@@ -100,7 +100,8 @@ set( models_sources
     poisson_generator_ps.cpp poisson_generator_ps.h
     pp_psc_delta.h pp_psc_delta.cpp
     pp_pop_psc_delta.h pp_pop_psc_delta.cpp
-    pp_cond_exp_mc_urbanczik.h pp_cond_exp_mc_urbanczik.cpp
+    pp_cond_exp_mc_urbanczik.h pp_cond_exp_mc_urbanczik.cpp    
+    pp_cond_exp_mc_pyr.h pp_cond_exp_mc_pyr.cpp
     ppd_sup_generator.h ppd_sup_generator.cpp
     pulsepacket_generator.h pulsepacket_generator.cpp
     quantal_stp_synapse.h quantal_stp_synapse_impl.h

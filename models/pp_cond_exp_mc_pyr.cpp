@@ -1,5 +1,5 @@
 /*
- *  pp_cond_exp_mc_urbanczik.cpp
+ *  pp_cond_exp_mc_pyr.cpp
  *
  *  This file is part of NEST.
  *
@@ -21,7 +21,7 @@
  */
 
 
-#include "pp_cond_exp_mc_urbanczik.h"
+#include "pp_cond_exp_mc_pyr.h"
 
 #ifdef HAVE_GSL
 
@@ -53,21 +53,21 @@
    He pointed out that the problem is avoided by defining the comp_names_
    vector with its final size. See also #348.
 */
-std::vector< Name > nest::pp_cond_exp_mc_urbanczik::comp_names_( NCOMP );
+std::vector< Name > nest::pp_cond_exp_mc_pyr::comp_names_( NCOMP );
 
 /* ----------------------------------------------------------------
  * Receptor dictionary
  * ---------------------------------------------------------------- */
 
 // leads to seg fault on exit, see #328
-// DictionaryDatum nest::pp_cond_exp_mc_urbanczik::receptor_dict_ = new
+// DictionaryDatum nest::pp_cond_exp_mc_pyr::receptor_dict_ = new
 // Dictionary();
 
 /* ----------------------------------------------------------------
  * Recordables map
  * ---------------------------------------------------------------- */
 
-nest::RecordablesMap< nest::pp_cond_exp_mc_urbanczik > nest::pp_cond_exp_mc_urbanczik::recordablesMap_;
+nest::RecordablesMap< nest::pp_cond_exp_mc_pyr > nest::pp_cond_exp_mc_pyr::recordablesMap_;
 
 namespace nest
 {
@@ -75,20 +75,26 @@ namespace nest
 
 template <>
 void
-RecordablesMap< pp_cond_exp_mc_urbanczik >::create()
+RecordablesMap< pp_cond_exp_mc_pyr >::create()
 {
   insert_( Name( "V_m.s" ),
-    &pp_cond_exp_mc_urbanczik::get_y_elem_< pp_cond_exp_mc_urbanczik::State_::V_M, pp_cond_exp_mc_urbanczik::SOMA > );
+    &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::SOMA > );
   insert_( Name( "g_ex.s" ),
-    &pp_cond_exp_mc_urbanczik::get_y_elem_< pp_cond_exp_mc_urbanczik::State_::G_EXC, pp_cond_exp_mc_urbanczik::SOMA > );
+    &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::G_EXC, pp_cond_exp_mc_pyr::SOMA > );
   insert_( Name( "g_in.s" ),
-    &pp_cond_exp_mc_urbanczik::get_y_elem_< pp_cond_exp_mc_urbanczik::State_::G_INH, pp_cond_exp_mc_urbanczik::SOMA > );
+    &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::G_INH, pp_cond_exp_mc_pyr::SOMA > );
   insert_( Name( "V_m.p" ),
-    &pp_cond_exp_mc_urbanczik::get_y_elem_< pp_cond_exp_mc_urbanczik::State_::V_M, pp_cond_exp_mc_urbanczik::DEND > );
+    &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::BASAL > );
   insert_( Name( "I_ex.p" ),
-    &pp_cond_exp_mc_urbanczik::get_y_elem_< pp_cond_exp_mc_urbanczik::State_::I_EXC, pp_cond_exp_mc_urbanczik::DEND > );
+    &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::I_EXC, pp_cond_exp_mc_pyr::BASAL > );
   insert_( Name( "I_in.p" ),
-    &pp_cond_exp_mc_urbanczik::get_y_elem_< pp_cond_exp_mc_urbanczik::State_::I_INH, pp_cond_exp_mc_urbanczik::DEND > );
+    &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::I_INH, pp_cond_exp_mc_pyr::BASAL > );
+  insert_( Name( "V_m.p" ),
+    &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::APICAL > );
+  insert_( Name( "I_ex.p" ),
+    &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::I_EXC, pp_cond_exp_mc_pyr::APICAL > );
+  insert_( Name( "I_in.p" ),
+    &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::I_INH, pp_cond_exp_mc_pyr::APICAL > );
 }
 }
 
@@ -97,15 +103,15 @@ RecordablesMap< pp_cond_exp_mc_urbanczik >::create()
  * ---------------------------------------------------------------- */
 
 extern "C" int
-nest::pp_cond_exp_mc_urbanczik_dynamics( double, const double y[], double f[], void* pnode )
+nest::pp_cond_exp_mc_pyr_dynamics( double, const double y[], double f[], void* pnode )
 {
   // some shorthands
-  typedef nest::pp_cond_exp_mc_urbanczik N;
-  typedef nest::pp_cond_exp_mc_urbanczik::State_ S;
+  typedef nest::pp_cond_exp_mc_pyr N;
+  typedef nest::pp_cond_exp_mc_pyr::State_ S;
 
   // get access to node so we can work almost as in a member function
   assert( pnode );
-  const nest::pp_cond_exp_mc_urbanczik& node = *( reinterpret_cast< nest::pp_cond_exp_mc_urbanczik* >( pnode ) );
+  const nest::pp_cond_exp_mc_pyr& node = *( reinterpret_cast< nest::pp_cond_exp_mc_pyr* >( pnode ) );
 
   // computations written quite explicitly for clarity, assume compile
   // will optimized most stuff away ...
@@ -114,7 +120,7 @@ nest::pp_cond_exp_mc_urbanczik_dynamics( double, const double y[], double f[], v
   const double V = y[ S::idx( N::SOMA, S::V_M ) ];
 
   // leak current of soma
-  const double I_L = node.P_.urbanczik_params.g_L[ N::SOMA ] * ( V - node.P_.urbanczik_params.E_L[ N::SOMA ] );
+  const double I_L = node.P_.pyr_params.g_L[ N::SOMA ] * ( V - node.P_.pyr_params.E_L[ N::SOMA ] );
 
   // excitatory synaptic current soma
   const double I_syn_exc = y[ S::idx( N::SOMA, S::G_EXC ) ] * ( V - node.P_.E_ex[ N::SOMA ] );
@@ -134,11 +140,11 @@ nest::pp_cond_exp_mc_urbanczik_dynamics( double, const double y[], double f[], v
     const double V_dnd = y[ S::idx( n, S::V_M ) ];
 
     // coupling current from dendrite to soma
-    I_conn_d_s += node.P_.urbanczik_params.g_conn[ n ] * ( V_dnd - V );
+    I_conn_d_s += node.P_.pyr_params.g_conn[ n ] * ( V_dnd - V );
 
     // coupling current from soma to dendrite
     // not part of the main paper but an extension mentioned in the supplement
-    const double I_conn_s_d = node.P_.urbanczik_params.g_conn[ N::SOMA ] * ( V - V_dnd );
+    const double I_conn_s_d = node.P_.pyr_params.g_conn[ N::SOMA ] * ( V - V_dnd );
 
     // dendritic current due to input
     const double I_syn_ex = y[ S::idx( n, S::I_EXC ) ];
@@ -148,13 +154,13 @@ nest::pp_cond_exp_mc_urbanczik_dynamics( double, const double y[], double f[], v
     // dendrite
     // In the paper the resting potential is set to zero and
     // the capacitance to one.
-    f[ S::idx( n, S::V_M ) ] = ( -node.P_.urbanczik_params.g_L[ n ] * ( V_dnd - node.P_.urbanczik_params.E_L[ n ] )
+    f[ S::idx( n, S::V_M ) ] = ( -node.P_.pyr_params.g_L[ n ] * ( V_dnd - node.P_.pyr_params.E_L[ n ] )
                                  + I_syn_ex + I_syn_in + I_conn_s_d )
-      / node.P_.urbanczik_params.C_m[ n ];
+      / node.P_.pyr_params.C_m[ n ];
 
     // derivative dendritic current
-    f[ S::idx( n, S::I_EXC ) ] = -I_syn_ex / node.P_.urbanczik_params.tau_syn_ex[ n ];
-    f[ S::idx( n, S::I_INH ) ] = -I_syn_in / node.P_.urbanczik_params.tau_syn_in[ n ];
+    f[ S::idx( n, S::I_EXC ) ] = -I_syn_ex / node.P_.pyr_params.tau_syn_ex[ n ];
+    f[ S::idx( n, S::I_INH ) ] = -I_syn_in / node.P_.pyr_params.tau_syn_in[ n ];
 
     // g_inh and g_exc are not used for the dendrites
     // therefore we set the corresponding derivatives to zero
@@ -166,13 +172,13 @@ nest::pp_cond_exp_mc_urbanczik_dynamics( double, const double y[], double f[], v
   // soma
   f[ S::idx( N::SOMA, S::V_M ) ] =
     ( -I_L - I_syn_exc - I_syn_inh + I_conn_d_s + node.B_.I_stim_[ N::SOMA ] + node.P_.I_e[ N::SOMA ] )
-    / node.P_.urbanczik_params.C_m[ N::SOMA ]; // plus or minus I_conn_d_s?
+    / node.P_.pyr_params.C_m[ N::SOMA ]; // plus or minus I_conn_d_s?
 
   // excitatory conductance soma
-  f[ S::idx( N::SOMA, S::G_EXC ) ] = -y[ S::idx( N::SOMA, S::G_EXC ) ] / node.P_.urbanczik_params.tau_syn_ex[ N::SOMA ];
+  f[ S::idx( N::SOMA, S::G_EXC ) ] = -y[ S::idx( N::SOMA, S::G_EXC ) ] / node.P_.pyr_params.tau_syn_ex[ N::SOMA ];
 
   // inhibitory conductance soma
-  f[ S::idx( N::SOMA, S::G_INH ) ] = -y[ S::idx( N::SOMA, S::G_INH ) ] / node.P_.urbanczik_params.tau_syn_in[ N::SOMA ];
+  f[ S::idx( N::SOMA, S::G_INH ) ] = -y[ S::idx( N::SOMA, S::G_INH ) ] / node.P_.pyr_params.tau_syn_in[ N::SOMA ];
 
   // I_EXC and I_INH are not used for the soma
   // therefore we set the corresponding derivatives to zero
@@ -186,81 +192,91 @@ nest::pp_cond_exp_mc_urbanczik_dynamics( double, const double y[], double f[], v
  * Default constructors defining default parameters and state
  * ---------------------------------------------------------------- */
 
-nest::pp_cond_exp_mc_urbanczik::Parameters_::Parameters_()
+nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_()
   : t_ref( 3.0 ) // ms
 {
-  urbanczik_params.phi_max = 0.15;
-  urbanczik_params.rate_slope = 0.5;
-  urbanczik_params.beta = 1.0 / 3.0;
-  urbanczik_params.theta = -55.0;
+  pyr_params.phi_max = 0.15;
+  pyr_params.rate_slope = 0.5;
+  pyr_params.beta = 1.0 / 3.0;
+  pyr_params.theta = -55.0;
   // conductances between compartments
-  urbanczik_params.g_conn[ SOMA ] = 600.0; // nS, soma-dendrite
-  urbanczik_params.g_conn[ DEND ] = 0.0;   // nS, dendrite-soma
+  pyr_params.g_conn[ SOMA ] = 600.0; // nS, soma-dendrite
+  pyr_params.g_conn[ BASAL ] = 0.0;   // nS, dendrite-soma
 
   // soma parameters
-  urbanczik_params.g_L[ SOMA ] = 30.0;  // nS
-  urbanczik_params.C_m[ SOMA ] = 300.0; // pF
+  pyr_params.g_L[ SOMA ] = 30.0;  // nS
+  pyr_params.C_m[ SOMA ] = 300.0; // pF
   E_ex[ SOMA ] = 0.0;                   // mV
   E_in[ SOMA ] = -75;                   // mV
-  urbanczik_params.E_L[ SOMA ] = -70.0; // mV
-  urbanczik_params.tau_syn_ex[ SOMA ] = 3.0;
-  urbanczik_params.tau_syn_in[ SOMA ] = 3.0;
+  pyr_params.E_L[ SOMA ] = -70.0; // mV
+  pyr_params.tau_syn_ex[ SOMA ] = 3.0;
+  pyr_params.tau_syn_in[ SOMA ] = 3.0;
   I_e[ SOMA ] = 0.0; // pA
 
-  // dendritic parameters
-  urbanczik_params.g_L[ DEND ] = 30.0;
-  urbanczik_params.C_m[ DEND ] = 300.0; // pF
-  E_ex[ DEND ] = 0.0;                   // mV
-  E_in[ DEND ] = 0.0;                   // mV
-  urbanczik_params.E_L[ DEND ] = -70.0; // mV
-  urbanczik_params.tau_syn_ex[ DEND ] = 3.0;
-  urbanczik_params.tau_syn_in[ DEND ] = 3.0;
-  I_e[ DEND ] = 0.0; // pA
+  // basal dendrite parameters
+  pyr_params.g_L[ BASAL ] = 30.0;
+  pyr_params.C_m[ BASAL ] = 300.0; // pF
+  E_ex[ BASAL ] = 0.0;                   // mV
+  E_in[ BASAL ] = 0.0;                   // mV
+  pyr_params.E_L[ BASAL ] = -70.0; // mV
+  pyr_params.tau_syn_ex[ BASAL ] = 3.0;
+  pyr_params.tau_syn_in[ BASAL ] = 3.0;
+  I_e[ BASAL ] = 0.0; // pA
+
+  // apical dendrite parameters
+  pyr_params.g_L[ APICAL ] = 30.0;
+  pyr_params.C_m[ APICAL ] = 300.0; // pF
+  E_ex[ APICAL ] = 0.0;                   // mV
+  E_in[ APICAL ] = 0.0;                   // mV
+  pyr_params.E_L[ APICAL ] = -70.0; // mV
+  pyr_params.tau_syn_ex[ APICAL ] = 3.0;
+  pyr_params.tau_syn_in[ APICAL ] = 3.0;
+  I_e[ APICAL ] = 0.0; // pA
 }
 
-nest::pp_cond_exp_mc_urbanczik::Parameters_::Parameters_( const Parameters_& p )
+nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_( const Parameters_& p )
   : t_ref( p.t_ref )
 {
-  urbanczik_params.phi_max = p.urbanczik_params.phi_max;
-  urbanczik_params.rate_slope = p.urbanczik_params.rate_slope;
-  urbanczik_params.beta = p.urbanczik_params.beta;
-  urbanczik_params.theta = p.urbanczik_params.theta;
+  pyr_params.phi_max = p.pyr_params.phi_max;
+  pyr_params.rate_slope = p.pyr_params.rate_slope;
+  pyr_params.beta = p.pyr_params.beta;
+  pyr_params.theta = p.pyr_params.theta;
   // copy C-arrays
   for ( size_t n = 0; n < NCOMP; ++n )
   {
-    urbanczik_params.g_conn[ n ] = p.urbanczik_params.g_conn[ n ];
-    urbanczik_params.g_L[ n ] = p.urbanczik_params.g_L[ n ];
-    urbanczik_params.C_m[ n ] = p.urbanczik_params.C_m[ n ];
+    pyr_params.g_conn[ n ] = p.pyr_params.g_conn[ n ];
+    pyr_params.g_L[ n ] = p.pyr_params.g_L[ n ];
+    pyr_params.C_m[ n ] = p.pyr_params.C_m[ n ];
     E_ex[ n ] = p.E_ex[ n ];
     E_in[ n ] = p.E_in[ n ];
-    urbanczik_params.E_L[ n ] = p.urbanczik_params.E_L[ n ];
-    urbanczik_params.tau_syn_ex[ n ] = p.urbanczik_params.tau_syn_ex[ n ];
-    urbanczik_params.tau_syn_in[ n ] = p.urbanczik_params.tau_syn_in[ n ];
+    pyr_params.E_L[ n ] = p.pyr_params.E_L[ n ];
+    pyr_params.tau_syn_ex[ n ] = p.pyr_params.tau_syn_ex[ n ];
+    pyr_params.tau_syn_in[ n ] = p.pyr_params.tau_syn_in[ n ];
     I_e[ n ] = p.I_e[ n ];
   }
 }
 
-nest::pp_cond_exp_mc_urbanczik::Parameters_&
-nest::pp_cond_exp_mc_urbanczik::Parameters_::operator=( const Parameters_& p )
+nest::pp_cond_exp_mc_pyr::Parameters_&
+nest::pp_cond_exp_mc_pyr::Parameters_::operator=( const Parameters_& p )
 {
   assert( this != &p ); // would be bad logical error in program
 
   t_ref = p.t_ref;
-  urbanczik_params.phi_max = p.urbanczik_params.phi_max;
-  urbanczik_params.rate_slope = p.urbanczik_params.rate_slope;
-  urbanczik_params.beta = p.urbanczik_params.beta;
-  urbanczik_params.theta = p.urbanczik_params.theta;
+  pyr_params.phi_max = p.pyr_params.phi_max;
+  pyr_params.rate_slope = p.pyr_params.rate_slope;
+  pyr_params.beta = p.pyr_params.beta;
+  pyr_params.theta = p.pyr_params.theta;
 
   for ( size_t n = 0; n < NCOMP; ++n )
   {
-    urbanczik_params.g_conn[ n ] = p.urbanczik_params.g_conn[ n ];
-    urbanczik_params.g_L[ n ] = p.urbanczik_params.g_L[ n ];
-    urbanczik_params.C_m[ n ] = p.urbanczik_params.C_m[ n ];
+    pyr_params.g_conn[ n ] = p.pyr_params.g_conn[ n ];
+    pyr_params.g_L[ n ] = p.pyr_params.g_L[ n ];
+    pyr_params.C_m[ n ] = p.pyr_params.C_m[ n ];
     E_ex[ n ] = p.E_ex[ n ];
     E_in[ n ] = p.E_in[ n ];
-    urbanczik_params.E_L[ n ] = p.urbanczik_params.E_L[ n ];
-    urbanczik_params.tau_syn_ex[ n ] = p.urbanczik_params.tau_syn_ex[ n ];
-    urbanczik_params.tau_syn_in[ n ] = p.urbanczik_params.tau_syn_in[ n ];
+    pyr_params.E_L[ n ] = p.pyr_params.E_L[ n ];
+    pyr_params.tau_syn_ex[ n ] = p.pyr_params.tau_syn_ex[ n ];
+    pyr_params.tau_syn_in[ n ] = p.pyr_params.tau_syn_in[ n ];
     I_e[ n ] = p.I_e[ n ];
   }
 
@@ -268,7 +284,7 @@ nest::pp_cond_exp_mc_urbanczik::Parameters_::operator=( const Parameters_& p )
 }
 
 
-nest::pp_cond_exp_mc_urbanczik::State_::State_( const Parameters_& p )
+nest::pp_cond_exp_mc_pyr::State_::State_( const Parameters_& p )
   : r_( 0 )
 {
   // for simplicity, we first initialize all values to 0,
@@ -279,11 +295,11 @@ nest::pp_cond_exp_mc_urbanczik::State_::State_( const Parameters_& p )
   }
   for ( size_t n = 0; n < NCOMP; ++n )
   {
-    y_[ idx( n, V_M ) ] = p.urbanczik_params.E_L[ n ];
+    y_[ idx( n, V_M ) ] = p.pyr_params.E_L[ n ];
   }
 }
 
-nest::pp_cond_exp_mc_urbanczik::State_::State_( const State_& s )
+nest::pp_cond_exp_mc_pyr::State_::State_( const State_& s )
   : r_( s.r_ )
 {
   for ( size_t i = 0; i < STATE_VEC_SIZE; ++i )
@@ -292,8 +308,8 @@ nest::pp_cond_exp_mc_urbanczik::State_::State_( const State_& s )
   }
 }
 
-nest::pp_cond_exp_mc_urbanczik::State_&
-nest::pp_cond_exp_mc_urbanczik::State_::operator=( const State_& s )
+nest::pp_cond_exp_mc_pyr::State_&
+nest::pp_cond_exp_mc_pyr::State_::operator=( const State_& s )
 {
   r_ = s.r_;
   for ( size_t i = 0; i < STATE_VEC_SIZE; ++i )
@@ -303,7 +319,7 @@ nest::pp_cond_exp_mc_urbanczik::State_::operator=( const State_& s )
   return *this;
 }
 
-nest::pp_cond_exp_mc_urbanczik::Buffers_::Buffers_( pp_cond_exp_mc_urbanczik& n )
+nest::pp_cond_exp_mc_pyr::Buffers_::Buffers_( pp_cond_exp_mc_pyr& n )
   : logger_( n )
   , s_( 0 )
   , c_( 0 )
@@ -313,7 +329,7 @@ nest::pp_cond_exp_mc_urbanczik::Buffers_::Buffers_( pp_cond_exp_mc_urbanczik& n 
   // init_buffers_().
 }
 
-nest::pp_cond_exp_mc_urbanczik::Buffers_::Buffers_( const Buffers_&, pp_cond_exp_mc_urbanczik& n )
+nest::pp_cond_exp_mc_pyr::Buffers_::Buffers_( const Buffers_&, pp_cond_exp_mc_pyr& n )
   : logger_( n )
   , s_( 0 )
   , c_( 0 )
@@ -328,29 +344,29 @@ nest::pp_cond_exp_mc_urbanczik::Buffers_::Buffers_( const Buffers_&, pp_cond_exp
  * ---------------------------------------------------------------- */
 
 void
-nest::pp_cond_exp_mc_urbanczik::Parameters_::get( DictionaryDatum& d ) const
+nest::pp_cond_exp_mc_pyr::Parameters_::get( DictionaryDatum& d ) const
 {
   def< double >( d, names::t_ref, t_ref );
-  def< double >( d, names::phi_max, urbanczik_params.phi_max );
-  def< double >( d, names::rate_slope, urbanczik_params.rate_slope );
-  def< double >( d, names::beta, urbanczik_params.beta );
-  def< double >( d, names::theta, urbanczik_params.theta );
+  def< double >( d, names::phi_max, pyr_params.phi_max );
+  def< double >( d, names::rate_slope, pyr_params.rate_slope );
+  def< double >( d, names::beta, pyr_params.beta );
+  def< double >( d, names::theta, pyr_params.theta );
 
-  def< double >( d, names::g_sp, urbanczik_params.g_conn[ SOMA ] );
-  def< double >( d, names::g_ps, urbanczik_params.g_conn[ DEND ] );
+  def< double >( d, names::g_sp, pyr_params.g_conn[ SOMA ] );
+  def< double >( d, names::g_ps, pyr_params.g_conn[ BASAL ] );
 
   // create subdictionaries for per-compartment parameters
   for ( size_t n = 0; n < NCOMP; ++n )
   {
     DictionaryDatum dd = new Dictionary();
 
-    def< double >( dd, names::g_L, urbanczik_params.g_L[ n ] );
-    def< double >( dd, names::E_L, urbanczik_params.E_L[ n ] );
+    def< double >( dd, names::g_L, pyr_params.g_L[ n ] );
+    def< double >( dd, names::E_L, pyr_params.E_L[ n ] );
     def< double >( dd, names::E_ex, E_ex[ n ] );
     def< double >( dd, names::E_in, E_in[ n ] );
-    def< double >( dd, names::C_m, urbanczik_params.C_m[ n ] );
-    def< double >( dd, names::tau_syn_ex, urbanczik_params.tau_syn_ex[ n ] );
-    def< double >( dd, names::tau_syn_in, urbanczik_params.tau_syn_in[ n ] );
+    def< double >( dd, names::C_m, pyr_params.C_m[ n ] );
+    def< double >( dd, names::tau_syn_ex, pyr_params.tau_syn_ex[ n ] );
+    def< double >( dd, names::tau_syn_in, pyr_params.tau_syn_in[ n ] );
     def< double >( dd, names::I_e, I_e[ n ] );
 
     ( *d )[ comp_names_[ n ] ] = dd;
@@ -358,17 +374,17 @@ nest::pp_cond_exp_mc_urbanczik::Parameters_::get( DictionaryDatum& d ) const
 }
 
 void
-nest::pp_cond_exp_mc_urbanczik::Parameters_::set( const DictionaryDatum& d )
+nest::pp_cond_exp_mc_pyr::Parameters_::set( const DictionaryDatum& d )
 {
   // allow setting the membrane potential
   updateValue< double >( d, names::t_ref, t_ref );
-  updateValue< double >( d, names::phi_max, urbanczik_params.phi_max );
-  updateValue< double >( d, names::rate_slope, urbanczik_params.rate_slope );
-  updateValue< double >( d, names::beta, urbanczik_params.beta );
-  updateValue< double >( d, names::theta, urbanczik_params.theta );
+  updateValue< double >( d, names::phi_max, pyr_params.phi_max );
+  updateValue< double >( d, names::rate_slope, pyr_params.rate_slope );
+  updateValue< double >( d, names::beta, pyr_params.beta );
+  updateValue< double >( d, names::theta, pyr_params.theta );
 
-  updateValue< double >( d, Name( names::g_sp ), urbanczik_params.g_conn[ SOMA ] );
-  updateValue< double >( d, Name( names::g_ps ), urbanczik_params.g_conn[ DEND ] );
+  updateValue< double >( d, Name( names::g_sp ), pyr_params.g_conn[ SOMA ] );
+  updateValue< double >( d, Name( names::g_ps ), pyr_params.g_conn[ BASAL ] );
 
   // extract from sub-dictionaries
   for ( size_t n = 0; n < NCOMP; ++n )
@@ -377,22 +393,22 @@ nest::pp_cond_exp_mc_urbanczik::Parameters_::set( const DictionaryDatum& d )
     {
       DictionaryDatum dd = getValue< DictionaryDatum >( d, comp_names_[ n ] );
 
-      updateValue< double >( dd, names::E_L, urbanczik_params.E_L[ n ] );
+      updateValue< double >( dd, names::E_L, pyr_params.E_L[ n ] );
       updateValue< double >( dd, names::E_ex, E_ex[ n ] );
       updateValue< double >( dd, names::E_in, E_in[ n ] );
-      updateValue< double >( dd, names::C_m, urbanczik_params.C_m[ n ] );
-      updateValue< double >( dd, names::g_L, urbanczik_params.g_L[ n ] );
-      updateValue< double >( dd, names::tau_syn_ex, urbanczik_params.tau_syn_ex[ n ] );
-      updateValue< double >( dd, names::tau_syn_in, urbanczik_params.tau_syn_in[ n ] );
+      updateValue< double >( dd, names::C_m, pyr_params.C_m[ n ] );
+      updateValue< double >( dd, names::g_L, pyr_params.g_L[ n ] );
+      updateValue< double >( dd, names::tau_syn_ex, pyr_params.tau_syn_ex[ n ] );
+      updateValue< double >( dd, names::tau_syn_in, pyr_params.tau_syn_in[ n ] );
       updateValue< double >( dd, names::I_e, I_e[ n ] );
     }
   }
-  if ( urbanczik_params.rate_slope < 0 )
+  if ( pyr_params.rate_slope < 0 )
   {
     throw BadProperty( "Rate slope cannot be negative." );
   }
 
-  if ( urbanczik_params.phi_max < 0 )
+  if ( pyr_params.phi_max < 0 )
   {
     throw BadProperty( "Maximum rate cannot be negative." );
   }
@@ -405,12 +421,12 @@ nest::pp_cond_exp_mc_urbanczik::Parameters_::set( const DictionaryDatum& d )
   // apply checks compartment-wise
   for ( size_t n = 0; n < NCOMP; ++n )
   {
-    if ( urbanczik_params.C_m[ n ] <= 0 )
+    if ( pyr_params.C_m[ n ] <= 0 )
     {
       throw BadProperty( "Capacitance (" + comp_names_[ n ].toString() + ") must be strictly positive." );
     }
 
-    if ( urbanczik_params.tau_syn_ex[ n ] <= 0 || urbanczik_params.tau_syn_in[ n ] <= 0 )
+    if ( pyr_params.tau_syn_ex[ n ] <= 0 || pyr_params.tau_syn_in[ n ] <= 0 )
     {
       throw BadProperty( "All time constants must be strictly positive." );
     }
@@ -418,7 +434,7 @@ nest::pp_cond_exp_mc_urbanczik::Parameters_::set( const DictionaryDatum& d )
 }
 
 void
-nest::pp_cond_exp_mc_urbanczik::State_::get( DictionaryDatum& d ) const
+nest::pp_cond_exp_mc_pyr::State_::get( DictionaryDatum& d ) const
 {
   // we assume here that State_::get() always is called after
   // Parameters_::get(), so that the per-compartment dictionaries exist
@@ -432,7 +448,7 @@ nest::pp_cond_exp_mc_urbanczik::State_::get( DictionaryDatum& d ) const
 }
 
 void
-nest::pp_cond_exp_mc_urbanczik::State_::set( const DictionaryDatum& d, const Parameters_& )
+nest::pp_cond_exp_mc_pyr::State_::set( const DictionaryDatum& d, const Parameters_& )
 {
   // extract from sub-dictionaries
   for ( size_t n = 0; n < NCOMP; ++n )
@@ -450,8 +466,8 @@ nest::pp_cond_exp_mc_urbanczik::State_::set( const DictionaryDatum& d, const Par
  * Default and copy constructor for node, and destructor
  * ---------------------------------------------------------------- */
 
-nest::pp_cond_exp_mc_urbanczik::pp_cond_exp_mc_urbanczik()
-  : UrbanczikArchivingNode< pp_cond_exp_mc_urbanczik_parameters >()
+nest::pp_cond_exp_mc_pyr::pp_cond_exp_mc_pyr()
+  : PyrArchivingNode< pp_cond_exp_mc_pyr_parameters >()
   , P_()
   , S_( P_ )
   , B_( *this )
@@ -461,20 +477,21 @@ nest::pp_cond_exp_mc_urbanczik::pp_cond_exp_mc_urbanczik()
   // set up table of compartment names
   // comp_names_.resize(NCOMP); --- Fixed size, see comment on definition
   comp_names_[ SOMA ] = Name( "soma" );
-  comp_names_[ DEND ] = Name( "dendritic" );
-  UrbanczikArchivingNode< pp_cond_exp_mc_urbanczik_parameters >::urbanczik_params = &P_.urbanczik_params;
+  comp_names_[ BASAL ] = Name( "basal" );
+  comp_names_[ APICAL ] = Name( "apical" );
+  PyrArchivingNode< pp_cond_exp_mc_pyr_parameters >::pyr_params = &P_.pyr_params;
 }
 
-nest::pp_cond_exp_mc_urbanczik::pp_cond_exp_mc_urbanczik( const pp_cond_exp_mc_urbanczik& n )
-  : UrbanczikArchivingNode< pp_cond_exp_mc_urbanczik_parameters >( n )
+nest::pp_cond_exp_mc_pyr::pp_cond_exp_mc_pyr( const pp_cond_exp_mc_pyr& n )
+  : PyrArchivingNode< pp_cond_exp_mc_pyr_parameters >( n )
   , P_( n.P_ )
   , S_( n.S_ )
   , B_( n.B_, *this )
 {
-  UrbanczikArchivingNode< pp_cond_exp_mc_urbanczik_parameters >::urbanczik_params = &P_.urbanczik_params;
+  PyrArchivingNode< pp_cond_exp_mc_pyr_parameters >::pyr_params = &P_.pyr_params;
 }
 
-nest::pp_cond_exp_mc_urbanczik::~pp_cond_exp_mc_urbanczik()
+nest::pp_cond_exp_mc_pyr::~pp_cond_exp_mc_pyr()
 {
   // GSL structs may not have been allocated, so we need to protect destruction
   if ( B_.s_ )
@@ -496,7 +513,7 @@ nest::pp_cond_exp_mc_urbanczik::~pp_cond_exp_mc_urbanczik()
  * ---------------------------------------------------------------- */
 
 void
-nest::pp_cond_exp_mc_urbanczik::init_buffers_()
+nest::pp_cond_exp_mc_pyr::init_buffers_()
 {
   B_.spikes_.resize( NUM_SPIKE_RECEPTORS );
   for ( size_t n = 0; n < NUM_SPIKE_RECEPTORS; ++n )
@@ -543,7 +560,7 @@ nest::pp_cond_exp_mc_urbanczik::init_buffers_()
     gsl_odeiv_evolve_reset( B_.e_ );
   }
 
-  B_.sys_.function = pp_cond_exp_mc_urbanczik_dynamics;
+  B_.sys_.function = pp_cond_exp_mc_pyr_dynamics;
   B_.sys_.jacobian = NULL;
   B_.sys_.dimension = State_::STATE_VEC_SIZE;
   B_.sys_.params = reinterpret_cast< void* >( this );
@@ -554,7 +571,7 @@ nest::pp_cond_exp_mc_urbanczik::init_buffers_()
 }
 
 void
-nest::pp_cond_exp_mc_urbanczik::pre_run_hook()
+nest::pp_cond_exp_mc_pyr::pre_run_hook()
 {
   // ensures initialization in case mm connected after Simulate
   B_.logger_.init();
@@ -566,7 +583,7 @@ nest::pp_cond_exp_mc_urbanczik::pre_run_hook()
   // since t_ref >= 0, this can only fail in error
   assert( V_.RefractoryCounts_ >= 0 );
 
-  assert( ( int ) NCOMP == ( int ) pp_cond_exp_mc_urbanczik_parameters::NCOMP );
+  assert( ( int ) NCOMP == ( int ) pp_cond_exp_mc_pyr_parameters::NCOMP );
 }
 
 
@@ -575,7 +592,7 @@ nest::pp_cond_exp_mc_urbanczik::pre_run_hook()
  * ---------------------------------------------------------------- */
 
 void
-nest::pp_cond_exp_mc_urbanczik::update( Time const& origin, const long from, const long to )
+nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const long to )
 {
 
   assert( to >= 0 && ( delay ) from < kernel().connection_manager.get_min_delay() );
@@ -637,7 +654,7 @@ nest::pp_cond_exp_mc_urbanczik::update( Time const& origin, const long from, con
       // Neuron not refractory
 
       // There is no reset of the membrane potential after a spike
-      double rate = 1000.0 * P_.urbanczik_params.phi( S_.y_[ State_::V_M ] );
+      double rate = 1000.0 * P_.pyr_params.phi( S_.y_[ State_::V_M ] );
 
       if ( rate > 0.0 )
       {
@@ -681,8 +698,8 @@ nest::pp_cond_exp_mc_urbanczik::update( Time const& origin, const long from, con
     }
 
     // Store dendritic membrane potential for Urbanczik-Senn plasticity
-    write_urbanczik_history(
-      Time::step( origin.get_steps() + lag + 1 ), S_.y_[ S_.idx( DEND, State_::V_M ) ], n_spikes, DEND );
+    write_ubanczik_history(
+      Time::step( origin.get_steps() + lag + 1 ), S_.y_[ S_.idx( BASAL, State_::V_M ) ], n_spikes, BASAL );
 
     // set new input currents
     for ( size_t n = 0; n < NCOMP; ++n )
@@ -696,7 +713,7 @@ nest::pp_cond_exp_mc_urbanczik::update( Time const& origin, const long from, con
 }
 
 void
-nest::pp_cond_exp_mc_urbanczik::handle( SpikeEvent& e )
+nest::pp_cond_exp_mc_pyr::handle( SpikeEvent& e )
 {
   assert( e.get_delay_steps() > 0 );
   assert( 0 <= e.get_rport() && e.get_rport() < 2 * NCOMP );
@@ -706,7 +723,7 @@ nest::pp_cond_exp_mc_urbanczik::handle( SpikeEvent& e )
 }
 
 void
-nest::pp_cond_exp_mc_urbanczik::handle( CurrentEvent& e )
+nest::pp_cond_exp_mc_pyr::handle( CurrentEvent& e )
 {
   assert( e.get_delay_steps() > 0 );
   // not 100% clean, should look at MIN, SUP
@@ -718,7 +735,7 @@ nest::pp_cond_exp_mc_urbanczik::handle( CurrentEvent& e )
 }
 
 void
-nest::pp_cond_exp_mc_urbanczik::handle( DataLoggingRequest& e )
+nest::pp_cond_exp_mc_pyr::handle( DataLoggingRequest& e )
 {
   B_.logger_.handle( e );
 }
