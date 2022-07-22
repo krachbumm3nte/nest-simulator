@@ -36,7 +36,7 @@
 // Includes from sli:
 #include "dictdatum.h"
 #include "dictutils.h"
-
+#include <iostream>
 namespace nest
 {
 
@@ -195,6 +195,7 @@ private:
   double tau_s_trace_;
 
   double t_lastspike_;
+  int compartment_;
 };
 
 
@@ -219,7 +220,12 @@ urbanczik_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSy
 
   // for now we only support two-compartment neurons
   // in this case the dendritic compartment has index 1
-  const int comp = 1;
+  int rport =  e.get_rport();
+  if (rport <= 1 or rport > 5) {
+    std::cout << "connection on port " << rport << "\n";
+    // throw IllegalConnection("Urbanczik synapse can only connect to dendrites!");
+  }
+  const int comp = rport / 2; // integer division to retrieve compartment from rport 
 
   target->get_urbanczik_history( t_lastspike_ - dendritic_delay, t_spike - dendritic_delay, &start, &finish, comp );
 
@@ -283,6 +289,7 @@ urbanczik_synapse< targetidentifierT >::urbanczik_synapse()
   , tau_L_trace_( 0.0 )
   , tau_s_trace_( 0.0 )
   , t_lastspike_( -1.0 )
+  , compartment_( 0 )
 {
 }
 

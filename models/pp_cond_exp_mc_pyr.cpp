@@ -83,17 +83,17 @@ RecordablesMap< pp_cond_exp_mc_pyr >::create()
     &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::G_EXC, pp_cond_exp_mc_pyr::SOMA > );
   insert_( Name( "g_in.s" ),
     &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::G_INH, pp_cond_exp_mc_pyr::SOMA > );
-  insert_( Name( "V_m.p" ),
+  insert_( Name( "V_m.b" ),
     &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::BASAL > );
-  insert_( Name( "I_ex.p" ),
+  insert_( Name( "I_ex.b" ),
     &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::I_EXC, pp_cond_exp_mc_pyr::BASAL > );
-  insert_( Name( "I_in.p" ),
+  insert_( Name( "I_in.b" ),
     &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::I_INH, pp_cond_exp_mc_pyr::BASAL > );
-  insert_( Name( "V_m.p" ),
+  insert_( Name( "V_m.a" ),
     &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::APICAL > );
-  insert_( Name( "I_ex.p" ),
+  insert_( Name( "I_ex.a" ),
     &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::I_EXC, pp_cond_exp_mc_pyr::APICAL > );
-  insert_( Name( "I_in.p" ),
+  insert_( Name( "I_in.a" ),
     &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::I_INH, pp_cond_exp_mc_pyr::APICAL > );
 }
 }
@@ -200,8 +200,9 @@ nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_()
   pyr_params.beta = 1.0 / 3.0;
   pyr_params.theta = -55.0;
   // conductances between compartments
-  pyr_params.g_conn[ SOMA ] = 600.0; // nS, soma-dendrite
-  pyr_params.g_conn[ BASAL ] = 0.0;   // nS, dendrite-soma
+  pyr_params.g_conn[ SOMA ] = 0.0; // nS, soma-dendrite
+  pyr_params.g_conn[ BASAL ] = 600.0;   // nS, dendrite-soma
+  pyr_params.g_conn[ APICAL ] = 600.0;   // nS, dendrite-soma
 
   // soma parameters
   pyr_params.g_L[ SOMA ] = 30.0;  // nS
@@ -354,6 +355,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::get( DictionaryDatum& d ) const
 
   def< double >( d, names::g_sp, pyr_params.g_conn[ SOMA ] );
   def< double >( d, names::g_ps, pyr_params.g_conn[ BASAL ] );
+  def< double >( d, names::g_ps, pyr_params.g_conn[ APICAL ] );
 
   // create subdictionaries for per-compartment parameters
   for ( size_t n = 0; n < NCOMP; ++n )
@@ -385,6 +387,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::set( const DictionaryDatum& d )
 
   updateValue< double >( d, Name( names::g_sp ), pyr_params.g_conn[ SOMA ] );
   updateValue< double >( d, Name( names::g_ps ), pyr_params.g_conn[ BASAL ] );
+  updateValue< double >( d, Name( names::g_ps ), pyr_params.g_conn[ APICAL ] );
 
   // extract from sub-dictionaries
   for ( size_t n = 0; n < NCOMP; ++n )
@@ -700,6 +703,8 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
     // Store dendritic membrane potential for Urbanczik-Senn plasticity
     write_ubanczik_history(
       Time::step( origin.get_steps() + lag + 1 ), S_.y_[ S_.idx( BASAL, State_::V_M ) ], n_spikes, BASAL );
+    write_ubanczik_history(
+      Time::step( origin.get_steps() + lag + 1 ), S_.y_[ S_.idx( APICAL, State_::V_M ) ], n_spikes, APICAL );
 
     // set new input currents
     for ( size_t n = 0; n < NCOMP; ++n )

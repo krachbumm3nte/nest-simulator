@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# urbanczik_synapse_example.py
+# pyr_synapse_example.py
 #
 # This file is part of NEST.
 #

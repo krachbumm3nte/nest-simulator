@@ -633,6 +633,10 @@ pp_cond_exp_mc_pyr::get_status( DictionaryDatum& d ) const
   ( *receptor_dict_ )[ names::basal_inh ] = BASAL_INH;
   ( *receptor_dict_ )[ names::basal_curr ] = I_BASAL;
 
+  ( *receptor_dict_ )[ names::apical_exc ] = APICAL_EXC;
+  ( *receptor_dict_ )[ names::apical_inh ] = APICAL_INH;
+  ( *receptor_dict_ )[ names::apical_curr ] = I_APICAL;
+
   ( *d )[ names::receptor_types ] = receptor_dict_;
 }
 
