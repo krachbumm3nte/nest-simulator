@@ -66,6 +66,12 @@ nest::PyrArchivingNode< pyr_parameters >::get_urbanczik_history( double t1,
   std::deque< histentry_extended >::iterator* finish,
   int comp )
 {
+  // remove the oldest entries from pyr_history_ to prevent runaway computing time.
+  if (pyr_history_[ comp - 1].size() > 3000) {
+    pyr_history_[ comp - 1].erase(pyr_history_[ comp - 1 ].begin(), pyr_history_[ comp - 1 ].begin() + 500);
+  }
+
+
   *finish = pyr_history_[ comp - 1 ].end();
   if ( pyr_history_[ comp - 1 ].empty() )
   {

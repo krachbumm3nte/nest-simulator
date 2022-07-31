@@ -689,6 +689,7 @@ public:
     std::deque< histentry_extended >::iterator* finish,
     int );
   // make neuron parameters accessible in Urbanczik synapse
+  virtual double get_g( int comp);
   virtual double get_C_m( int comp );
   virtual double get_g_L( int comp );
   virtual double get_tau_L( int comp );

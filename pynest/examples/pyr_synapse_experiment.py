@@ -67,14 +67,13 @@ nest.Connect(a_stim, post, syn_spec=syn_params)
 print(syn_params["receptor_type"])
 
 
-
 b_p = nest.Create("poisson_generator")
 a_p = nest.Create("poisson_generator")
 nest.Connect(b_p, b_stim)
 nest.Connect(a_p, a_stim)
 
 mm = nest.Create('multimeter', 1, {'record_from': ["V_m.s", "V_m.b", "V_m.a"]})
-#nest.Connect(mm, post)
+# nest.Connect(mm, post)
 
 b_p.rate = 1000
 nest.Simulate(200)

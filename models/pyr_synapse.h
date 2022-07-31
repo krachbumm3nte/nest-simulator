@@ -1,5 +1,5 @@
 /*
- *  urbanczik_synapse.h
+ *  pyr_synapse.h
  *
  *  This file is part of NEST.
  *
@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef URBANCZIK_SYNAPSE_H
-#define URBANCZIK_SYNAPSE_H
+#ifndef PYR_SYNAPSE_H
+#define PYR_SYNAPSE_H
 
 // C++ includes:
 #include <cmath>
@@ -50,7 +50,7 @@ Synapse type for a plastic synapse after Urbanczik and Senn
 Description
 +++++++++++
 
-``urbanczik_synapse`` is a connector to create Urbanczik synapses as defined in
+``pyr_synapse`` is a connector to create Urbanczik synapses as defined in
 [1]_ that can connect suitable :ref:`multicompartment models
 <multicompartment-models>`. In contrast to most STDP models, the synaptic weight
 depends on the postsynaptic dendritic potential, in addition to the pre- and
@@ -104,7 +104,7 @@ EndUserDocs */
 // target index addressing) derived from generic connection template
 
 template < typename targetidentifierT >
-class urbanczik_synapse : public Connection< targetidentifierT >
+class pyr_synapse : public Connection< targetidentifierT >
 {
 
 public:
@@ -115,15 +115,15 @@ public:
    * Default Constructor.
    * Sets default values for all parameters. Needed by GenericConnectorModel.
    */
-  urbanczik_synapse();
+  pyr_synapse();
 
 
   /**
    * Copy constructor.
    * Needs to be defined properly in order for GenericConnector to work.
    */
-  urbanczik_synapse( const urbanczik_synapse& ) = default;
-  urbanczik_synapse& operator=( const urbanczik_synapse& ) = default;
+  pyr_synapse( const pyr_synapse& ) = default;
+  pyr_synapse& operator=( const pyr_synapse& ) = default;
 
   // Explicitly declare all methods inherited from the dependent base
   // ConnectionBase. This avoids explicit name prefixes in all places these
@@ -207,7 +207,7 @@ private:
  */
 template < typename targetidentifierT >
 inline void
-urbanczik_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseProperties& )
+pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseProperties& )
 {
   double t_spike = e.get_stamp().get_ms();
   // use accessor functions (inherited from Connection< >) to obtain delay and target
@@ -236,6 +236,8 @@ urbanczik_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSy
   double const g_L = target->get_g_L( comp );
   double const tau_L = target->get_tau_L( comp );
   double const C_m = target->get_C_m( comp );
+  double const g_som = target->get_g( comp );
+  std::cout << g_som;
   double const tau_s = weight_ > 0.0 ? target->get_tau_syn_ex( comp ) : target->get_tau_syn_in( comp );
   double dPI_exp_integral = 0.0;
 
@@ -281,7 +283,7 @@ urbanczik_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSy
 
 
 template < typename targetidentifierT >
-urbanczik_synapse< targetidentifierT >::urbanczik_synapse()
+pyr_synapse< targetidentifierT >::pyr_synapse()
   : ConnectionBase()
   , weight_( 1.0 )
   , init_weight_( 1.0 )
@@ -300,7 +302,7 @@ urbanczik_synapse< targetidentifierT >::urbanczik_synapse()
 
 template < typename targetidentifierT >
 void
-urbanczik_synapse< targetidentifierT >::get_status( DictionaryDatum& d ) const
+pyr_synapse< targetidentifierT >::get_status( DictionaryDatum& d ) const
 {
   ConnectionBase::get_status( d );
   def< double >( d, names::weight, weight_ );
@@ -313,7 +315,7 @@ urbanczik_synapse< targetidentifierT >::get_status( DictionaryDatum& d ) const
 
 template < typename targetidentifierT >
 void
-urbanczik_synapse< targetidentifierT >::set_status( const DictionaryDatum& d, ConnectorModel& cm )
+pyr_synapse< targetidentifierT >::set_status( const DictionaryDatum& d, ConnectorModel& cm )
 {
   ConnectionBase::set_status( d, cm );
   updateValue< double >( d, names::weight, weight_ );

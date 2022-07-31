@@ -93,6 +93,12 @@ public:
   double get_g_L( int comp );
 
   /**
+   * \fn double get_g( int comp )
+   * Returns conductance g connecting compartments
+   */
+  double get_g( int comp );
+
+  /**
    * \fn double get_tau_L( int comp )
    * Returns time constant tau_L
    */
@@ -138,6 +144,13 @@ inline double
 PyrArchivingNode< pyr_parameters >::get_g_L( int comp )
 {
   return pyr_params->g_L[ comp ];
+}
+
+template < class pyr_parameters >
+inline double
+PyrArchivingNode< pyr_parameters >::get_g( int comp )
+{
+  return pyr_params->g_conn[ comp ];
 }
 
 template < class pyr_parameters >

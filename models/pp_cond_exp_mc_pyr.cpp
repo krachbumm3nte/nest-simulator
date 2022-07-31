@@ -353,15 +353,16 @@ nest::pp_cond_exp_mc_pyr::Parameters_::get( DictionaryDatum& d ) const
   def< double >( d, names::beta, pyr_params.beta );
   def< double >( d, names::theta, pyr_params.theta );
 
-  def< double >( d, names::g_sp, pyr_params.g_conn[ SOMA ] );
-  def< double >( d, names::g_ps, pyr_params.g_conn[ BASAL ] );
-  def< double >( d, names::g_ps, pyr_params.g_conn[ APICAL ] );
+  def< double >( d, names::g_som, pyr_params.g_conn[ SOMA ] );
+  def< double >( d, names::g_b, pyr_params.g_conn[ BASAL ] );
+  def< double >( d, names::g_a, pyr_params.g_conn[ APICAL ] );
 
   // create subdictionaries for per-compartment parameters
   for ( size_t n = 0; n < NCOMP; ++n )
   {
     DictionaryDatum dd = new Dictionary();
 
+    def< double >( dd, names::g, pyr_params.g_conn[ n ] );
     def< double >( dd, names::g_L, pyr_params.g_L[ n ] );
     def< double >( dd, names::E_L, pyr_params.E_L[ n ] );
     def< double >( dd, names::E_ex, E_ex[ n ] );
@@ -385,9 +386,9 @@ nest::pp_cond_exp_mc_pyr::Parameters_::set( const DictionaryDatum& d )
   updateValue< double >( d, names::beta, pyr_params.beta );
   updateValue< double >( d, names::theta, pyr_params.theta );
 
-  updateValue< double >( d, Name( names::g_sp ), pyr_params.g_conn[ SOMA ] );
-  updateValue< double >( d, Name( names::g_ps ), pyr_params.g_conn[ BASAL ] );
-  updateValue< double >( d, Name( names::g_ps ), pyr_params.g_conn[ APICAL ] );
+  updateValue< double >( d, Name( names::g_som ), pyr_params.g_conn[ SOMA ] );
+  updateValue< double >( d, Name( names::g_b ), pyr_params.g_conn[ BASAL ] );
+  updateValue< double >( d, Name( names::g_a ), pyr_params.g_conn[ APICAL ] );
 
   // extract from sub-dictionaries
   for ( size_t n = 0; n < NCOMP; ++n )
@@ -400,6 +401,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::set( const DictionaryDatum& d )
       updateValue< double >( dd, names::E_ex, E_ex[ n ] );
       updateValue< double >( dd, names::E_in, E_in[ n ] );
       updateValue< double >( dd, names::C_m, pyr_params.C_m[ n ] );
+      updateValue< double >( dd, names::g, pyr_params.g_conn[ n ] );
       updateValue< double >( dd, names::g_L, pyr_params.g_L[ n ] );
       updateValue< double >( dd, names::tau_syn_ex, pyr_params.tau_syn_ex[ n ] );
       updateValue< double >( dd, names::tau_syn_in, pyr_params.tau_syn_in[ n ] );

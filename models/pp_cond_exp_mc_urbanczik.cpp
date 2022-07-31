@@ -345,6 +345,7 @@ nest::pp_cond_exp_mc_urbanczik::Parameters_::get( DictionaryDatum& d ) const
     DictionaryDatum dd = new Dictionary();
 
     def< double >( dd, names::g_L, urbanczik_params.g_L[ n ] );
+    def< double >( dd, names::g, urbanczik_params.g_conn[ n ] );
     def< double >( dd, names::E_L, urbanczik_params.E_L[ n ] );
     def< double >( dd, names::E_ex, E_ex[ n ] );
     def< double >( dd, names::E_in, E_in[ n ] );

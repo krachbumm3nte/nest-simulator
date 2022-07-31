@@ -454,6 +454,12 @@ nest::Node::get_C_m( int )
 }
 
 double
+nest::Node::get_g( int )
+{
+  throw UnexpectedEvent();
+}
+
+double
 nest::Node::get_g_L( int )
 {
   throw UnexpectedEvent();

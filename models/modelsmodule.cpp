@@ -127,6 +127,7 @@
 #include "gap_junction.h"
 #include "ht_synapse.h"
 #include "jonke_synapse.h"
+#include "pyr_synapse.h"
 #include "quantal_stp_synapse.h"
 #include "quantal_stp_synapse_impl.h"
 #include "rate_connection_delayed.h"
@@ -321,6 +322,8 @@ ModelsModule::init( SLIInterpreter* )
   register_connection_model< cont_delay_synapse >( "cont_delay_synapse" );
   register_connection_model< ht_synapse >( "ht_synapse" );
   register_connection_model< jonke_synapse >( "jonke_synapse" );
+  register_connection_model< pyr_synapse >(
+    "pyr_synapse", default_connection_model_flags | RegisterConnectionModelFlags::REQUIRES_URBANCZIK_ARCHIVING );
   register_connection_model< quantal_stp_synapse >( "quantal_stp_synapse" );
   register_connection_model< static_synapse >( "static_synapse" );
   register_connection_model< static_synapse_hom_w >( "static_synapse_hom_w" );

@@ -1,3 +1,5 @@
+
+/aeif_cond_alpha 5 Create /foo Set 
 /poisson_generator Create dup << /rate 1000 >> SetStatus /gex Set
 
 /parrot_neuron 1 Create /pre Set

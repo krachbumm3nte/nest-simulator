@@ -207,8 +207,9 @@ these parameters are marked with an asterisk.
  tau_syn_ex*    ms      Rise time of the excitatory synaptic alpha function
  tau_syn_in*    ms      Rise time of the inhibitory synaptic alpha function
  I_e*           pA      Constant input current
- g_sp           nS      Coupling between soma and dendrite
- g_ps           nS      Coupling between dendrite and soma
+ g_som          nS      Coupling between soma and dendritic compartments
+ g_b            nS      Coupling between basal dendrite and soma
+ g_a            nS      Coupling between apical dendrite and soma
  t_ref          ms      Duration of refractory period
 ============   =====   =====================================================
 
