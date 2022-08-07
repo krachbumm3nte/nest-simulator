@@ -236,8 +236,6 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
   double const g_L = target->get_g_L( comp );
   double const tau_L = target->get_tau_L( comp );
   double const C_m = target->get_C_m( comp );
-  double const g_som = target->get_g( comp );
-  std::cout << g_som;
   double const tau_s = weight_ > 0.0 ? target->get_tau_syn_ex( comp ) : target->get_tau_syn_in( comp );
   double dPI_exp_integral = 0.0;
 

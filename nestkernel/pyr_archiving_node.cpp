@@ -1,5 +1,5 @@
 /*
- *  pyr_archiving_node_impl.h
+ *  pyr_archiving_node.cpp
  *
  *  This file is part of NEST.
  *
@@ -27,6 +27,9 @@
 
 // Includes from sli:
 #include "dictutils.h"
+#include "stdio.h"
+#include<iostream>
+#include<fstream>
 
 namespace nest
 {
@@ -67,9 +70,10 @@ nest::PyrArchivingNode< pyr_parameters >::get_urbanczik_history( double t1,
   int comp )
 {
   // remove the oldest entries from pyr_history_ to prevent runaway computing time.
-  if (pyr_history_[ comp - 1].size() > 3000) {
-    pyr_history_[ comp - 1].erase(pyr_history_[ comp - 1 ].begin(), pyr_history_[ comp - 1 ].begin() + 500);
-  }
+  //if (pyr_history_[ comp - 1].size() > 7000) {
+    //std::cout << "purging compartment " << comp-1 << ", conns: " << n_incoming_ << "\n";
+    //pyr_history_[ comp - 1].erase(pyr_history_[ comp - 1 ].begin(), pyr_history_[ comp - 1 ].begin() + 500);
+  //}
 
 
   *finish = pyr_history_[ comp - 1 ].end();
@@ -84,14 +88,22 @@ nest::PyrArchivingNode< pyr_parameters >::get_urbanczik_history( double t1,
     // To have a well defined discretization of the integral, we make sure
     // that we exclude the entry at t1 but include the one at t2 by subtracting
     // a small number so that runner->t_ is never equal to t1 or t2.
+    int counter = 0;
     while ( ( runner != pyr_history_[ comp - 1 ].end() ) && ( runner->t_ - 1.0e-6 < t1 ) )
     {
+      ++counter;
+      //std::cout << runner->access_counter_ << "\n";
       ++runner;
     }
+    std::cout << counter << std::endl;
+    
     *start = runner;
+
     while ( ( runner != pyr_history_[ comp - 1 ].end() ) && ( runner->t_ - 1.0e-6 < t2 ) )
     {
-      ( runner->access_counter_ )++;
+      runner->access_counter_++;
+      //std::cout << runner->access_counter_ << "\n";
+
       ++runner;
     }
     *finish = runner;
@@ -100,7 +112,7 @@ nest::PyrArchivingNode< pyr_parameters >::get_urbanczik_history( double t1,
 
 template < class pyr_parameters >
 void
-nest::PyrArchivingNode< pyr_parameters >::write_ubanczik_history( Time const& t_sp,
+nest::PyrArchivingNode< pyr_parameters >::write_urbanczik_history( Time const& t_sp,
   double V_W,
   int n_spikes,
   int comp )
@@ -116,6 +128,7 @@ nest::PyrArchivingNode< pyr_parameters >::write_ubanczik_history( Time const& t_
   {
     // prune all entries from history which are no longer needed
     // except the penultimate one. we might still need it.
+    int s = pyr_history_[ comp - 1 ].size();
     while ( pyr_history_[ comp - 1 ].size() > 1 )
     {
       if ( pyr_history_[ comp - 1 ].front().access_counter_ >= n_incoming_ )
@@ -126,6 +139,11 @@ nest::PyrArchivingNode< pyr_parameters >::write_ubanczik_history( Time const& t_
       {
         break;
       }
+    }
+
+    s -= pyr_history_[ comp - 1 ].size();
+    if (s > 0) {
+      std::cout << "pruned compartment " << comp - 1 << " by " << s << "\n"; 
     }
 
     double dPI = ( n_spikes - pyr_params->phi( V_W_star ) * Time::get_resolution().get_ms() )

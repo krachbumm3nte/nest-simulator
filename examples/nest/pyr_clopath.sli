@@ -3,11 +3,11 @@
 /poisson_generator Create dup << /rate 1000 >> SetStatus /gex Set
 
 /parrot_neuron 1 Create /pre Set
-/pp_cond_exp_mc_pyr 1 Create /post Set
+/aeif_psc_delta_clopath 1 Create /post Set
 
 
 
-pre post << >> << /synapse_model /pyr_synapse /receptor_type 4 /weight 200.0 /eta 50.0>> Connect
+pre post << >> << /synapse_model /clopath_synapse /weight 200.0 >> Connect
 gex pre Connect  % excitatory input
 
 1000 Simulate

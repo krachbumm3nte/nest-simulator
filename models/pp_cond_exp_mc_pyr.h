@@ -45,7 +45,7 @@
 #include "ring_buffer.h"
 #include "universal_data_logger.h"
 #include "pyr_archiving_node.h"
-#include "pyr_archiving_node_impl.h"
+#include "pyr_archiving_node.cpp"
 
 // Includes from sli:
 #include "dictdatum.h"

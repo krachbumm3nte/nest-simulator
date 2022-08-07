@@ -9,7 +9,7 @@ nest.resolution = resolution
 nest.set_verbosity("M_ERROR")
 nest.SetKernelStatus({"local_num_threads": 1})
 
-dims = [3, 10, 5]
+dims = [3, 5, 3]
 L = len(dims)
 
 pyr_pops = []

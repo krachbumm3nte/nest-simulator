@@ -703,9 +703,9 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
     }
 
     // Store dendritic membrane potential for Urbanczik-Senn plasticity
-    write_ubanczik_history(
+    write_urbanczik_history(
       Time::step( origin.get_steps() + lag + 1 ), S_.y_[ S_.idx( BASAL, State_::V_M ) ], n_spikes, BASAL );
-    write_ubanczik_history(
+    write_urbanczik_history(
       Time::step( origin.get_steps() + lag + 1 ), S_.y_[ S_.idx( APICAL, State_::V_M ) ], n_spikes, APICAL );
 
     // set new input currents
