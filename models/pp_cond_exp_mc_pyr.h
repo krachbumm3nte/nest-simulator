@@ -85,7 +85,8 @@ private:
   {
     SOMA = 0,
     BASAL,
-    APICAL,
+    APICAL_TD,
+    APICAL_LAT,
     NCOMP
   };
 
@@ -95,6 +96,10 @@ private:
   double theta;      //!< Parameter of the rate function
   double phi( double u );
   double h( double u );
+
+  // target neuron for a singular current synapse
+  int curr_target;
+  double lambda_curr;
 
 public:
   // The Urbanczik parameters need to be public within this class as they are passed to the GSL solver
@@ -289,7 +294,8 @@ private:
   {
     SOMA = 0,
     BASAL,
-    APICAL,
+    APICAL_TD,
+    APICAL_LAT,
     NCOMP
   };
 
@@ -309,8 +315,10 @@ private:
     SOMA_INH,
     BASAL_EXC,
     BASAL_INH,
-    APICAL_EXC,
-    APICAL_INH,
+    APICAL_TD_EXC,
+    APICAL_TD_INH,
+    APICAL_LAT_EXC,
+    APICAL_LAT_INH,
     SUP_SPIKE_RECEPTOR
   };
 
@@ -330,7 +338,8 @@ private:
   {
     I_SOMA = MIN_CURR_RECEPTOR,
     I_BASAL,
-    I_APICAL,
+    I_APICAL_TD,
+    I_APICAL_LAT,
     SUP_CURR_RECEPTOR
   };
 
@@ -634,9 +643,13 @@ pp_cond_exp_mc_pyr::get_status( DictionaryDatum& d ) const
   ( *receptor_dict_ )[ names::basal_inh ] = BASAL_INH;
   ( *receptor_dict_ )[ names::basal_curr ] = I_BASAL;
 
-  ( *receptor_dict_ )[ names::apical_exc ] = APICAL_EXC;
-  ( *receptor_dict_ )[ names::apical_inh ] = APICAL_INH;
-  ( *receptor_dict_ )[ names::apical_curr ] = I_APICAL;
+  ( *receptor_dict_ )[ names::apical_td_exc ] = APICAL_TD_EXC;
+  ( *receptor_dict_ )[ names::apical_td_inh ] = APICAL_TD_INH;
+  ( *receptor_dict_ )[ names::apical_td_curr ] = I_APICAL_TD;
+  
+  ( *receptor_dict_ )[ names::apical_lat_exc ] = APICAL_LAT_EXC;
+  ( *receptor_dict_ )[ names::apical_lat_inh ] = APICAL_LAT_INH;
+  ( *receptor_dict_ )[ names::apical_lat_curr ] = I_APICAL_LAT;
 
   ( *d )[ names::receptor_types ] = receptor_dict_;
 }

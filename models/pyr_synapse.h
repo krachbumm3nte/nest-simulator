@@ -222,7 +222,7 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
   // in this case the dendritic compartment has index 1
   int rport =  get_rport();
 
-  if (rport <= 1 or rport > 5) {
+  if (rport <= 1 or rport > 8) {
     std::cout << "connection on port " << rport << " to neuron ";
     std::cout << e.retrieve_sender_node_id_from_source_table() << "\n";
     // throw IllegalConnection("Urbanczik synapse can only connect to dendrites!");
@@ -254,7 +254,7 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
   PI_exp_integral_ = ( exp( ( t_lastspike_ - t_spike ) / tau_Delta_ ) * PI_exp_integral_ + dPI_exp_integral );
   weight_ = PI_integral_ - PI_exp_integral_;
   weight_ = init_weight_ + weight_ * 15.0 * C_m * tau_s * eta_ / ( g_L * ( tau_L - tau_s ) );
-  //TODO: magic number!
+  //TODO: magic number! remove C_m?
 
   if ( weight_ > Wmax_ )
   {
@@ -325,13 +325,15 @@ pyr_synapse< targetidentifierT >::set_status( const DictionaryDatum& d, Connecto
   init_weight_ = weight_;
   // check if weight_ and Wmin_ has the same sign
   if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) ) == ( ( Wmin_ >= 0 ) - ( Wmin_ < 0 ) ) ) )
-  {
+  { 
+    std::cout << weight_ << " " << Wmin_ << " " << Wmax_ << "\n";
     throw BadProperty( "Weight and Wmin must have same sign." );
   }
 
   // check if weight_ and Wmax_ has the same sign
   if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) ) == ( ( Wmax_ > 0 ) - ( Wmax_ <= 0 ) ) ) )
   {
+    std::cout << weight_ << " " << Wmin_ << " " << Wmax_ << "\n";
     throw BadProperty( "Weight and Wmax must have same sign." );
   }
 }
