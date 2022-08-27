@@ -105,16 +105,10 @@ public:
   double get_tau_L( int comp );
 
   /**
-   * \fn double get_tau_s( int comp )
-   * Returns time constant tau_syn_ex
+   * \fn double get_tau_s()
+   * Returns synaptic time constant tau_syn
    */
-  double get_tau_syn_ex( int comp );
-
-  /**
-   * \fn double get_tau_syn_in( int comp )
-   * Returns time constant tau_syn_in
-   */
-  double get_tau_syn_in( int comp );
+  double get_tau_s( int comp );
 
 protected:
   /**
@@ -136,7 +130,7 @@ template < class pyr_parameters >
 inline double
 PyrArchivingNode< pyr_parameters >::get_C_m( int comp )
 {
-  return pyr_params->C_m[ comp ];
+  return pyr_params->C_m;
 }
 
 template < class pyr_parameters >
@@ -157,22 +151,17 @@ template < class pyr_parameters >
 inline double
 PyrArchivingNode< pyr_parameters >::get_tau_L( int comp )
 {
-  return pyr_params->C_m[ comp ] / pyr_params->g_L[ comp ];
+  //TODO: what to do with this
+  return 1 / pyr_params->g_L[ comp ];
 }
 
 template < class pyr_parameters >
 inline double
-PyrArchivingNode< pyr_parameters >::get_tau_syn_ex( int comp )
+PyrArchivingNode< pyr_parameters >::get_tau_s( int comp )
 {
-  return pyr_params->tau_syn_ex[ comp ];
+  return pyr_params->tau_syn;
 }
 
-template < class pyr_parameters >
-inline double
-PyrArchivingNode< pyr_parameters >::get_tau_syn_in( int comp )
-{
-  return pyr_params->tau_syn_in[ comp ];
-}
 
 } // of namespace
 #endif

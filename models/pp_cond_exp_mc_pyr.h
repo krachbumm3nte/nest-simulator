@@ -103,12 +103,12 @@ private:
 
 public:
   // The Urbanczik parameters need to be public within this class as they are passed to the GSL solver
+  double tau_syn;
+
   double g_conn[ NCOMP ];     //!< Conductances connecting compartments in nS
   double g_L[ NCOMP ];        //!< Leak Conductance in nS
-  double C_m[ NCOMP ];        //!< Capacity of the membrane in pF
+  double C_m;        //!< Capacity of the membrane in pF
   double E_L[ NCOMP ];        //!< Reversal Potential in mV
-  double tau_syn_ex[ NCOMP ]; //!< Rise time of excitatory synaptic conductance in ms
-  double tau_syn_in[ NCOMP ]; //!< Rise time of inhibitory synaptic conductance in ms
 };
 
 /* BeginUserDocs: neuron, point process, conductance-based
@@ -205,9 +205,7 @@ these parameters are marked with an asterisk.
 ============   =====   =====================================================
  V_m*           mV      Membrane potential
  E_L*           mV      Leak reversal potential
- C_m*           pF      Capacity of the membrane
- E_ex*          mV      Excitatory reversal potential
- E_in*          mV      Inhibitory reversal potential
+ C_m           pF      Capacity of the membrane
  g_L*           nS      Leak conductance
  tau_syn_ex*    ms      Rise time of the excitatory synaptic alpha function
  tau_syn_in*    ms      Rise time of the inhibitory synaptic alpha function
@@ -311,14 +309,10 @@ private:
    */
   enum SpikeSynapseTypes
   {
-    SOMA_EXC = MIN_SPIKE_RECEPTOR,
-    SOMA_INH,
-    BASAL_EXC,
-    BASAL_INH,
-    APICAL_TD_EXC,
-    APICAL_TD_INH,
-    APICAL_LAT_EXC,
-    APICAL_LAT_INH,
+    S_SOMA = MIN_SPIKE_RECEPTOR,
+    S_BASAL,
+    S_APICAL_TD,
+    S_APICAL_LAT,
     SUP_SPIKE_RECEPTOR
   };
 
@@ -376,8 +370,6 @@ private:
   struct Parameters_
   {
     double t_ref;         //!< Refractory period in ms
-    double E_ex[ NCOMP ]; //!< Excitatory reversal Potential in mV
-    double E_in[ NCOMP ]; //!< Inhibitory reversal Potential in mV
     double I_e[ NCOMP ];  //!< Constant Current in pA
 
     pp_cond_exp_mc_pyr_parameters pyr_params;
@@ -413,10 +405,8 @@ public:
     enum StateVecElems_
     {
       V_M = 0,
-      G_EXC,
-      G_INH,
-      I_EXC, // in the paper it is I_dnd which accounts for both excitation and inhibition
-      I_INH,
+      G, //TODO: are these still needed?
+      I,
       STATE_VEC_COMPS
     };
 
@@ -635,20 +625,16 @@ pp_cond_exp_mc_pyr::get_status( DictionaryDatum& d ) const
    * a seg fault on exit, see #328
    */
   DictionaryDatum receptor_dict_ = new Dictionary();
-  ( *receptor_dict_ )[ names::soma_exc ] = SOMA_EXC;
-  ( *receptor_dict_ )[ names::soma_inh ] = SOMA_INH;
+  ( *receptor_dict_ )[ names::soma ] = S_SOMA;
   ( *receptor_dict_ )[ names::soma_curr ] = I_SOMA;
 
-  ( *receptor_dict_ )[ names::basal_exc ] = BASAL_EXC;
-  ( *receptor_dict_ )[ names::basal_inh ] = BASAL_INH;
+  ( *receptor_dict_ )[ names::basal ] = S_BASAL;
   ( *receptor_dict_ )[ names::basal_curr ] = I_BASAL;
 
-  ( *receptor_dict_ )[ names::apical_td_exc ] = APICAL_TD_EXC;
-  ( *receptor_dict_ )[ names::apical_td_inh ] = APICAL_TD_INH;
+  ( *receptor_dict_ )[ names::apical_td ] = S_APICAL_TD;
   ( *receptor_dict_ )[ names::apical_td_curr ] = I_APICAL_TD;
   
-  ( *receptor_dict_ )[ names::apical_lat_exc ] = APICAL_LAT_EXC;
-  ( *receptor_dict_ )[ names::apical_lat_inh ] = APICAL_LAT_INH;
+  ( *receptor_dict_ )[ names::apical_lat ] = S_APICAL_LAT;
   ( *receptor_dict_ )[ names::apical_lat_curr ] = I_APICAL_LAT;
 
   ( *d )[ names::receptor_types ] = receptor_dict_;

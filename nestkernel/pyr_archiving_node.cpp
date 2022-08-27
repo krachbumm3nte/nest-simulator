@@ -131,7 +131,10 @@ nest::PyrArchivingNode< pyr_parameters >::write_urbanczik_history( Time const& t
   } else if (comp == 1) {
     // basal compartment
     const double g_b = pyr_params->g_conn[ pyr_parameters::BASAL ];
-    const double g_a = pyr_params->g_conn[ pyr_parameters::APICAL_TD ];
+    double g_a = pyr_params->g_conn[ pyr_parameters::APICAL_LAT ];
+    if (g_a == 0) {
+      g_a = 1; // avoid zero division for interneurons where the apical compartment is silenced.
+    }
     V_W_star = ( g_b * V_W ) / ( g_L * g_b * g_a);
     comp_deviation = n_spikes - pyr_params->phi( V_W_star ) * Time::get_resolution().get_ms();
   } else if (comp == 2) {

@@ -195,7 +195,6 @@ private:
   double tau_s_trace_;
 
   double t_lastspike_;
-  int compartment_;
 };
 
 
@@ -218,25 +217,23 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
   std::deque< histentry_extended >::iterator start;
   std::deque< histentry_extended >::iterator finish;
 
-  // for now we only support two-compartment neurons
-  // in this case the dendritic compartment has index 1
-  int rport =  get_rport();
+  int rport = get_rport();
 
-  if (rport <= 1 or rport > 8) {
+  if ( rport < 1 or rport > 4 )
+  {
     std::cout << "connection on port " << rport << " to neuron ";
     std::cout << e.retrieve_sender_node_id_from_source_table() << "\n";
     // throw IllegalConnection("Urbanczik synapse can only connect to dendrites!");
   }
-  const int comp = rport / 2; // integer division to retrieve compartment from rport
+  const int comp = rport -1; // compartment number linearly relates to receptor port
   // TODO: this needs to be validated and generalized
 
 
-  target->get_urbanczik_history( t_lastspike_ - dendritic_delay, t_spike - dendritic_delay, &start, &finish, comp );
-
+  target->get_urbanczik_history( t_lastspike_ - dendritic_delay, t_spike - dendritic_delay, &start, &finish, rport );
   double const g_L = target->get_g_L( comp );
   double const tau_L = target->get_tau_L( comp );
   double const C_m = target->get_C_m( comp );
-  double const tau_s = weight_ > 0.0 ? target->get_tau_syn_ex( comp ) : target->get_tau_syn_in( comp );
+  double const tau_s = target->get_tau_s( comp);
   double dPI_exp_integral = 0.0;
 
   while ( start != finish )
@@ -253,8 +250,7 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
 
   PI_exp_integral_ = ( exp( ( t_lastspike_ - t_spike ) / tau_Delta_ ) * PI_exp_integral_ + dPI_exp_integral );
   weight_ = PI_integral_ - PI_exp_integral_;
-  weight_ = init_weight_ + weight_ * 15.0 * C_m * tau_s * eta_ / ( g_L * ( tau_L - tau_s ) );
-  //TODO: magic number! remove C_m?
+  weight_ = init_weight_ + weight_ * C_m * tau_s * eta_ / ( g_L * ( tau_L - tau_s ) );
 
   if ( weight_ > Wmax_ )
   {
@@ -270,6 +266,7 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
   // use accessor functions (inherited from Connection< >) to obtain delay in steps and rport
   e.set_delay_steps( get_delay_steps() );
   e.set_rport( rport );
+
   e();
 
   // compute the trace of the presynaptic spike train
@@ -284,17 +281,16 @@ template < typename targetidentifierT >
 pyr_synapse< targetidentifierT >::pyr_synapse()
   : ConnectionBase()
   , weight_( 1.0 )
-  , init_weight_( 1.0 )
+  , init_weight_( 0.0 )
   , tau_Delta_( 100.0 )
   , eta_( 0.07 )
-  , Wmin_( 0.0 )
-  , Wmax_( 100.0 )
+  , Wmin_( -1.0 )
+  , Wmax_( 1.0 )
   , PI_integral_( 0.0 )
   , PI_exp_integral_( 0.0 )
   , tau_L_trace_( 0.0 )
   , tau_s_trace_( 0.0 )
   , t_lastspike_( -1.0 )
-  , compartment_( 0 )
 {
 }
 
@@ -323,19 +319,6 @@ pyr_synapse< targetidentifierT >::set_status( const DictionaryDatum& d, Connecto
   updateValue< double >( d, names::Wmax, Wmax_ );
 
   init_weight_ = weight_;
-  // check if weight_ and Wmin_ has the same sign
-  if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) ) == ( ( Wmin_ >= 0 ) - ( Wmin_ < 0 ) ) ) )
-  { 
-    std::cout << weight_ << " " << Wmin_ << " " << Wmax_ << "\n";
-    throw BadProperty( "Weight and Wmin must have same sign." );
-  }
-
-  // check if weight_ and Wmax_ has the same sign
-  if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) ) == ( ( Wmax_ > 0 ) - ( Wmax_ <= 0 ) ) ) )
-  {
-    std::cout << weight_ << " " << Wmin_ << " " << Wmax_ << "\n";
-    throw BadProperty( "Weight and Wmax must have same sign." );
-  }
 }
 
 } // of namespace nest
