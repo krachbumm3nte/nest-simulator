@@ -241,16 +241,14 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
     double const t_up = start->t_ + dendritic_delay;     // from t_lastspike to t_spike
     double const minus_delta_t_up = t_lastspike_ - t_up; // from 0 to -delta t
     double const minus_t_down = t_up - t_spike;          // from -t_spike to 0
+      // I_1 (t,T) = sum_{t'=t}^T (s_L*(t') - s_s*(t')) * V*(t')
     double const PI =
-      ( tau_L_trace_ * exp( minus_delta_t_up / tau_L ) - tau_s_trace_ * exp( minus_delta_t_up / tau_s ) ) * start->dw_;
+      tau_s_trace_ * exp( minus_delta_t_up / tau_s )  * start->dw_;
     PI_integral_ += PI;
-    dPI_exp_integral += exp( minus_t_down / tau_Delta_ ) * PI;
     ++start;
   }
 
-  PI_exp_integral_ = ( exp( ( t_lastspike_ - t_spike ) / tau_Delta_ ) * PI_exp_integral_ + dPI_exp_integral );
-  weight_ = PI_integral_ - PI_exp_integral_;
-  weight_ = init_weight_ + weight_ * C_m * tau_s * eta_ / ( g_L * ( tau_L - tau_s ) );
+  weight_ = init_weight_ + PI_integral_ * eta_ ;
 
   if ( weight_ > Wmax_ )
   {
@@ -266,7 +264,6 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
   // use accessor functions (inherited from Connection< >) to obtain delay in steps and rport
   e.set_delay_steps( get_delay_steps() );
   e.set_rport( rport );
-
   e();
 
   // compute the trace of the presynaptic spike train

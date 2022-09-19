@@ -542,6 +542,7 @@ inline double
 pp_cond_exp_mc_urbanczik_parameters::h( double u )
 {
   return 15.0 * beta / ( 1.0 + ( 1.0 / rate_slope ) * exp( -beta * ( theta - u ) ) );
+  //TODO: I found the magic number from the synapse, but WTF?
 }
 
 
