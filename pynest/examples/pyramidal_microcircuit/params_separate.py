@@ -3,6 +3,8 @@ from copy import deepcopy
 from pprint import pprint
 
 resolution = 0.1
+nest.resolution = resolution
+
 
 """intn_params = {
     't_ref': 3.0,
