@@ -1,6 +1,6 @@
 import nest
 import matplotlib.pyplot as plt
-from params_separate import *
+from pyramidal_microcircuit.params import *
 
 pyr = nest.Create(pyr_model, 1, pyr_params)
 stim = nest.Create("poisson_generator")

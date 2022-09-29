@@ -3,7 +3,7 @@ import nest
 import matplotlib.pyplot as plt
 import numpy as np
 from copy import copy
-from params_separate import *
+from params import *
 
 nest.resolution = resolution
 nest.set_verbosity("M_ERROR")
@@ -27,42 +27,26 @@ if noise:
 for lr in range(1, L):
     pyr_l = nest.Create(pyr_model, dims[lr], pyr_params)
 
-    nh = dims[lr] // 2
-    pyr_e, pyr_i = pyr_l[:nh], pyr_l[nh:]
+    nest.Connect(pyr_pops[-1], pyr_l, syn_spec=syn_ff_pyr_pyr)
 
-    nhi = dims[+1] // 2
-
-    nest.Connect(pyr_pops[-1][:dims[-1] // 2], pyr_l, syn_spec=syn_ff_pyr_pyr_e)
-    nest.Connect(pyr_pops[-1][dims[-1] // 2:], pyr_l, syn_spec=syn_ff_pyr_pyr_i)
-
-    
-
-    
     if 1 <= lr < L:
         int_l = nest.Create(intn_model, dims[lr+1], intn_params)
-        int_e, int_i = int_l[:nhi], int_l[nhi:]
 
-        nest.Connect(pyr_e, int_l, syn_spec=syn_laminar_pyr_intn_e)
-        nest.Connect(pyr_i, int_l, syn_spec=syn_laminar_pyr_intn_i)
+        nest.Connect(pyr_l, int_l, syn_spec=syn_laminar_pyr_intn)
 
-        nest.Connect(int_l, pyr_l, syn_spec=syn_laminar_intn_pyr_i)
+        nest.Connect(int_l, pyr_l, syn_spec=syn_laminar_intn_pyr)
 
-        """
         print("setting up feedback connections")
         # TODO: do we need top-down current inputs or not?
         for i in range(len(pyr_l)):
             id = int_l[i].get("global_id")
             pyr_l[i].target = id
-        """
-        nest.Connect(pyr_l, pyr_pops[-1], syn_spec=syn_fb_pyr_pyr_e)
-        # nest.Connect(pyr_i, pyr_pops[-1], syn_spec=syn_fb_pyr_pyr_i)
+
+        nest.Connect(pyr_l, pyr_pops[-1], syn_spec=syn_fb_pyr_pyr)
+
         if noise:
             nest.Connect(gauss, int_l, syn_spec={"receptor_type": intn_comps["soma_curr"]})
         intn_pops.append(int_l)
-
-
-
-
 
     if noise:
         nest.Connect(gauss, pyr_l, syn_spec={"receptor_type": pyr_comps["soma_curr"]})
