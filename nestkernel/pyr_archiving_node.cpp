@@ -70,13 +70,14 @@ nest::PyrArchivingNode< pyr_parameters >::get_urbanczik_history( double t1,
   int comp )
 {
   // remove the oldest entries from pyr_history_ to prevent runaway computing time.
-  if (pyr_history_[ comp - 1].size() > 7000) {
+  //if (pyr_history_[ comp - 1].size() > 7000) {
     //std::cout << "purging compartment " << comp-1 << ", conns: " << n_incoming_ << "\n";
-    pyr_history_[ comp - 1].erase(pyr_history_[ comp - 1 ].begin(), pyr_history_[ comp - 1 ].begin() + 500);
-  }
+    //pyr_history_[ comp - 1].erase(pyr_history_[ comp - 1 ].begin(), pyr_history_[ comp - 1 ].begin() + 500);
+  //}
 
 
-  *finish = pyr_history_[ comp - 1 ].end();
+  //*finish = pyr_history_[ comp - 1 ].end();
+  
   if ( pyr_history_[ comp - 1 ].empty() )
   {
     *start = *finish;
