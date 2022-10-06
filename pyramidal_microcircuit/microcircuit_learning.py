@@ -4,14 +4,24 @@ import matplotlib.pyplot as plt
 import numpy as np
 from copy import copy
 from params import *
+from scipy.ndimage import uniform_filter1d
+
+import pandas as pd
+
+def regroup_records(records, group_key):
+    records = pd.DataFrame.from_dict(records)
+    return regroup_df(records, group_key)
+
+def regroup_df(df, group_key):
+    return dict([(n, x.loc[:, x.columns != group_key]) for n, x in df.groupby(group_key)])
 
 
-
-dims = [6, 4, 2]
-L = len(dims)
+dims = [8, 8, 8]
 noise = True
+SIM_TIME = 1000
+stim_rate = 2500
 
-
+L = len(dims)
 pyr_pops = []
 intn_pops = []
 
@@ -20,7 +30,7 @@ stim = nest.Create("poisson_generator", dims[0])
 l0 = nest.Create("parrot_neuron", dims[0])
 pyr_pops.append(l0)
 if noise:
-    gauss = nest.Create("noise_generator", 1, {"mean": 0., "std": 0.2})
+    gauss = nest.Create("noise_generator", 1, {"mean": 0., "std": 0.005})
 
 for lr in range(1, L):
     pyr_l = nest.Create(pyr_model, dims[lr], pyr_params)
@@ -43,7 +53,6 @@ for lr in range(1, L):
 
     if lr > 1:
         print(f"setting up {len(pyr_l)} feedback connections")
-        # TODO: do we need top-down current inputs or not?
         for i in range(len(pyr_l)):
             id = int_l[i].get("global_id")
             pyr_l[i].target = id
@@ -61,28 +70,43 @@ for lr in range(1, L):
 out = nest.Create("spike_recorder", dims[-1])
 nudge = nest.Create("dc_generator", dims[-1])
 nest.Connect(nudge, pyr_pops[-1], "one_to_one", syn_spec={'receptor_type': pyr_comps['soma_curr']})
-mm = nest.Create('multimeter', 1, {'record_from': ["V_m.a_lat", "V_m.a_td", "V_m.b", "V_m.s"]})
+mm_pyr_l = nest.Create('multimeter', 1, {'record_from': ["V_m.a_lat", "V_m.a_td", "V_m.b", "V_m.s"]})
+mm_intn = nest.Create('multimeter', 1, {'record_from': ["V_m.s"]})
+mm_pyr_m = nest.Create('multimeter', 1, {'record_from': ["V_m.s"]})
+
+for pop in pyr_pops:
+    print(pop)
+nest.Connect(mm_pyr_l, pyr_pops[1])
+nest.Connect(mm_pyr_m, pyr_pops[2])
+nest.Connect(mm_intn, intn_pops[0])
+
+sr_intn = nest.Create("spike_recorder", 1)
+sr_pyr = nest.Create("spike_recorder", 1)
+
+nest.Connect(intn_pops[0], sr_intn)
+nest.Connect(pyr_pops[2], sr_pyr)
+
+
 
 
 nest.Connect(stim, pyr_pops[0], conn_spec="one_to_one")
 
 record_neuron = pyr_pops[1][0]
 record_id = record_neuron.get("global_id")
-nest.Connect(mm, record_neuron)
 
 
 
-print(nest.GetConnections(record_neuron))
-print(nest.GetConnections(target=record_neuron))
-pot_td = []
-pot_lat = []
+#print(nest.GetConnections(record_neuron))
+#print(nest.GetConnections(target=record_neuron))
 
 T = []
 
-for run in range(1500):
+print("setup complete, running simulations...")
+np.seterr('raise')
+for run in range(1000):
     for i in range(dims[0]):
         if np.random.random() > 0.8:
-            stim[i].rate = 1000
+            stim[i].rate = stim_rate
             #nudge[i].amplitude = 2
         else:
             stim[i].rate = 0
@@ -90,79 +114,66 @@ for run in range(1500):
 
 
     start = time.time()
-    nest.Simulate(200)
+    nest.Simulate(SIM_TIME)
     t = time.time() - start
     T.append(t)
     
-    pot_td.append(np.abs(np.mean(mm.get("events")["V_m.a_td"])))
-    pot_lat.append(np.abs(np.mean(mm.get("events")["V_m.a_lat"])))
-    mm.n_events = 0
     
-    if run % 50 == 0 and run > 0:
-        td = np.mean(pot_td[-50:])
-        lat = np.mean(pot_lat[-50:])
+    
+    if run % 25 == 0 and run > 0:
 
-        print(f"{run}: {np.mean(T[-50:]):.2f}, td: {td:.6f}, lat: {lat:.6f}, apical potential: {abs(td+lat):.4f}")
 
-        e = wr.events
-        e_arr = np.array([e['senders'], e['targets'], e['receptors'], e['times'], e['weights']])
 
-        out_weights = e_arr[:,np.where(e_arr[0] == record_id)].squeeze(1)
-        in_weights = e_arr[:,np.where(e_arr[1] == record_id)].squeeze(1)
+        # uniform_filter1d(np.abs(events["V_m.a_td"][indices]), size=1250)
 
-        out_ar = {}
-        in_ar = {}
+        # print(f"{run}: {np.mean(T[-50:]):.2f}, td: {td:.6f}, lat: {lat:.6f}, apical potential: {abs(td+lat):.4f}")
+        print(f"{run}: {np.mean(T[-50:]):.2f}")
 
-        for i, row in enumerate(out_weights.swapaxes(0,1)):
-            f = row[1]
-            if f in out_ar:
-                out_ar[f].append((row[3:]))
-            else:
-                out_ar[f] = [row[3:]]
+        weight_df = pd.DataFrame.from_dict(wr.events)
 
-        for i, row in enumerate(in_weights.swapaxes(0,1)):
-            f = row[0]
-            if f in in_ar:
-                in_ar[f].append((row[3:]))
-            else:
-                in_ar[f] = [row[3:]]
+        weights_from = regroup_df(weight_df[weight_df.senders == record_id], 'targets')
+        weights_to = regroup_df(weight_df[weight_df.targets == record_id], 'senders')
 
-        fig, [ax0, ax1] = plt.subplots(1, 2)
-        for k, v in in_ar.items():
-            f = np.array(v)
-            if not np.min(f[:,1]) == np.max(f[:,1]):
-                ax0.plot(f[:,0], f[:,1], label=f"from {k}")
+        events_senders = regroup_records(mm_pyr_l.get("events"), "senders")
 
-        for k, v in out_ar.items():
-            f = np.array(v)
-            if not np.min(f[:,1]) == np.max(f[:,1]):
-                ax0.plot(f[:,0], f[:,1], "g", label=f"to {k}")
 
-        ax1.plot(pot_td, label="top-down apical potential")
-        ax1.plot(pot_lat, label="lateral apical potential")
+        fig, [[ax0, ax1], [ax2, ax3]] = plt.subplots(2, 2)
+        fig.set_dpi(fig.get_dpi() * 4)
+
+
+        times_pyr = sr_pyr.events['times']
+        times_int = sr_intn.events['times']
+
+        foo = np.array([times_pyr, times_int])
+
+        ax0.hist(foo, run, density=True, histtype='bar')
+
+        # for k, v in weights_to.items():
+            # ax0.plot(v['times'], v['weights'], "r", label=f"from {k}")
+
+        #for k, v in weights_from.items():
+            #ax0.plot(v['times'], v['weights'], "g", label=f"from {k}")
+
+        for k, v in events_senders.items():
+            ax1.plot(v['times'], uniform_filter1d(np.abs(v["V_m.a_td"]), size=1250), '.', label=f"V_m.a ({k})")
         #f = np.array(data_arrays[0])
         #plt.plot(f[:,0], f[:,1])
         
+
+        for k, v in regroup_records(mm_pyr_m.events, "senders").items():
+            ax2.plot(v['times'], uniform_filter1d(v['V_m.s'], size=1250), '.')
+        
+        for k, v in regroup_records(mm_intn.events, "senders").items():
+            ax3.plot(v['times'], uniform_filter1d(v['V_m.s'], size=1250), '.')
+
+
         ax0.set_title("pyramidal neuron weights")
         ax1.set_title("apical compartment voltage")
-        ax0.legend()
-        ax0.set_ylim(-1, 1)
-        ax1.legend()
+        #ax0.legend()
+        # ax1.legend()
+        #ax0.set_ylim(-1, 1)
+        #ax0.hlines(0, 0, run * SIM_TIME)
+
         plt.savefig(f"{run}_weights.png")
+        plt.close()
         # plt.show()
-
-
-
-
-
-
-    # TODO: get and print synaptic weights
-
-fig, (a1, a2) = plt.subplots(1, 2)
-
-a1.plot(pot_td, 'o', label="u_a")
-# a1.plot(errors_b, 'o', label="u_b")
-a2.plot(T, label="t")
-a2.set_ylim(0, max(T))
-plt.legend()
-plt.show()
