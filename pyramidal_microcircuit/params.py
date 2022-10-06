@@ -40,7 +40,7 @@ nest.rng_seed = 1
 comp_defaults = {
         'V_m': 0.0,
         'E_L': 0.0,
-        'g_L': 0.6,
+        'g_L': 0.08,
         'g': 0.8
     }
 
@@ -51,16 +51,12 @@ pyr_params = {
     'apical_td': deepcopy(comp_defaults),
     'apical_lat': deepcopy(comp_defaults),
     # parameters of rate function
-    'phi_max': 0.15,
-    'rate_slope': 0.5,
-    'beta': 5.0,
-    'theta': 1.0,
     'C_m': 1.0,
-    'lambda' : 0.5
+    'lambda': 0.5
 
 }
 pyr_params['basal']['g'] = 1.0
-pyr_params['soma']['g_L'] = 0.1
+pyr_params['soma']['g_L'] = 0.01
 
 intn_params = deepcopy(pyr_params)
 
@@ -100,11 +96,11 @@ syn_fb_pyr_pyr['receptor_type'] = pyr_comps['apical_td']
 syn_laminar_pyr_intn = deepcopy(syn_params)
 syn_laminar_pyr_intn['receptor_type'] = intn_comps['basal']
 # syn_laminar_pyr_intn['eta'] = 0.02375
-syn_laminar_pyr_intn['eta'] = 0.002
+syn_laminar_pyr_intn['eta'] = 0.0001
 
 syn_laminar_intn_pyr = deepcopy(syn_params)
 syn_laminar_intn_pyr['receptor_type'] = pyr_comps['apical_td']
-syn_laminar_intn_pyr['eta'] = 0.002
+syn_laminar_intn_pyr['eta'] = 0.0001
 # syn_laminar_intn_pyr['eta'] = 0.0005
 
 print(pyr_comps)

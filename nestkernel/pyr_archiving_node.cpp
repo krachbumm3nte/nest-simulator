@@ -133,10 +133,8 @@ nest::PyrArchivingNode< pyr_parameters >::write_urbanczik_history( Time const& t
     // basal compartment
     const double g_b = pyr_params->g_conn[ pyr_parameters::BASAL ];
     double g_a = pyr_params->g_conn[ pyr_parameters::APICAL_LAT ];
-    if (g_a == 0) {
-      g_a = 1; // avoid zero division for interneurons where the apical compartment is silenced.
-    }
-    V_W_star = ( g_b * V_W ) / ( g_L * g_b * g_a);
+
+    V_W_star = ( g_b * V_W ) / ( g_L + g_b + g_a);
     comp_deviation = n_spikes - pyr_params->phi( V_W_star ) * Time::get_resolution().get_ms();
   } else if (comp == 2) {
     // apical compartment for top-down pyr-pyr connections
@@ -146,14 +144,15 @@ nest::PyrArchivingNode< pyr_parameters >::write_urbanczik_history( Time const& t
   } else if (comp == 3) {
     // apical compartment for lateral interneuron-pyr connections
     // TODO: is E_L a legitimate placeholder vor v_rest?
-    comp_deviation = pyr_params->E_L[0] - V_W;
+    //comp_deviation = pyr_params->E_L[0] - V_W;
+    comp_deviation = -V_W;
   }
 
   if ( n_incoming_ )
   {
     // prune all entries from history which are no longer needed
     // except the penultimate one. we might still need it.
-    int s = pyr_history_[ comp - 1 ].size();
+    //int s = pyr_history_[ comp - 1 ].size();
     while ( pyr_history_[ comp - 1 ].size() > 1 )
     {
       if ( pyr_history_[ comp - 1 ].front().access_counter_ >= n_incoming_ )
@@ -166,7 +165,7 @@ nest::PyrArchivingNode< pyr_parameters >::write_urbanczik_history( Time const& t
       }
     }
 
-    s -= pyr_history_[ comp - 1 ].size();
+    //s -= pyr_history_[ comp - 1 ].size();
     //if (s > 0) {
       //std::cout << "pruned compartment " << comp - 1 << " by " << s << "\n"; 
     //}
