@@ -70,8 +70,8 @@ nest.CopyModel('pyr_synapse', 'record_syn', {"weight_recorder": wr})
 syn_params = {
     'synapse_model': 'record_syn',
     'tau_Delta': 30,
-    'Wmin': -1.0,
-    'Wmax': 1.0,  # TODO: verify
+    'Wmin': -10.0,
+    'Wmax': 10.0,  # TODO: verify
     'eta': 0.0,
     'delay': resolution,
 }

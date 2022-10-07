@@ -114,8 +114,8 @@ nest::PyrArchivingNode< pyr_parameters >::get_urbanczik_history( double t1,
 template < class pyr_parameters >
 void
 nest::PyrArchivingNode< pyr_parameters >::write_urbanczik_history( Time const& t_sp,
-  double V_W,
-  int n_spikes,
+  double V_dend, 
+  double V_som,
   int comp )
 {
   const double t_ms = t_sp.get_ms();
@@ -134,18 +134,19 @@ nest::PyrArchivingNode< pyr_parameters >::write_urbanczik_history( Time const& t
     const double g_b = pyr_params->g_conn[ pyr_parameters::BASAL ];
     double g_a = pyr_params->g_conn[ pyr_parameters::APICAL_LAT ];
 
-    V_W_star = ( g_b * V_W ) / ( g_L + g_b + g_a);
-    comp_deviation = n_spikes - pyr_params->phi( V_W_star ) * Time::get_resolution().get_ms();
+    V_W_star = ( g_b * V_dend ) / ( g_L + g_b + g_a);
+    comp_deviation = pyr_params->phi( V_som ) - pyr_params->phi( V_W_star );
   } else if (comp == 2) {
     // apical compartment for top-down pyr-pyr connections
     // TODO: top-down synapses require presynpatic factors twice
     // in the synapse, calculation for this compartment should be <this * r_pre - weight * r_pre^2>
-    comp_deviation = n_spikes - pyr_params->phi( V_W ) * Time::get_resolution().get_ms();
+    comp_deviation = pyr_params->phi( V_som ) - pyr_params->phi( V_dend );
+    comp_deviation = 6;
   } else if (comp == 3) {
     // apical compartment for lateral interneuron-pyr connections
     // TODO: is E_L a legitimate placeholder vor v_rest?
     //comp_deviation = pyr_params->E_L[0] - V_W;
-    comp_deviation = -V_W;
+    comp_deviation = -V_dend;
   }
 
   if ( n_incoming_ )

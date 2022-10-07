@@ -19,7 +19,7 @@ def regroup_df(df, group_key):
 
 
 SIM_TIME = 1000
-n_runs = 20
+n_runs = 500
 
 dims = [4, 4, 4]
 
@@ -119,7 +119,7 @@ for run in range(n_runs):
     t = time.time() - start
     T.append(t)
 
-    if run % 5 == 0 and run > 0:
+    if run % 10 == 0 and run > 0:
 
         # uniform_filter1d(np.abs(events["V_m.a_td"][indices]), size=1250)
 
@@ -142,7 +142,6 @@ for run in range(n_runs):
 
         foo = times_pyr, times_int
 
-        ax0.hist(foo, run, density=True, histtype='bar')
 
         v_int = pd.DataFrame.from_dict(mm_intn.events).groupby('times')['V_m.s'].sum().reset_index()
         v_pyr_m = pd.DataFrame.from_dict(mm_pyr_m.events).groupby('times')['V_m.s'].sum().reset_index()
@@ -150,7 +149,7 @@ for run in range(n_runs):
         v_pyr_m = regroup_records(mm_pyr_l.events, 'senders')
 
         for k, v in v_pyr_m.items():
-            ax2.plot(v['times'], v['V_m.s'])
+            ax0.plot(v['times'], v['V_m.s'])
 
         td_weights = nest.GetConnections(pyr_pops[2], record_neuron).get("weight")
 
@@ -159,8 +158,9 @@ for run in range(n_runs):
 
         ax3.hlines(td_weights, 0, run*SIM_TIME, 'g')
 
-        # for k, v in weights_from.items():
-        # ax0.plot(v['times'], v['weights'], "g", label=f"from {k}")
+
+        for k, v in weights_from.items():
+            ax2.plot(v['times'], v['weights'], "3", label=f"to {k}")
 
         for k, v in events_senders.items():
             ax1.plot(v['times'], uniform_filter1d(np.abs(v["V_m.a_td"]), size=1250), '.', label=f"V_m.a ({k})")
@@ -173,9 +173,9 @@ for run in range(n_runs):
         # for k, v in regroup_records(mm_intn.events, "senders").items():
             # ax3.plot(v['times'], uniform_filter1d(v['V_m.s'], size=1250), '.')
 
-        ax0.set_title("pyr and intn firing rates")
+        ax0.set_title("pyr somatic voltages")
         ax1.set_title("apical compartment voltage")
-        ax2.set_title("pyr somatic voltages")
+        ax2.set_title("pyr_intn weights")
         ax3.set_title("intn_pyr weights")
         # ax0.legend()
         # ax1.legend()
