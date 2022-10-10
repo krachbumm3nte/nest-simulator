@@ -112,10 +112,10 @@ public:
 
 protected:
   /**
-   * \fn void write_urbanczik_history( Time const& t_sp, double V_W, int n_spikes, int comp ))
+   * \fn void write_urbanczik_history( Time const& t_sp, double V_W, int V_SOM, int comp ))
    * Writes the history for compartment comp into the buffers.
    */
-  void write_urbanczik_history( Time const& t_sp, double V_dend, double V_som, int comp );
+  void write_urbanczik_history( Time const& t_sp, double V_W, double V_SOM, int comp );
 
   pyr_parameters* pyr_params;
 
