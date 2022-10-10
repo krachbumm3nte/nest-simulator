@@ -3,17 +3,20 @@ import matplotlib.pyplot as plt
 from params import *
 
 
+pyr_params['lambda'] = 1
+
+
 stim = nest.Create("poisson_generator")
-par = nest.Create("parrot_neuron")
-nest.Connect(stim, par)
-pyr = nest.Create(pyr_model, 1, intn_params)
+par = nest.Create(pyr_model, 1, pyr_params)
+nest.Connect(stim, par, syn_spec=syn_ff_pyr_pyr)
+pyr = nest.Create(pyr_model, 1, pyr_params)
 mm = nest.Create("multimeter", 1, {'record_from': ["V_m.b", "V_m.s", "V_m.a_td", "V_m.a_lat"]})
 nest.Connect(mm, pyr)
 
 pyr_comps = nest.GetDefaults("pp_cond_exp_mc_pyr")["receptor_types"]
 print(pyr_comps)
-nest.Connect(par, pyr, syn_spec=syn_laminar_pyr_intn)
-
+pyr_id = pyr.get("global_id")
+par.target = pyr_id
 
 stim.rate = 50
 
