@@ -76,7 +76,7 @@ nest::PyrArchivingNode< pyr_parameters >::get_urbanczik_history( double t1,
   //}
 
 
-  //*finish = pyr_history_[ comp - 1 ].end();
+  *finish = pyr_history_[ comp - 1 ].end();
   
   if ( pyr_history_[ comp - 1 ].empty() )
   {
@@ -89,22 +89,14 @@ nest::PyrArchivingNode< pyr_parameters >::get_urbanczik_history( double t1,
     // To have a well defined discretization of the integral, we make sure
     // that we exclude the entry at t1 but include the one at t2 by subtracting
     // a small number so that runner->t_ is never equal to t1 or t2.
-    int counter = 0;
     while ( ( runner != pyr_history_[ comp - 1 ].end() ) && ( runner->t_ - 1.0e-6 < t1 ) )
     {
-      ++counter;
-      //std::cout << runner->access_counter_ << "\n";
       ++runner;
     }
-    //std::cout << counter << std::endl;
-    
     *start = runner;
-
     while ( ( runner != pyr_history_[ comp - 1 ].end() ) && ( runner->t_ - 1.0e-6 < t2 ) )
     {
-      runner->access_counter_++;
-      //std::cout << runner->access_counter_ << "\n";
-
+      ( runner->access_counter_ )++;
       ++runner;
     }
     *finish = runner;
@@ -140,7 +132,7 @@ nest::PyrArchivingNode< pyr_parameters >::write_urbanczik_history( Time const& t
     // apical compartment for top-down pyr-pyr connections
     // TODO: top-down synapses require presynpatic factors twice
     // in the synapse, calculation for this compartment should be <this * r_pre - weight * r_pre^2>
-    comp_deviation = V_SOM - pyr_params->phi( V_W ) * Time::get_resolution().get_ms();
+    comp_deviation = (V_SOM - pyr_params->phi( V_W )) * Time::get_resolution().get_ms();
   } else if (comp == 3) {
     // apical compartment for lateral interneuron-pyr connections
     // TODO: is E_L a legitimate placeholder vor v_rest?
@@ -152,7 +144,6 @@ nest::PyrArchivingNode< pyr_parameters >::write_urbanczik_history( Time const& t
   {
     // prune all entries from history which are no longer needed
     // except the penultimate one. we might still need it.
-    //int s = pyr_history_[ comp - 1 ].size();
     while ( pyr_history_[ comp - 1 ].size() > 1 )
     {
       if ( pyr_history_[ comp - 1 ].front().access_counter_ >= n_incoming_ )

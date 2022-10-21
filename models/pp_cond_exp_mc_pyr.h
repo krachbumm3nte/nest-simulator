@@ -541,11 +541,12 @@ private:
 inline double
 pp_cond_exp_mc_pyr_parameters::phi( double u )
 {
+    return phi_max / ( 1.0 + rate_slope * exp( beta * ( theta - u ) ) );
+
   //TODO: should be:
   // gamma log(1 + exp(beta (u - theta))) with gamma=0.1, beta=1, theta=3
   // in some cases!
-  return log(1 + exp(u));
-  //return phi_max / ( 1.0 + rate_slope * exp( beta * ( theta - u ) ) );
+  // return log(1 + exp(u));
 }
 
 inline double
