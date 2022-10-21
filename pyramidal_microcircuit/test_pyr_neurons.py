@@ -9,15 +9,6 @@ from scipy.ndimage import uniform_filter1d
 import pandas as pd
 
 
-def regroup_records(records, group_key):
-    records = pd.DataFrame.from_dict(records)
-    return regroup_df(records, group_key)
-
-
-def regroup_df(df, group_key):
-    return dict([(n, x.loc[:, x.columns != group_key]) for n, x in df.groupby(group_key)])
-
-
 SIM_TIME = 100
 n_runs = 500
 
@@ -42,56 +33,36 @@ pyr_pops.append(l0)
 if noise:
     gauss = nest.Create("noise_generator", 1, {"mean": 0., "std": noise_std})
 
-for lr in range(1, L):
-    pyr_l = nest.Create(pyr_model, dims[lr], pyr_params)
 
-    nest.Connect(pyr_pops[-1], pyr_l, syn_spec=syn_ff_pyr_pyr)
-    print(lr, len(pyr_l))
+pyr = nest.Create(pyr_model, 1, pyr_params)
 
-    if lr < L - 1:
-        int_l = nest.Create(intn_model, dims[lr+1], intn_params)
-        print(len(int_l))
+pyr_1 = nest.Create(pyr_model, 1, pyr_params)
 
-        if noise:
-            nest.Connect(gauss, int_l, syn_spec={"receptor_type": intn_comps["soma_curr"]})
+int_1 = nest.Create(intn_model, 1, intn_params)
 
-        nest.Connect(pyr_l, int_l, syn_spec=syn_laminar_pyr_intn)
-        nest.Connect(int_l, pyr_l, syn_spec=syn_laminar_intn_pyr)
+w = 0.5
 
-        intn_pops.append(int_l)
-
-    if lr > 1:
-        print(f"setting up {len(pyr_l)} feedback connections")
-        for i in range(len(pyr_l)):
-            id = int_l[i].get("global_id")
-            pyr_l[i].target = id
-
-        nest.Connect(pyr_l, pyr_pops[-1], syn_spec=syn_fb_pyr_pyr)
-
-    if noise:
-        nest.Connect(gauss, pyr_l, syn_spec={"receptor_type": pyr_comps["soma_curr"]})
-    pyr_pops.append(pyr_l)
+nest.Connect(pyr_1, pyr, syn_dict=dict(syn_fb_pyr_pyr, **{"weight": w}))
+nest.Connect(int_1, pyr, syn_dict=dict(syn_laminar_intn_pyr, **{"weight": -w}))
 
 
-nudge = nest.Create("dc_generator", dims[-1], {'amplitude': 0})
-nest.Connect(nudge, pyr_pops[-1], "one_to_one", syn_spec={'receptor_type': pyr_comps['soma_curr']})
-
-mm_pyr_l = nest.Create('multimeter', 1, {'record_from': ["V_m.a_lat", "V_m.a_td", "V_m.b", "V_m.s"]})
+mm_pyr = nest.Create('multimeter', 1, {'record_from': ["V_m.a_lat", "V_m.a_td", "V_m.b", "V_m.s"]})
 mm_intn = nest.Create('multimeter', 1, {'record_from': ["V_m.s"]})
-mm_pyr_m = nest.Create('multimeter', 1, {'record_from': ["V_m.s"]})
-nest.Connect(mm_pyr_l, pyr_pops[1])
-nest.Connect(mm_pyr_m, pyr_pops[2])
-nest.Connect(mm_intn, intn_pops[0])
+mm_pyr_1 = nest.Create('multimeter', 1, {'record_from': ["V_m.s"]})
+nest.Connect(mm_pyr, pyr)
+nest.Connect(mm_pyr_1, pyr_1)
+nest.Connect(mm_intn, int_1)
 
 sr_intn = nest.Create("spike_recorder", 1)
 sr_pyr = nest.Create("spike_recorder", 1)
-sr_out = nest.Create("spike_recorder", 1)
-nest.Connect(intn_pops[0], sr_intn)
-nest.Connect(pyr_pops[1], sr_pyr)
-nest.Connect(pyr_pops[-1], sr_out)
+sr_pyr_1 = nest.Create("spike_recorder", 1)
+nest.Connect(int_1, sr_intn)
+nest.Connect(pyr, sr_pyr)
+nest.Connect(pyr_1, sr_pyr_1)
 
 stim = nest.Create("dc_generator", dims[0])
-nest.Connect(stim, pyr_pops[0], conn_spec="one_to_one", syn_spec={"receptor_type": pyr_comps['soma_curr']})
+nest.Connect(stim, pyr_1, conn_spec="one_to_one", syn_spec={"receptor_type": pyr_comps['soma_curr']})
+nest.Connect(stim, int_1, conn_spec="one_to_one", syn_spec={"receptor_type": pyr_comps['soma_curr']})
 
 record_neuron = pyr_pops[1][0]
 record_id = record_neuron.get("global_id")
@@ -120,7 +91,7 @@ for run in range(n_runs):
     t = time.time() - start
     T.append(t)
     out_activity = np.count_nonzero(sr_pyr.events["senders"] == record_id)
-    sr_out.n_events = 0
+    sr_pyr_1.n_events = 0
     total_out_spikes = out_activity
     # target_spikes = len(np.where(out_activity == target_id)[0])
     # spike_ratio = target_spikes/total_out_spikes
