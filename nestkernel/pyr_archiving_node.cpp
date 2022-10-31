@@ -137,7 +137,7 @@ nest::PyrArchivingNode< pyr_parameters >::write_urbanczik_history( Time const& t
     // apical compartment for lateral interneuron-pyr connections
     // TODO: is E_L a legitimate placeholder vor v_rest?
     //comp_deviation = pyr_params->E_L[0] - V_W;
-    comp_deviation = -V_W  * Time::get_resolution().get_ms() ;
+    comp_deviation = -V_W * Time::get_resolution().get_ms();
   }
 
   if ( n_incoming_ )

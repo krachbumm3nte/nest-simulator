@@ -10,19 +10,17 @@ import pandas as pd
 from network import Network
 
 
-SIM_TIME = 100
+SIM_TIME = 300
 n_runs = 500
 
-# dims = [4, 4, 4]
-dims = [2, 3, 3]
+dims = [4, 4, 4]
 
-cmap_1 = plt.cm.get_cmap('hsv', 5)
-cmap_2 = plt.cm.get_cmap('hsv', 5)
+cmap_1 = plt.cm.get_cmap('hsv', dims[1]+1)
+cmap_2 = plt.cm.get_cmap('hsv', dims[2]+1)
 
 noise = True
 noise_std = 0.1
 
-stim_amp = 0.5
 
 target_amp = 10
 
@@ -31,7 +29,7 @@ T = []
 
 accuracy = []
 
-net = Network(dims, True, noise_std=noise_std, init_self_pred=True)
+net = Network(dims, True, noise_std=noise_std, init_self_pred=True, nudging=False)
 
 
 pyr_1 = net.pyr_pops[1]
@@ -81,10 +79,10 @@ for run in range(n_runs):
 
         weight_df = pd.DataFrame.from_dict(wr.events)
 
-        weights_from = regroup_df(weight_df[weight_df.senders == pyr_1_id], 'targets')
-        weights_to = regroup_df(weight_df[weight_df.targets == pyr_1_id], 'senders')
+        weights_from = regroup_df(weight_df[weight_df.senders == pyr_1_id[0]], 'targets')
+        weights_to = regroup_df(weight_df[weight_df.targets == pyr_1_id[0]], 'senders')
 
-        events_senders = regroup_records(net.mm_pyr_l.get("events"), "senders")
+        events_senders = regroup_records(net.mm_pyr_0.get("events"), "senders")
 
         fig, [[ax0, ax1], [ax2, ax3]] = plt.subplots(2, 2)
         fig.set_dpi(fig.get_dpi() * 4)
@@ -96,25 +94,27 @@ for run in range(n_runs):
 
         foo = times_pyr, times_int
 
-        v_pyr_l = regroup_records(net.mm_pyr_l.events, 'senders')
-        v_pyr_m = regroup_records(net.mm_pyr_m.events, 'senders')
+        v_pyr_0 = regroup_records(net.mm_pyr_0.events, 'senders')
+        v_pyr_1 = regroup_records(net.mm_pyr_1.events, 'senders')
         v_int = regroup_records(net.mm_intn.events, 'senders')
 
         td_weights = np.array(nest.GetConnections(pyr_2, pyr_1).get("weight"))
         spikes_pyr = regroup_records(net.sr_pyr.events, "senders")
 
-        """for k, v in v_int.items():
-            ax0.plot(v['times'], uniform_filter1d(v['V_m.s'], size=3000), 'g')
+        
 
-        for k, v in v_pyr_l.items():
-            ax0.plot(v['times'], uniform_filter1d(v['V_m.s'], size=3000), 'r')
-        """
+        for k, v in v_int.items():
+            ax0.plot(v['times'], uniform_filter1d(v['V_m.s'], size=3000), "--", color=cmap_2(k - min(int_0_id)))
+
+        for k, v in v_pyr_1.items():
+            ax0.plot(v['times'], uniform_filter1d(v['V_m.s'], size=3000), color=cmap_2(k - min(pyr_2_id)))
+
         foo = [v['times'] for (k, v) in spikes_pyr.items()]
         ax0.set_title("pyramidal spike rates")
         ax0.hist(foo, run//10 + 1, density=False)
 
         for k, v in events_senders.items():
-            ax1.plot(v['times'], uniform_filter1d(np.abs(v["V_m.a_lat"]), size=900), label=f"V_m.a ({k})")
+            ax1.plot(v['times'], uniform_filter1d(v["V_m.a_lat"], size=500), color=cmap_1(k - min(pyr_1_id)), label=f"V_m.a ({k})")
         # ax1.set_ylim(0, 2)
         ax1.set_title("apical compartment voltage")
 
@@ -123,6 +123,7 @@ for run in range(n_runs):
         w_pp_12 = pd.DataFrame.from_dict(nest.GetConnections(source=pyr_1, target=pyr_2).get())
         w_pi_11 = pd.DataFrame.from_dict(nest.GetConnections(source=pyr_1, target=int_0).get())
 
+
         for idx, row in w_pp_21.iterrows():
             t = row["target"]
             col = cmap_2(row["source"] % dims[2])
@@ -130,7 +131,10 @@ for run in range(n_runs):
 
         for idx, row in w_ip_11.iterrows():
             t = row["target"]
-            ax2.plot(row["target"], row["weight"], ".", color=cmap_2(row["source"] % dims[2]), label=f"from {t}")
+            ax2.plot(row["target"], -row["weight"], "x", color=cmap_2(row["source"] % dims[2]), label=f"from {t}")
+        ax2.set_title("W_PP_21 = W_IP_11")
+        ax2.set_ylim(-1,1)
+        
 
         for idx, row in w_pp_12.iterrows():
             t = row["target"]
@@ -138,18 +142,9 @@ for run in range(n_runs):
 
         for idx, row in w_pi_11.iterrows():
             t = row["target"]
-            ax3.plot(row["source"], -row["weight"], ".", color=cmap_2(row["target"] % dims[2]), label=f"from {t}")
-
-        """
-        ax3.hlines(td_weights*1.1, 0, run*SIM_TIME, 'blue')
-        for k, v in weights_to.items():
-            ax3.plot(v['times'], v['weights'], "g", label=f"from {k}")
-
-        for k, v in weights_from.items():
-            ax3.plot(v['times'], v['weights'], "r", label=f"to {k}")
-"""
-        # ax3.hlines(0, 0, run*SIM_TIME, 'black')
-        ax3.set_title("intn_pyr weights")
+            ax3.plot(row["source"], row["weight"], "x", color=cmap_2(row["target"] % dims[2]), label=f"from {t}")
+        ax3.set_title("W_PP_12 = W_PI_11")
+        ax3.set_ylim(-1,1)
 
         plt.savefig(f"{run}_weights.png")
         plt.close()

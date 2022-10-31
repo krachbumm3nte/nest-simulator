@@ -113,8 +113,8 @@ nest::pp_cond_exp_mc_pyr_dynamics( double, const double y[], double f[], void* p
   //TODO: this still contains E_L but is only valid if set to zero
   const double I_L = node.P_.pyr_params.g_L[ N::SOMA ] * ( V - node.P_.pyr_params.E_L[ N::SOMA ] );
 
-  // excitatory synaptic current soma
-  const double I_syn_exc = y[ S::idx( N::SOMA, S::G ) ] * V ;
+  // synaptic current at the soma
+  const double I_som = y[ S::idx( N::SOMA, S::G ) ] * V ;
 
 
   // coupling from dendrites to soma all summed up
@@ -158,10 +158,9 @@ nest::pp_cond_exp_mc_pyr_dynamics( double, const double y[], double f[], void* p
 
   // derivative membrane potential
   // soma
-  //TODO: why minus I_syn_exc?
   f[ S::idx( N::SOMA, S::V_M ) ] =
-    ( -I_L + I_syn_exc + I_conn_d_s + node.B_.I_stim_[ N::SOMA ] + node.P_.I_e[ N::SOMA ] )
-    / node.P_.pyr_params.C_m; // plus or minus I_conn_d_s?
+    ( -I_L + I_som + I_conn_d_s + node.B_.I_stim_[ N::SOMA ] + node.P_.I_e[ N::SOMA ] )
+    / node.P_.pyr_params.C_m;
 
   // excitatory conductance soma
   f[ S::idx( N::SOMA, S::G ) ] = -y[ S::idx( N::SOMA, S::G ) ] / node.P_.pyr_params.tau_syn;
@@ -734,7 +733,7 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       ce.set_sender(*this);
       //ce.set_delay_steps(0);
       ce.set_stamp( kernel().simulation_manager.get_slice_origin() + Time::step( lag + 1 ) );
-      ce.set_weight(1 - P_.pyr_params.lambda_curr);
+      ce.set_weight(P_.pyr_params.lambda_curr);
       ce();
     }
 
