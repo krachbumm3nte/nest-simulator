@@ -96,7 +96,6 @@ private:
   double theta;      //!< Parameter of the rate function
   double phi( double u );
   double h( double u );
-  double rate_times;
 
   // target neuron for a singular current synapse
   int curr_target;
@@ -541,11 +540,8 @@ private:
 inline double
 pp_cond_exp_mc_pyr_parameters::phi( double u )
 {
-    return phi_max / ( 1.0 + rate_slope * exp( beta * ( theta - u ) ) );
-
-  //TODO: should be:
-  // gamma log(1 + exp(beta (u - theta))) with gamma=0.1, beta=1, theta=3
-  // in some cases!
+  return phi_max / ( 1.0 + rate_slope * exp( beta * ( theta - u ) ) );
+  // TODO: which is the correct activation function for this?
   // return log(1 + exp(u));
 }
 

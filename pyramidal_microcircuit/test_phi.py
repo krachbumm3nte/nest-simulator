@@ -4,45 +4,54 @@ import numpy as np
 from scipy.misc import derivative
 
 
-def phi(x):
-    return 1 / (1 + np.exp(-x))
-
-
 def p_spike(x):
     return -1 * (np.exp(-phi(x) * 0.1) - 1)
 
 
-phi_max = 0.9
-rate_slope = 0.9
-beta = 3.
-theta = 1
+phi_max = 0.15
+rate_slope = 0.5
+beta = 1/3
+theta = -55
+
+phi_max = 1
+rate_slope = 1
+beta = 1
+theta = 0
+
+timestep = 0.1
 
 def phi_old(x):
-    return phi_max / ( 1.0 + rate_slope * np.exp( beta * ( theta - x ) ) );
+    return phi_max / (1.0 + rate_slope * np.exp(beta * (theta - x)))
+
+def phi(x):
+    return 1 / (1 + np.exp(-x))
 
 
+def rate(x):
+    rate = phi(x)
+    return 1 - np.exp(-rate * timestep)
 
-def phi_2(x):
-    return np.log(1 + np.exp(x))
-
-def p_spike_2(x):
-    return -1 * (np.exp(-phi_2(x) * 0.1) - 1)
-
-x = np.linspace(-1.5, 5, 500)
-
-# plt.plot(x, phi(x), label="phi(x)")
-
-def p_sin(x):
-    return phi(np.sin(x))
+def rate_2(x):
+    rate = phi(x)
+    return 1 - np.exp(-rate * timestep)
 
 
+x = np.linspace(-1, 2, 500)
 
-plt.plot(x, phi(x), label="phi")
-plt.plot(x, phi_2(x), label="phi (sacramento)")
-plt.plot(x, phi_old(x), label="phi old")
+fig, ax = plt.subplots(1, 2)
+
+ax[0].plot(x, phi(x), label="phi (sacramento)")
+ax[0].plot(x, phi_old(x), label="phi old")
+
+ax[1].plot(x, rate(x), label="rate old")
+ax[1].plot(x, rate_2(x), label="rate sacramento")
+
+ax[0].set_ylim(0,1)
+ax[1].set_ylim(0,1)
 
 #plt.plot(x, p_spike(x), label="p_spike_1")
 #plt.plot(x, p_spike_2(x), label="p_spike_2")
 
-plt.legend()
+ax[0].legend()
+ax[1].legend()
 plt.show()

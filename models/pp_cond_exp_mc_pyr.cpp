@@ -183,7 +183,6 @@ nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_()
   pyr_params.rate_slope = 1;
   pyr_params.beta = 1;
   pyr_params.theta = 0;
-  pyr_params.rate_times = 10000;
   
   //pyr_params.phi_max = 0.15;
   //pyr_params.rate_slope = 0.5;
@@ -231,7 +230,6 @@ nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_( const Parameters_& p )
   pyr_params.rate_slope = p.pyr_params.rate_slope;
   pyr_params.beta = p.pyr_params.beta;
   pyr_params.theta = p.pyr_params.theta;
-  pyr_params.rate_times = p.pyr_params.rate_times;
 
   pyr_params.curr_target = p.pyr_params.curr_target;
   pyr_params.lambda_curr = p.pyr_params.lambda_curr;
@@ -261,7 +259,6 @@ nest::pp_cond_exp_mc_pyr::Parameters_::operator=( const Parameters_& p )
   pyr_params.beta = p.pyr_params.beta;
   pyr_params.theta = p.pyr_params.theta;
   pyr_params.tau_syn = p.pyr_params.tau_syn;
-  pyr_params.rate_times = p.pyr_params.rate_times;
 
   pyr_params.curr_target = p.pyr_params.curr_target;
   pyr_params.lambda_curr = p.pyr_params.lambda_curr;
@@ -347,7 +344,6 @@ nest::pp_cond_exp_mc_pyr::Parameters_::get( DictionaryDatum& d ) const
   def< double >( d, names::beta, pyr_params.beta );
   def< double >( d, names::theta, pyr_params.theta );
   def< double >( d, names::tau_syn, pyr_params.tau_syn);
-  def< double >( d, names::rate_times, pyr_params.rate_times );
 
 
   def< double >( d, names::g_som, pyr_params.g_conn[ SOMA ] );
@@ -386,7 +382,6 @@ nest::pp_cond_exp_mc_pyr::Parameters_::set( const DictionaryDatum& d )
   updateValue< double >( d, names::theta, pyr_params.theta );
   updateValue< double >( d, names::tau_syn, pyr_params.tau_syn);
   updateValue< double >( d, names::C_m, pyr_params.C_m);
-  updateValue< double >( d, names::rate_times, pyr_params.rate_times );
 
 
   updateValue< double >( d, Name( names::g_som ), pyr_params.g_conn[ SOMA ] );
@@ -659,7 +654,7 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       // Neuron not refractory
 
       // There is no reset of the membrane potential after a spike
-      double rate = P_.pyr_params.rate_times * P_.pyr_params.phi( S_.y_[ State_::V_M ] );
+      double rate = P_.pyr_params.phi( S_.y_[ State_::V_M ] );
 
       if ( rate > 0.0 )
       {
@@ -667,7 +662,7 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
         if ( P_.t_ref > 0.0 )
         {
           // Draw random number and compare to prob to have a spike
-          if ( V_.rng_->drand() <= -numerics::expm1( -rate * V_.h_ * 1e-3 ) )
+          if ( V_.rng_->drand() <= -numerics::expm1( -rate * V_.h_) )
           {
             n_spikes = 1;
           }
@@ -675,7 +670,7 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
         else
         {
           // Draw Poisson random number of spikes
-          poisson_distribution::param_type param( rate * V_.h_ * 1e-3 );
+          poisson_distribution::param_type param( rate * V_.h_);
           n_spikes = V_.poisson_dist_( V_.rng_, param );
         }
 
@@ -724,7 +719,7 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
 
     if (P_.pyr_params.curr_target != 0) {
       CurrentEvent ce;
-      ce.set_current(S_.y_[ S_.idx( SOMA, State_::V_M ) ]);
+      ce.set_current(S_.y_[ S_.idx( SOMA, State_::V_M )] * V_.h_);
       // cast target id to int because parameters need to be floats for some reason?
       Node* n = kernel().node_manager.get_node_or_proxy( (int) P_.pyr_params.curr_target);
       ce.set_receiver(*n);

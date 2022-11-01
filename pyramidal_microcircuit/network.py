@@ -9,7 +9,7 @@ class Network:
         self.dims = dims
         self.noise = noise
         self.noise_std = noise_std
-        self.stim_amp = 45
+        self.stim_amp = 15
         self.target_amp = 0.5
         self.L = len(dims)
         self.nudging = nudging
@@ -52,6 +52,7 @@ class Network:
 
                 if self.nudging:
                     for i in range(len(pyr_l)):
+                        print("setting target")
                         id = int_l[i].get("global_id")
                         pyr_l[i].target = id
 
@@ -68,9 +69,7 @@ class Network:
 
                 self.intn_pops.append(int_l)
 
-        self.pyr_pops[-1].set({"g_a": 0})
-
-
+        self.pyr_pops[-1].set({"apical_lat": {"g": 0}})
 
         self.nudge = nest.Create("dc_generator", self.dims[-1], {'amplitude': 0})
         nest.Connect(self.nudge, self.pyr_pops[-1], "one_to_one", syn_spec={'receptor_type': pyr_comps['soma_curr']})
