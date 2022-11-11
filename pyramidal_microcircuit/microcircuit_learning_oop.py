@@ -8,10 +8,10 @@ from scipy.ndimage import uniform_filter1d
 from utils import *
 import pandas as pd
 from network import Network
-
+from pympler.tracker import SummaryTracker
 
 SIM_TIME = 300
-n_runs = 500
+n_runs = 1000
 
 dims = [4, 4, 4]
 
@@ -29,7 +29,7 @@ T = []
 
 accuracy = []
 
-net = Network(dims, True, noise_std=noise_std, init_self_pred=False, nudging=True)
+net = Network(dims, True, noise_std=noise_std, init_self_pred=init_self_pred, nudging=True)
 
 
 pyr_1 = net.pyr_pops[1]
@@ -41,15 +41,12 @@ pyr_2_id = pyr_2.get("global_id")
 int_0 = net.intn_pops[0]
 int_0_id = int_0.get("global_id")
 
-print(pyr_1_id, pyr_2_id, int_0_id)
-print(pyr_2.get(["global_id", "target"]))
+# print(nest.GetConnections(source=pyr_2, target=pyr_1))
+# print(nest.GetConnections(source=int_0, target=pyr_1))
+# print(nest.GetConnections(source=pyr_1, target=int_0))
+# print(nest.GetConnections(source=pyr_1, target=pyr_2))
 
-print(nest.GetConnections(source=pyr_2, target=pyr_1))
-print(nest.GetConnections(source=int_0, target=pyr_1))
-print(nest.GetConnections(target=pyr_2, source=pyr_1))
-print(nest.GetConnections(target=int_0, source=pyr_1))
-
-
+tracker = SummaryTracker()
 print("setup complete, running simulations...")
 np.seterr('raise')
 for run in range(n_runs):
@@ -64,19 +61,23 @@ for run in range(n_runs):
     nest.Simulate(SIM_TIME)
     t = time.time() - start
     T.append(t)
-    out_activity = np.count_nonzero(net.sr_pyr.events["senders"] == pyr_1_id[0])
+    out_activity = len(net.sr_out.events["times"])
+    pyr_activity = len(net.sr_pyr.events["times"])
+    intn_activity = len(net.sr_intn.events["times"])
     net.sr_out.n_events = 0
-    total_out_spikes = out_activity
+    net.sr_pyr.n_events = 0
+    net.sr_intn.n_events = 0
     # target_spikes = len(np.where(out_activity == target_id)[0])
     # spike_ratio = target_spikes/total_out_spikes
     # accuracy.append(spike_ratio)
-
+    if run % 100 == 0:
+        tracker.print_diff()
     if run % 5 == 0 and run > 0:
 
         # uniform_filter1d(np.abs(events["V_m.a_td"][indices]), size=1250)
 
         # print(f"{run}: {np.mean(T[-50:]):.2f}, td: {td:.6f}, lat: {lat:.6f}, apical potential: {abs(td+lat):.4f}")
-        print(f"{run}: {np.mean(T[-50:]):.2f}. num spikes: {total_out_spikes}")
+        print(f"{run}: {np.mean(T[-50:]):.2f}. spikes: pyr:{pyr_activity}, out:{out_activity}, intn:{intn_activity}")
 
         weight_df = pd.DataFrame.from_dict(wr.events)
 
@@ -86,8 +87,8 @@ for run in range(n_runs):
         events_senders = regroup_records(net.mm_pyr_0.get("events"), "senders")
         plt.tight_layout()
         fig, [[ax0, ax1], [ax2, ax3]] = plt.subplots(2, 2)
-        fig.set_dpi(fig.get_dpi() * 4)
-
+        fig.set_dpi(fig.get_dpi() * 10)
+        plt.rcParams['savefig.dpi'] = 300
         times_pyr = net.sr_pyr.events['times']
         times_int = net.sr_intn.events['times']
         net.sr_pyr.n_events = 0
@@ -103,10 +104,10 @@ for run in range(n_runs):
         spikes_pyr = regroup_records(net.sr_pyr.events, "senders")
 
         for k, v in v_int.items():
-            ax0.plot(v['times'], uniform_filter1d(v['V_m.s'], size=1500), "--", color=cmap_2(k - min(int_0_id)))
+            ax0.plot(v['times'], uniform_filter1d(v['V_m.s'], size=1500), "--", color=cmap_2(k % dims[2]))
 
         for k, v in v_pyr_1.items():
-            ax0.plot(v['times'], uniform_filter1d(v['V_m.s'], size=1500), color=cmap_2(k - min(pyr_2_id)))
+            ax0.plot(v['times'], uniform_filter1d(v['V_m.s'], size=1500), color=cmap_2(k % dims[2]))
 
         foo = [v['times'] for (k, v) in spikes_pyr.items()]
         ax0.set_title("intn(--) and pyr(-) somatic voltages")
@@ -114,8 +115,9 @@ for run in range(n_runs):
 
         for k, v in events_senders.items():
             ax1.plot(v['times'], uniform_filter1d(v["V_m.a_lat"], size=500),
-                     color=cmap_1(k - min(pyr_1_id)), label=f"V_m.a ({k})")
+                     color=cmap_1(k % dims[2]), label=k)
         # ax1.set_ylim(0, 2)
+        ax1.legend()
         ax1.set_title("apical compartment voltages")
 
         w_pp_21 = pd.DataFrame.from_dict(nest.GetConnections(source=pyr_2, target=pyr_1).get())

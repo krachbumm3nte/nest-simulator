@@ -8,14 +8,29 @@ nest.set_verbosity("M_ERROR")
 nest.SetKernelStatus({"local_num_threads": 3})
 nest.rng_seed = 156
 
-
+"""
 g_a = 0.8
 g_b = 1.0
+g_som = 1
+
 g_lk_dnd = 0.8
 g_lk_som = 0.8
-g_som = 0.8
 
 lam = g_som / (g_lk_som + g_b + g_som)
+"""
+init_self_pred = True
+plasticity = False
+
+lam = 0.1
+
+g_a = 0.8
+g_b_int = 1 - lam
+g_b_pyr = 1
+g_som = 1
+
+g_lk_dnd = 0.4
+g_lk_som = 0.4
+
 
 comp_defaults = {
         'V_m': 0.0,
@@ -36,21 +51,22 @@ pyr_params = {
     # 'rate_slope': 1,
     # 'beta': 1,
     # 'theta': 0,
-    'phi_max': 0.55,
-    'rate_slope': 0.5,
-    'beta': 3.0,
-    'theta': 0.5,
-    't_ref': 0.5,
+    'phi_max': 1.5,
+    'rate_slope': 2,
+    'beta': 1,
+    'theta': 1,
+    't_ref': 0.1,
 
 }
 
-pyr_params['basal']['g'] = g_b
+pyr_params['basal']['g'] = g_b_pyr
 pyr_params['apical_td']['g'] = 0.0
 pyr_params['apical_lat']['g'] = g_a
 pyr_params['soma']['g_L'] = g_lk_som
 
 intn_params = deepcopy(pyr_params)
 intn_params['apical_lat']['g'] = 0.0
+pyr_params['basal']['g'] = g_b_int
 
 # synapse params:
 wr = nest.Create('weight_recorder')
@@ -69,7 +85,7 @@ static_syn_params = {
     'synapse_model': 'record_syn',
     'tau_Delta': 30,
     'Wmin': -1.0,
-    'Wmax': 1.0,  # TODO: verify
+    'Wmax': 1.0,
     'eta': 0.0,
     'delay': resolution,
 }
@@ -90,12 +106,14 @@ syn_fb_pyr_pyr['receptor_type'] = pyr_comps['apical_lat']
 syn_laminar_pyr_intn = deepcopy(syn_params)
 syn_laminar_pyr_intn['receptor_type'] = intn_comps['basal']
 # syn_laminar_pyr_intn['eta'] = 0.
-syn_laminar_pyr_intn['eta'] = 0.006
 
 syn_laminar_intn_pyr = deepcopy(syn_params)
 syn_laminar_intn_pyr['receptor_type'] = pyr_comps['apical_lat']
 # syn_laminar_intn_pyr['eta'] = 0.
-syn_laminar_intn_pyr['eta'] = 0.0004
+
+if plasticity:
+    syn_laminar_pyr_intn['eta'] = 0.0004
+    syn_laminar_intn_pyr['eta'] = 0.00001
 
 # set weights after the fact because deepcopy does not enjoy copying functions.
 all_syns = [syn_ff_pyr_pyr, syn_fb_pyr_pyr, syn_laminar_intn_pyr, syn_laminar_pyr_intn]

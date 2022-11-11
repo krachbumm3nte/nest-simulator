@@ -4,12 +4,9 @@ from params import *
 
 print(lam)
 # pyr_params["lambda"] = pyr_params["lambda"]
-pyr_params["lambda"] = 1
+# pyr_params["lambda"] = 1
 pyr_params['basal']['g'] = 0
 pyr_params['apical_lat']['g'] = 0
-pyr_params['soma']['g_L'] = 0.5
-
-lam = g_som / (g_lk_som + g_b + g_som)
 
 
 stim = nest.Create("dc_generator")
@@ -21,6 +18,10 @@ pyr = nest.Create(pyr_model, 1, pyr_params)
 mm = nest.Create("multimeter", 1, {'record_from': ["V_m.b", "V_m.s", "V_m.a_td", "V_m.a_lat"]})
 nest.Connect(mm, pyr)
 
+pyr_2 = nest.Create(pyr_model, 1, pyr_params)
+mm3 = nest.Create("multimeter", 1, {'record_from': ["V_m.b", "V_m.s", "V_m.a_td", "V_m.a_lat"]})
+nest.Connect(mm3, pyr)
+
 mm2 = nest.Create("multimeter", 1, {'record_from': ["V_m.b", "V_m.s", "V_m.a_td", "V_m.a_lat"]})
 nest.Connect(mm2, par)
 
@@ -28,6 +29,7 @@ pyr_comps = nest.GetDefaults("pp_cond_exp_mc_pyr")["receptor_types"]
 print(pyr_comps)
 pyr_id = pyr.get("global_id")
 par.target = pyr_id
+nest.Connect(par, pyr_2, syn_spec={'synapse_model': "static_synapse", "receptor_type": pyr_comps["soma_curr"]})
 
 stim.amplitude = 2
 nest.Simulate(100)
@@ -35,8 +37,6 @@ stim.amplitude = -2
 nest.Simulate(100)
 stim.amplitude = 0
 nest.Simulate(100)
-
-
 
 
 som = mm.get("events")['V_m.s']
@@ -50,5 +50,8 @@ plt.plot(bas, label="basal")
 
 som_2 = mm2.get("events")['V_m.s']
 plt.plot(som_2, label="soma parrot")
+
+som_3 = mm3.get("events")['V_m.s']
+plt.plot(som_3, label="soma static syn")
 plt.legend()
 plt.show()
