@@ -9,12 +9,12 @@ def p_spike(x):
 
 
 phi_max = 0.15
-rate_slope = 0.5
+gamma = 0.5
 beta = 1/3
 theta = -55
 
 phi_max = 1.5
-rate_slope = 2
+gamma = 2
 beta = 1
 theta = 1
 
@@ -22,7 +22,7 @@ timestep = 0.1
 
 
 def phi_new(x):
-    return phi_max / (1.0 + rate_slope * np.exp(beta * (theta - x)))
+    return phi_max / (1.0 + gamma * np.exp(beta * (theta - x)))
 
 
 def phi(x):

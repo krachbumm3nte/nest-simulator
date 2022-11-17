@@ -20,13 +20,13 @@ weight = .5
 
 
 phi_max = 0.9
-rate_slope = 0.9
+gamma = 0.9
 beta = 3.
 theta = 1
 
 
 def phi_old(x):
-    return phi_max / (1.0 + rate_slope * np.exp(beta * (theta - x)))
+    return phi_max / (1.0 + gamma * np.exp(beta * (theta - x)))
 
 # phi function from sacramento (2018) Fig S1
 def phi_sac(x):
