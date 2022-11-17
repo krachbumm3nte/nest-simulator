@@ -241,6 +241,7 @@ extern const Name g_rr;
 extern const Name g_sfa;
 extern const Name g_som;
 extern const Name g_sp;
+extern const Name gamma;
 extern const Name gamma_shape;
 extern const Name gaussian;
 extern const Name global_id;

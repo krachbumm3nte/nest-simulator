@@ -180,12 +180,12 @@ nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_()
   : t_ref( 3.0 ) // ms
 {
   pyr_params.phi_max = 1;
-  pyr_params.rate_slope = 1;
+  pyr_params.gamma = 1;
   pyr_params.beta = 1;
   pyr_params.theta = 0;
   
   //pyr_params.phi_max = 0.15;
-  //pyr_params.rate_slope = 0.5;
+  //pyr_params.gamma = 0.5;
   //pyr_params.beta = 0.3;
   //pyr_params.theta = -55;
   
@@ -227,7 +227,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_( const Parameters_& p )
   : t_ref( p.t_ref )
 {
   pyr_params.phi_max = p.pyr_params.phi_max;
-  pyr_params.rate_slope = p.pyr_params.rate_slope;
+  pyr_params.gamma = p.pyr_params.gamma;
   pyr_params.beta = p.pyr_params.beta;
   pyr_params.theta = p.pyr_params.theta;
 
@@ -255,7 +255,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::operator=( const Parameters_& p )
 
   t_ref = p.t_ref;
   pyr_params.phi_max = p.pyr_params.phi_max;
-  pyr_params.rate_slope = p.pyr_params.rate_slope;
+  pyr_params.gamma = p.pyr_params.gamma;
   pyr_params.beta = p.pyr_params.beta;
   pyr_params.theta = p.pyr_params.theta;
   pyr_params.tau_syn = p.pyr_params.tau_syn;
@@ -340,7 +340,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::get( DictionaryDatum& d ) const
 {
   def< double >( d, names::t_ref, t_ref );
   def< double >( d, names::phi_max, pyr_params.phi_max );
-  def< double >( d, names::rate_slope, pyr_params.rate_slope );
+  def< double >( d, names::gamma, pyr_params.gamma );
   def< double >( d, names::beta, pyr_params.beta );
   def< double >( d, names::theta, pyr_params.theta );
   def< double >( d, names::tau_syn, pyr_params.tau_syn);
@@ -377,7 +377,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::set( const DictionaryDatum& d )
   // allow setting the membrane potential
   updateValue< double >( d, names::t_ref, t_ref );
   updateValue< double >( d, names::phi_max, pyr_params.phi_max );
-  updateValue< double >( d, names::rate_slope, pyr_params.rate_slope );
+  updateValue< double >( d, names::gamma, pyr_params.gamma );
   updateValue< double >( d, names::beta, pyr_params.beta );
   updateValue< double >( d, names::theta, pyr_params.theta );
   updateValue< double >( d, names::tau_syn, pyr_params.tau_syn);
@@ -406,7 +406,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::set( const DictionaryDatum& d )
       updateValue< double >( dd, names::I_e, I_e[ n ] );
     }
   }
-  if ( pyr_params.rate_slope < 0 )
+  if ( pyr_params.gamma < 0 )
   {
     throw BadProperty( "Rate slope cannot be negative." );
   }

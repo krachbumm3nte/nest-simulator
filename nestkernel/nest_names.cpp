@@ -216,6 +216,7 @@ const Name g_rr( "g_rr" );
 const Name g_sfa( "g_sfa" );
 const Name g_som( "g_som" );
 const Name g_sp( "g_sp" );
+const Name gamma( "gamma" );
 const Name gamma_shape( "gamma_shape" );
 const Name gaussian( "gaussian" );
 const Name global_id( "global_id" );

@@ -91,7 +91,7 @@ private:
   };
 
   double phi_max;    //!< Parameter of the rate function
-  double rate_slope; //!< Parameter of the rate function
+  double gamma; //!< Parameter of the rate function
   double beta;       //!< Parameter of the rate function
   double theta;      //!< Parameter of the rate function
   double phi( double u );
@@ -540,15 +540,15 @@ private:
 inline double
 pp_cond_exp_mc_pyr_parameters::phi( double u )
 {
-  return phi_max / ( 1.0 + rate_slope * exp( beta * ( theta - u ) ) );
+  return gamma * log(1 + exp (beta * (u - theta)));
+  // return phi_max / ( 1.0 + gamma * exp( beta * ( theta - u ) ) );
   // TODO: which is the correct activation function for this?
-  // return log(1 + exp(u));
 }
 
 inline double
 pp_cond_exp_mc_pyr_parameters::h( double u )
 {
-  return 15.0 * beta / ( 1.0 + ( 1.0 / rate_slope ) * exp( -beta * ( theta - u ) ) );
+  return 15.0 * beta / ( 1.0 + ( 1.0 / gamma ) * exp( -beta * ( theta - u ) ) );
 }
 
 
