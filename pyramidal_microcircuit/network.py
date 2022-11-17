@@ -5,12 +5,12 @@ import numpy as np
 
 class Network:
 
-    def __init__(self, dims, noise=True, noise_std=0.1, init_self_pred=False, nudging=True) -> None:
+    def __init__(self) -> None:
         self.dims = dims
         self.noise = noise
         self.noise_std = noise_std
-        self.stim_amp = 105
-        self.target_amp = 0.5
+        self.stim_amp = stim_amp
+        self.target_amp = target_amp
         self.L = len(dims)
         self.nudging = nudging
         self.pyr_pops = []
@@ -19,7 +19,7 @@ class Network:
         self.gauss = None
         self.setup_populations(init_self_pred)
 
-    def gen_weights(self, lr, next_lr, w_min=-1, w_max=1):
+    def gen_weights(self, lr, next_lr, w_min=wmin_init, w_max=wmax_init):
         return np.random.uniform(w_min, w_max, (next_lr, lr))
 
     def setup_populations(self, self_predicting):
@@ -52,15 +52,12 @@ class Network:
 
                 if self.nudging:
                     for i in range(len(pyr_l)):
-                        # print("setting target")
                         id = int_l[i].get("global_id")
                         pyr_l[i].target = id
-                        print(pyr_l[i].get("global_id"), id)
 
                 syn_spec_ff_pi = syn_laminar_pyr_intn
                 syn_spec_ff_pi['weight'] = (
                     syn_spec_ff_pp['weight'] if self_predicting else self.gen_weights(self.dims[l-1], self.dims[l]))
-                # print(syn_spec_ff_pi['weight'])
                 nest.Connect(pyr_prev, int_l, syn_spec=syn_spec_ff_pi)
 
                 syn_spec_fb_pi = syn_laminar_intn_pyr
@@ -83,16 +80,13 @@ class Network:
         nest.Connect(self.mm_intn, self.intn_pops[0])
 
         self.sr_intn = nest.Create("spike_recorder", 1)
+        self.sr_in = nest.Create("spike_recorder", 1)
         self.sr_pyr = nest.Create("spike_recorder", 1)
         self.sr_out = nest.Create("spike_recorder", 1)
         nest.Connect(self.intn_pops[0], self.sr_intn)
-        nest.Connect(self.pyr_pops[-2], self.sr_pyr)
-        nest.Connect(self.pyr_pops[-1], self.sr_out)
-
-        self.stim = nest.Create("dc_generator", self.dims[0])
-
-        nest.Connect(self.stim, self.pyr_pops[0], conn_spec="one_to_one",
-                     syn_spec={"receptor_type": pyr_comps['soma_curr']})
+        nest.Connect(self.pyr_pops[0], self.sr_in)
+        nest.Connect(self.pyr_pops[1], self.sr_pyr)
+        nest.Connect(self.pyr_pops[2], self.sr_out)
 
         self.record_neuron = self.pyr_pops[1][0]
         self.record_id = self.record_neuron.get("global_id")
@@ -100,8 +94,6 @@ class Network:
     def set_input(self, indices):
         for i in range(self.dims[0]):
             if i in indices:
-                self.stim[i].amplitude = self.stim_amp
-                # nudge[i].amplitude = target_amp
+                self.pyr_pops[0][i].set({"soma": {"I_e": self.stim_amp}})
             else:
-                self.stim[i].amplitude = 0
-                # nudge[i].amplitude = -target_amp
+                self.pyr_pops[0][i].set({"soma": {"I_e": self.stim_amp}})
