@@ -36,7 +36,7 @@
 // Includes from sli:
 #include "dictdatum.h"
 #include "dictutils.h"
-#include <iostream>
+
 namespace nest
 {
 
@@ -159,7 +159,7 @@ public:
     // Return values from functions are ignored.
     using ConnTestDummyNodeBase::handles_test_event;
     port
-    handles_test_event( SpikeEvent&, rport )
+    handles_test_event( SpikeEvent&, rport ) override
     {
       return invalid_port;
     }
@@ -195,7 +195,6 @@ private:
   double tau_s_trace_;
 
   double t_lastspike_;
-  int compartment_;
 };
 
 
@@ -220,16 +219,7 @@ urbanczik_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSy
 
   // for now we only support two-compartment neurons
   // in this case the dendritic compartment has index 1
-  int rport =  get_rport();
-
-  if (rport <= 1 or rport > 5) {
-    std::cout << "connection on port " << rport << " to neuron ";
-    std::cout << e.retrieve_sender_node_id_from_source_table() << "\n";
-    // throw IllegalConnection("Urbanczik synapse can only connect to dendrites!");
-  }
-  const int comp = rport / 2; // integer division to retrieve compartment from rport
-  // TODO: this needs to be validated and generalized
-
+  const int comp = 1;
 
   target->get_urbanczik_history( t_lastspike_ - dendritic_delay, t_spike - dendritic_delay, &start, &finish, comp );
 
@@ -244,7 +234,6 @@ urbanczik_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSy
     double const t_up = start->t_ + dendritic_delay;     // from t_lastspike to t_spike
     double const minus_delta_t_up = t_lastspike_ - t_up; // from 0 to -delta t
     double const minus_t_down = t_up - t_spike;          // from -t_spike to 0
-    // I_1 (t,T) = sum_{t'=t}^T (s_L*(t') - s_s*(t')) * V*(t')
     double const PI =
       ( tau_L_trace_ * exp( minus_delta_t_up / tau_L ) - tau_s_trace_ * exp( minus_delta_t_up / tau_s ) ) * start->dw_;
     PI_integral_ += PI;
@@ -252,11 +241,9 @@ urbanczik_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSy
     ++start;
   }
 
-  // I_2 (t,T) = I_2(0,t) * exp(-(T-t)/tau) + I_2(t,T)
   PI_exp_integral_ = ( exp( ( t_lastspike_ - t_spike ) / tau_Delta_ ) * PI_exp_integral_ + dPI_exp_integral );
   weight_ = PI_integral_ - PI_exp_integral_;
   weight_ = init_weight_ + weight_ * 15.0 * C_m * tau_s * eta_ / ( g_L * ( tau_L - tau_s ) );
-  //TODO: magic number!
 
   if ( weight_ > Wmax_ )
   {
@@ -271,7 +258,7 @@ urbanczik_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSy
   e.set_weight( weight_ );
   // use accessor functions (inherited from Connection< >) to obtain delay in steps and rport
   e.set_delay_steps( get_delay_steps() );
-  e.set_rport( rport );
+  e.set_rport( get_rport() );
   e();
 
   // compute the trace of the presynaptic spike train
@@ -296,7 +283,6 @@ urbanczik_synapse< targetidentifierT >::urbanczik_synapse()
   , tau_L_trace_( 0.0 )
   , tau_s_trace_( 0.0 )
   , t_lastspike_( -1.0 )
-  , compartment_( 0 )
 {
 }
 
@@ -326,7 +312,7 @@ urbanczik_synapse< targetidentifierT >::set_status( const DictionaryDatum& d, Co
 
   init_weight_ = weight_;
   // check if weight_ and Wmin_ has the same sign
-  if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) ) == ( ( Wmin_ >= 0 ) - ( Wmin_ < 0 ) ) ) )
+  if ( std::signbit( weight_ ) != std::signbit( Wmax_ ) )
   {
     throw BadProperty( "Weight and Wmin must have same sign." );
   }
