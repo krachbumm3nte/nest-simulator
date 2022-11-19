@@ -405,7 +405,6 @@ public:
     enum StateVecElems_
     {
       V_M = 0,
-      G, //TODO: are these still needed?
       I,
       STATE_VEC_COMPS
     };
