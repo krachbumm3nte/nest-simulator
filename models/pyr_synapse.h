@@ -36,7 +36,7 @@
 // Includes from sli:
 #include "dictdatum.h"
 #include "dictutils.h"
-#include <iostream>
+
 namespace nest
 {
 
@@ -159,7 +159,7 @@ public:
     // Return values from functions are ignored.
     using ConnTestDummyNodeBase::handles_test_event;
     port
-    handles_test_event( SpikeEvent&, rport )
+    handles_test_event( SpikeEvent&, rport ) override
     {
       return invalid_port;
     }
@@ -225,15 +225,13 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
     std::cout << e.retrieve_sender_node_id_from_source_table() << "\n";
     // throw IllegalConnection("Urbanczik synapse can only connect to dendrites!");
   }
-  const int comp = rport -1; // compartment number linearly relates to receptor port
-  // TODO: this needs to be validated and generalized
-
+  // const int comp = rport - 1; // compartment number linearly relates to receptor port
 
   target->get_urbanczik_history( t_lastspike_ - dendritic_delay, t_spike - dendritic_delay, &start, &finish, rport );
-  //double const g_L = target->get_g_L( comp );
-  //double const tau_L = target->get_tau_L( comp );
-  //double const C_m = target->get_C_m( comp );
-  double const tau_s = target->get_tau_s( comp);
+  // double const g_L = target->get_g_L( comp );
+  // double const tau_L = target->get_tau_L( 0 );
+  // double const C_m = target->get_C_m( comp );
+  // double const tau_s = target->get_tau_s( 0 );
   double dPI_exp_integral = 0.0;
 
   while ( start != finish )
@@ -241,17 +239,15 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
     double const t_up = start->t_ + dendritic_delay;     // from t_lastspike to t_spike
     double const minus_delta_t_up = t_lastspike_ - t_up; // from 0 to -delta t
     double const minus_t_down = t_up - t_spike;          // from -t_spike to 0
-    // I_1 (t,T) = sum_{t'=t}^T (s_L*(t') - s_s*(t')) * V*(t')
-    double const PI = ( tau_s_trace_ * exp( minus_delta_t_up / tau_s ) ) * start->dw_;
-    // std::cout << tau_s_trace_ << ", " << start->dw_ << "\n";
+    double const PI = -tau_s_trace_ * exp( minus_delta_t_up / tau_Delta_ ) * start->dw_;
     PI_integral_ += PI;
     dPI_exp_integral += exp( minus_t_down / tau_Delta_ ) * PI;
     ++start;
   }
-  // PI_exp_integral_ = ( exp( ( t_lastspike_ - t_spike ) / tau_Delta_ ) * PI_exp_integral_ + dPI_exp_integral );
+
   PI_exp_integral_ = ( exp( ( t_lastspike_ - t_spike ) / tau_Delta_ ) * PI_exp_integral_ + dPI_exp_integral );
   weight_ = PI_integral_ - PI_exp_integral_;
-  weight_ = init_weight_ + weight_ * eta_ ;
+  weight_ = init_weight_ + weight_ * eta_;
 
   if ( weight_ > Wmax_ )
   {
@@ -271,7 +267,7 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
 
   // compute the trace of the presynaptic spike train
   // tau_L_trace_ = tau_L_trace_ * std::exp( ( t_lastspike_ - t_spike ) / tau_L ) + 1.0;
-  tau_s_trace_ = tau_s_trace_ * std::exp( ( t_lastspike_ - t_spike ) / tau_s ) + 1.0;
+  tau_s_trace_ = tau_s_trace_ * std::exp( ( t_lastspike_ - t_spike ) / tau_Delta_ ) + 1.0;
 
   t_lastspike_ = t_spike;
 }

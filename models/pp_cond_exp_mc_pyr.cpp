@@ -138,7 +138,7 @@ nest::pp_cond_exp_mc_pyr_dynamics( double, const double y[], double f[], void* p
 
     // derivative membrane potential
     f[ S::idx( n, S::V_M ) ] =
-      ( -node.P_.pyr_params.g_L[ n ] * ( V_dnd - node.P_.pyr_params.E_L[ n ] ) + I_dend + I_conn_s_d )
+      -node.P_.pyr_params.g_L[ n ] * V_dnd + I_dend + I_conn_s_d 
       / node.P_.pyr_params.C_m;
 
     // derivative dendritic current
@@ -152,6 +152,7 @@ nest::pp_cond_exp_mc_pyr_dynamics( double, const double y[], double f[], void* p
 
   // excitatory conductance soma
   f[ S::idx( N::SOMA, S::I ) ] = -y[ S::idx( N::SOMA, S::I ) ] / node.P_.pyr_params.tau_syn;
+  //std::cout << "soma curr " << y[ S::idx( N::SOMA, S::I)] << "\n";
 
   return GSL_SUCCESS;
 }
