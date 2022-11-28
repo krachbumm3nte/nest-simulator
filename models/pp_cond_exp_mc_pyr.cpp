@@ -81,8 +81,8 @@ RecordablesMap< pp_cond_exp_mc_pyr >::create()
     Name( "V_m.s" ), &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::SOMA > );
   insert_(
     Name( "V_m.b" ), &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::BASAL > );
-  insert_( Name( "V_m.a_td" ),
-    &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::APICAL_TD > );
+  // insert_( Name( "V_m.a_td" ),
+  //   &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::APICAL_TD > );
   insert_( Name( "V_m.a_lat" ),
     &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::APICAL_LAT > );
 }
@@ -137,9 +137,7 @@ nest::pp_cond_exp_mc_pyr_dynamics( double, const double y[], double f[], void* p
     const double I_dend = y[ S::idx( n, S::I ) ];
 
     // derivative membrane potential
-    f[ S::idx( n, S::V_M ) ] =
-      -node.P_.pyr_params.g_L[ n ] * V_dnd + I_dend + I_conn_s_d 
-      / node.P_.pyr_params.C_m;
+    f[ S::idx( n, S::V_M ) ] = -node.P_.pyr_params.g_L[ n ] * V_dnd + I_dend + I_conn_s_d / node.P_.pyr_params.C_m;
 
     // derivative dendritic current
     f[ S::idx( n, S::I ) ] = -I_dend / node.P_.pyr_params.tau_syn;
@@ -152,7 +150,7 @@ nest::pp_cond_exp_mc_pyr_dynamics( double, const double y[], double f[], void* p
 
   // excitatory conductance soma
   f[ S::idx( N::SOMA, S::I ) ] = -y[ S::idx( N::SOMA, S::I ) ] / node.P_.pyr_params.tau_syn;
-  //std::cout << "soma curr " << y[ S::idx( N::SOMA, S::I)] << "\n";
+  // std::cout << "soma curr " << y[ S::idx( N::SOMA, S::I)] << "\n";
 
   return GSL_SUCCESS;
 }
@@ -192,10 +190,10 @@ nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_()
   I_e[ BASAL ] = 0.0;            // pA
 
   // apical dendrite parameters
-  pyr_params.g_conn[ APICAL_TD ] = 0.8;
-  pyr_params.g_L[ APICAL_TD ] = 0.0;
-  pyr_params.E_L[ APICAL_TD ] = 0.0; // mV
-  I_e[ APICAL_TD ] = 0.0;            // pA
+  // pyr_params.g_conn[ APICAL_TD ] = 0.8;
+  // pyr_params.g_L[ APICAL_TD ] = 0.0;
+  // pyr_params.E_L[ APICAL_TD ] = 0.0; // mV
+  // I_e[ APICAL_TD ] = 0.0;            // pA
 
   // apical dendrite parameters
   pyr_params.g_conn[ APICAL_LAT ] = 0.8;
@@ -329,10 +327,9 @@ nest::pp_cond_exp_mc_pyr::Parameters_::get( DictionaryDatum& d ) const
 
   def< double >( d, names::g_som, pyr_params.g_conn[ SOMA ] );
   def< double >( d, names::g_b, pyr_params.g_conn[ BASAL ] );
-  def< double >( d, names::g_a, pyr_params.g_conn[ APICAL_TD ] );
+  // def< double >( d, names::g_a, pyr_params.g_conn[ APICAL_TD ] );
 
-  // TODO: verify that target does not interfere with actual targets!
-  //  why does this need to be a double???
+  // TODO: why does this need to be a double???
   def< double >( d, names::lambda, pyr_params.lambda_curr );
   def< double >( d, names::target, pyr_params.curr_target );
   def< double >( d, names::C_m, pyr_params.C_m );
@@ -367,7 +364,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::set( const DictionaryDatum& d )
 
   updateValue< double >( d, Name( names::g_som ), pyr_params.g_conn[ SOMA ] );
   updateValue< double >( d, Name( names::g_b ), pyr_params.g_conn[ BASAL ] );
-  updateValue< double >( d, Name( names::g_a ), pyr_params.g_conn[ APICAL_TD ] );
+  // updateValue< double >( d, Name( names::g_a ), pyr_params.g_conn[ APICAL_TD ] );
 
   updateValue< double >( d, Name( names::target ), pyr_params.curr_target );
   updateValue< double >( d, Name( names::lambda ), pyr_params.lambda_curr );
@@ -457,7 +454,7 @@ nest::pp_cond_exp_mc_pyr::pp_cond_exp_mc_pyr()
   // comp_names_.resize(NCOMP); --- Fixed size, see comment on definition
   comp_names_[ SOMA ] = Name( "soma" );
   comp_names_[ BASAL ] = Name( "basal" );
-  comp_names_[ APICAL_TD ] = Name( "apical_td" );
+  // comp_names_[ APICAL_TD ] = Name( "apical_td" );
   comp_names_[ APICAL_LAT ] = Name( "apical_lat" );
   PyrArchivingNode< pp_cond_exp_mc_pyr_parameters >::pyr_params = &P_.pyr_params;
 }
@@ -611,6 +608,7 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       }
     }
 
+
     // add incoming spikes to soma
     S_.y_[ State_::I ] += B_.spikes_[ SOMA ].get_value( lag );
 
@@ -676,10 +674,12 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       S_.y_[ S_.idx( BASAL, State_::V_M ) ],
       S_.y_[ S_.idx( SOMA, State_::V_M ) ],
       BASAL );
+    /*
     write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ),
       S_.y_[ S_.idx( APICAL_TD, State_::V_M ) ],
       S_.y_[ S_.idx( SOMA, State_::V_M ) ],
       APICAL_TD );
+    */
     write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ),
       S_.y_[ S_.idx( APICAL_LAT, State_::V_M ) ],
       S_.y_[ S_.idx( SOMA, State_::V_M ) ],

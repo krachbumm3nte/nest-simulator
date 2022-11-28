@@ -85,7 +85,7 @@ private:
   {
     SOMA = 0,
     BASAL,
-    APICAL_TD,
+    //APICAL_TD,
     APICAL_LAT,
     NCOMP
   };
@@ -292,7 +292,7 @@ private:
   {
     SOMA = 0,
     BASAL,
-    APICAL_TD,
+    // APICAL_TD,
     APICAL_LAT,
     NCOMP
   };
@@ -311,7 +311,7 @@ private:
   {
     S_SOMA = MIN_SPIKE_RECEPTOR,
     S_BASAL,
-    S_APICAL_TD,
+    //S_APICAL_TD,
     S_APICAL_LAT,
     SUP_SPIKE_RECEPTOR
   };
@@ -332,7 +332,7 @@ private:
   {
     I_SOMA = MIN_CURR_RECEPTOR,
     I_BASAL,
-    I_APICAL_TD,
+    // I_APICAL_TD,
     I_APICAL_LAT,
     SUP_CURR_RECEPTOR
   };
@@ -539,8 +539,8 @@ private:
 inline double
 pp_cond_exp_mc_pyr_parameters::phi( double u )
 {
-  return gamma * log(1 + exp (beta * (u - theta)));
-  // return phi_max / ( 1.0 + gamma * exp( beta * ( theta - u ) ) );
+  // return gamma * log(1 + exp (beta * (u - theta)));
+  return phi_max / ( 1.0 + gamma * exp( beta * ( theta - u ) ) );
   // TODO: which is the correct activation function for this?
 }
 
@@ -632,8 +632,8 @@ pp_cond_exp_mc_pyr::get_status( DictionaryDatum& d ) const
   ( *receptor_dict_ )[ names::basal ] = S_BASAL;
   ( *receptor_dict_ )[ names::basal_curr ] = I_BASAL;
 
-  ( *receptor_dict_ )[ names::apical_td ] = S_APICAL_TD;
-  ( *receptor_dict_ )[ names::apical_td_curr ] = I_APICAL_TD;
+  //( *receptor_dict_ )[ names::apical_td ] = S_APICAL_TD;
+  //( *receptor_dict_ )[ names::apical_td_curr ] = I_APICAL_TD;
   
   ( *receptor_dict_ )[ names::apical_lat ] = S_APICAL_LAT;
   ( *receptor_dict_ )[ names::apical_lat_curr ] = I_APICAL_LAT;

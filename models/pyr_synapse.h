@@ -239,7 +239,7 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
     double const t_up = start->t_ + dendritic_delay;     // from t_lastspike to t_spike
     double const minus_delta_t_up = t_lastspike_ - t_up; // from 0 to -delta t
     double const minus_t_down = t_up - t_spike;          // from -t_spike to 0
-    double const PI = -tau_s_trace_ * exp( minus_delta_t_up / tau_Delta_ ) * start->dw_;
+    double const PI = tau_s_trace_ * exp( minus_delta_t_up / tau_Delta_ ) * start->dw_;
     PI_integral_ += PI;
     dPI_exp_integral += exp( minus_t_down / tau_Delta_ ) * PI;
     ++start;
@@ -248,6 +248,7 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
   PI_exp_integral_ = ( exp( ( t_lastspike_ - t_spike ) / tau_Delta_ ) * PI_exp_integral_ + dPI_exp_integral );
   weight_ = PI_integral_ - PI_exp_integral_;
   weight_ = init_weight_ + weight_ * eta_;
+
 
   if ( weight_ > Wmax_ )
   {
