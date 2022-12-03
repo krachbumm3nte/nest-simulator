@@ -11,7 +11,7 @@ pyr_params['soma']['g_L'] = 0.6
 
 stim_amp = 10
 
-sim_time = 600
+sim_time = 0.1
 
 p1 = nest.Create(pyr_model, 1, pyr_params)
 mm1 = nest.Create("multimeter", 1, {'record_from': ["V_m.b", "V_m.s", "V_m.a_td", "V_m.a_lat"]})

@@ -3,41 +3,28 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.misc import derivative
 
-
-def p_spike(x):
-    return -1 * (np.exp(-phi(x) * 0.1) - 1)
-
-
-phi_max = 0.15
-gamma = 0.5
-beta = 1/3
-theta = -55
-
-phi_max = 1.5
-gamma = 2
+gamma = 0.1
 beta = 1
-theta = 1
+theta = 3
 
 timestep = 0.1
 
 
-def phi_new(x):
-    return phi_max / (1.0 + gamma * np.exp(beta * (theta - x)))
-
-
 def phi(x):
-    return 1 / (1 + np.exp(-x))
+    return gamma * np.log(1 + np.exp(beta * (x - theta)))
+
+
+gamma_2 = 0.4
+beta_2 = 2
+theta_2 = 3
+
+
+def phi_new(x):
+    return gamma_2 * np.log(1 + np.exp(beta_2 * (x - theta_2)))
 
 
 def rate(x):
-    rate = phi(x)
     return 1 - np.exp(-rate * timestep)
-
-
-def rate_2(x):
-    rate = phi_new(x)
-    return 1 - np.exp(-rate * timestep)
-
 
 x = np.linspace(-2, 3, 500)
 
@@ -46,8 +33,8 @@ fig, ax = plt.subplots(1, 2)
 ax[0].plot(x, phi(x), label="phi (sacramento)")
 ax[0].plot(x, phi_new(x), label="phi")
 
-ax[1].plot(x, rate(x), label="rate sacramento")
-ax[1].plot(x, rate_2(x), label="rate")
+ax[1].plot(x, rate(phi(x)), label="rate sacramento")
+ax[1].plot(x, rate(phi_new(x)), label="rate")
 
 ax[0].set_ylim(0, 1)
 ax[1].set_ylim(0, 1)

@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.misc import derivative
 
+# prove that the scaling for rate generation performed in the urbanczik-neuron is obsolete.
 
 def phi(x):
     return 1 / (1 + np.exp(-x))

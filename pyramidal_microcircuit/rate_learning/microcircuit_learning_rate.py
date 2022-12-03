@@ -1,15 +1,12 @@
-import sys
 import time
 import nest
 import matplotlib.pyplot as plt
 import numpy as np
-from params import *
+from params_rate import *
 from scipy.ndimage import uniform_filter1d
-from utils import *
 import pandas as pd
-from network import Network
+from network_rate import Network
 from pympler.tracker import SummaryTracker
-from matplotlib.ticker import FormatStrFormatter
 from sklearn.metrics import mean_squared_error as mse
 
 cmap_1 = plt.cm.get_cmap('hsv', dims[1]+1)
@@ -34,6 +31,10 @@ out_id = out.get("global_id")
 interneurons = net.intn_pops[0]
 intn_id = interneurons.get("global_id")
 
+print(in_id)
+print(hidden_id)
+print(out_id)
+print(intn_id)
 """conn = nest.GetConnections(net.pyr_pops[1][0], net.intn_pops[0][0])
 conn.eta = 0.00001
 conn.weight = -conn.weight"""
@@ -41,6 +42,7 @@ conn.weight = -conn.weight"""
 # tracker = SummaryTracker()
 np.seterr('raise')
 print("setup complete, running simulations...")
+
 for run in range(n_runs):
     input_index = int(np.random.random() * dims[0])
     # input_index = 0
@@ -50,18 +52,18 @@ for run in range(n_runs):
     nest.Simulate(SIM_TIME)
     t = time.time() - start
     T.append(t)
-    f = pd.DataFrame.from_dict(net.sr_out.events)["senders"].value_counts()
-    out_activity = [f[i] if (i in f) else 0 for i in out_id]
-    f = pd.DataFrame.from_dict(net.sr_hidden.events)["senders"].value_counts()
-    pyr_activity = [f[i] if (i in f) else 0 for i in hidden_id]
-    f = pd.DataFrame.from_dict(net.sr_intn.events)["senders"].value_counts()
-    intn_activity = [f[i] if (i in f) else 0 for i in intn_id]
-    f = pd.DataFrame.from_dict(net.sr_in.events)["senders"].value_counts()
-    in_activity = [f[i] if (i in f) else 0 for i in in_id]
-    net.sr_out.n_events = 0
-    net.sr_hidden.n_events = 0
-    net.sr_intn.n_events = 0
-    net.sr_in.n_events = 0
+    # f = pd.DataFrame.from_dict(net.sr_out.events)["senders"].value_counts()
+    # out_activity = [f[i] if (i in f) else 0 for i in out_id]
+    # f = pd.DataFrame.from_dict(net.sr_hidden.events)["senders"].value_counts()
+    # pyr_activity = [f[i] if (i in f) else 0 for i in hidden_id]
+    # f = pd.DataFrame.from_dict(net.sr_intn.events)["senders"].value_counts()
+    # intn_activity = [f[i] if (i in f) else 0 for i in intn_id]
+    # f = pd.DataFrame.from_dict(net.sr_in.events)["senders"].value_counts()
+    # in_activity = [f[i] if (i in f) else 0 for i in in_id]
+    # net.sr_out.n_events = 0
+    # net.sr_hidden.n_events = 0
+    # net.sr_intn.n_events = 0
+    # net.sr_in.n_events = 0
     # target_spikes = len(np.where(out_activity == target_id)[0])
     # spike_ratio = target_spikes/total_out_spikes
     # accuracy.append(spike_ratio)
@@ -177,8 +179,8 @@ for run in range(n_runs):
         ax4.set_title("Feedback weights")
         ax5.set_title("Feedforward weights")
 
-        ax4.set_ylim(wmin_init, wmax_init)
-        ax5.set_ylim(wmin_init, wmax_init)
+        ax4.set_ylim(wmin, wmax)
+        ax5.set_ylim(wmin, wmax)
         ax1.set_ylim(bottom=0)
         ax3.set_ylim(bottom=0)
 
@@ -188,7 +190,7 @@ for run in range(n_runs):
         plt.savefig(f"{run}_weights.png")
         plt.close()
         plot_duration = time.time() - plot_start
-        print(
-            f"{run}: {np.mean(T[-50:]):.2f}s. spikes: in: {in_activity}, pyr:{pyr_activity}, out:{out_activity}, intn:{intn_activity}")
+        # print(
+        #     f"{run}: {np.mean(T[-50:]):.2f}s. spikes: in: {in_activity}, pyr:{pyr_activity}, out:{out_activity}, intn:{intn_activity}")
         print(
             f"{run}: {np.mean(T[-50:]):.2f}s. plot time:{plot_duration:.2f}s apical error: {apical_err_now:.2f}, intn error: {intn_error_now:.2f}")

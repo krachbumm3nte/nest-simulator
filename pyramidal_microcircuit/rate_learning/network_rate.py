@@ -1,5 +1,5 @@
 import nest
-from params import *
+from params_rate import *
 import numpy as np
 
 
@@ -80,14 +80,14 @@ class Network:
         nest.Connect(self.mm_hidden, self.pyr_pops[1])
         nest.Connect(self.mm_out, self.pyr_pops[2])
 
-        self.sr_in = nest.Create("spike_recorder", 1)
-        self.sr_intn = nest.Create("spike_recorder", 1)
-        self.sr_hidden = nest.Create("spike_recorder", 1)
-        self.sr_out = nest.Create("spike_recorder", 1)
-        nest.Connect(self.pyr_pops[0], self.sr_in)
-        nest.Connect(self.intn_pops[0], self.sr_intn)
-        nest.Connect(self.pyr_pops[1], self.sr_hidden)
-        nest.Connect(self.pyr_pops[2], self.sr_out)
+        # self.sr_in = nest.Create("spike_recorder", 1)
+        # self.sr_intn = nest.Create("spike_recorder", 1)
+        # self.sr_hidden = nest.Create("spike_recorder", 1)
+        # self.sr_out = nest.Create("spike_recorder", 1)
+        # nest.Connect(self.pyr_pops[0], self.sr_in)
+        # nest.Connect(self.intn_pops[0], self.sr_intn)
+        # nest.Connect(self.pyr_pops[1], self.sr_hidden)
+        # nest.Connect(self.pyr_pops[2], self.sr_out)
 
     def set_input(self, indices):
         for i in range(self.dims[0]):

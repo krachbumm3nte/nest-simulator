@@ -1,5 +1,6 @@
 import nest
 import matplotlib.pyplot as plt
+import sys
 from params import *
 
 # pyr_params["lambda"] = pyr_params["lambda"]

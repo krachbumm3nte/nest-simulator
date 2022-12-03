@@ -6,26 +6,26 @@ from pprint import pprint
 resolution = 0.1
 nest.resolution = resolution
 nest.set_verbosity("M_ERROR")
-nest.SetKernelStatus({"local_num_threads": 2})
+nest.SetKernelStatus({"local_num_threads": 1, "use_wfr": False})
 nest.rng_seed = 15
 
 init_self_pred = True
-self_predicting_fb = False
-self_predicting_ff = False
+self_predicting_fb = True
+self_predicting_ff = True
 plasticity_fb = True
 plasticity_ff = True
 
 
-SIM_TIME = 750
+SIM_TIME = 3
 n_runs = 1500
 
 # Network parameters
 dims = [4, 4, 4]
 # dims = [2, 2, 2]
 noise = True
-noise_std = 0.1
+noise_std = 0.3
 target_amp = 10
-stim_amp = 5
+stim_amp = 1
 nudging = True
 
 # Neuron parameters
@@ -56,15 +56,10 @@ pyr_params = {
     'tau_syn': 1,
     'C_m': 1.0,
     'lambda': lam,
-    'phi_max': 0.5,
-    'gamma': 0.5,
+    'phi_max': 1,
+    'gamma': 1,
     'beta': 1,
-    'theta': 0.5,
-    # 'phi_max': 1.5,
-    # 'gamma': 2,
-    # 'beta': 1,
-    # 'theta': 1,
-    't_ref': 0,
+    'theta': 0,
 }
 
 pyr_params['basal']['g'] = g_b_pyr
@@ -83,13 +78,13 @@ intn_params['basal']['g'] = g_b_int
 # wr_ip = nest.Create('weight_recorder')
 # nest.CopyModel('pyr_synapse', 'record_syn_ip', {"weight_recorder": wr_ip})
 
-eta_pyr_int = 0.00001
-eta_int_pyr = 0.000002
-wmin_init, wmax_init = -1, 1
+eta_pyr_int = 0.000237
+eta_int_pyr = 0.0005
+wmin_init, wmax_init = -0.1, 0.1
 wmin, wmax = -1, 1
 syn_params = {
-    'synapse_model': 'pyr_synapse',
-    'tau_Delta': 130,
+    'synapse_model': 'pyr_synapse_rate',
+    'tau_Delta': 30,
     'Wmin': wmin,
     'Wmax': wmax,
     'eta': 0.0,
