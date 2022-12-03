@@ -1,5 +1,5 @@
 /*
- *  pp_cond_exp_mc_pyr.h
+ *  rate_neuron_pyr.h
  *
  *  This file is part of NEST.
  *
@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef PP_COND_EXP_MC_PYR_H
-#define PP_COND_EXP_MC_PYR_H
+#ifndef RATE_NEURON_PYR_H
+#define RATE_NEURON_PYR_H
 
 // Generated includes:
 #include "config.h"
@@ -37,11 +37,11 @@
 #include <gsl/gsl_odeiv.h>
 
 // Includes from nestkernel:
+#include "archiving_node.h"
 #include "connection.h"
 #include "event.h"
 #include "nest_types.h"
-#include "pyr_archiving_node.cpp"
-#include "pyr_archiving_node.h"
+#include "node.h"
 #include "random_generators.h"
 #include "recordables_map.h"
 #include "ring_buffer.h"
@@ -60,24 +60,23 @@ namespace nest
  * @note No point in declaring it inline, since it is called
  *       through a function pointer.
  */
-extern "C" int pp_cond_exp_mc_pyr_dynamics( double, const double*, double*, void* );
+extern "C" int rate_neuron_pyr_dynamics( double, const double*, double*, void* );
 
 /** @BeginDocumentation
-Name: pp_cond_exp_mc_pyr_parameters - Helper class for pp_cond_exp_mc_pyr
+Name: rate_neuron_pyr_parameters - Helper class for rate_neuron_pyr
 
 Description:
-``pp_cond_exp_mc_pyr_parameters`` is a helper class for the ``pp_cond_exp_mc_pyr`` neuron model
+``rate_neuron_pyr_parameters`` is a helper class for the ``rate_neuron_pyr`` neuron model
 that contains all parameters of the model that are needed to compute the weight changes of a
 connected ``urbanczik_synapse`` in the base class PyrArchivingNode.
 
 Author: Jonas Stapmanns, David Dahmen, Jan Hahne
 
-SeeAlso: pp_cond_exp_mc_pyr
+SeeAlso: rate_neuron_pyr
 */
-class pp_cond_exp_mc_pyr_parameters
+class rate_neuron_pyr_parameters
 {
-  friend class pp_cond_exp_mc_pyr;
-  friend class PyrArchivingNode< pp_cond_exp_mc_pyr_parameters >;
+  friend class rate_neuron_pyr;
 
 private:
   //! Compartments, NCOMP is number
@@ -121,7 +120,7 @@ Two-compartment point process neuron with conductance-based synapses
 Description
 +++++++++++
 
-pp_cond_exp_mc_pyr is an implementation of a two-compartment spiking
+rate_neuron_pyr is an implementation of a two-compartment spiking
 point process neuron with conductance-based synapses as it is used
 in [1]_. It is capable of connecting to an :doc:`Urbanczik synapse
 <urbanczik_synapse>`.
@@ -249,15 +248,15 @@ urbanczik_synapse
 
 EndUserDocs */
 
-class pp_cond_exp_mc_pyr : public PyrArchivingNode< pp_cond_exp_mc_pyr_parameters >
+class rate_neuron_pyr : public ArchivingNode
 {
 
   // Boilerplate function declarations --------------------------------
 
 public:
-  pp_cond_exp_mc_pyr();
-  pp_cond_exp_mc_pyr( const pp_cond_exp_mc_pyr& );
-  ~pp_cond_exp_mc_pyr();
+  rate_neuron_pyr();
+  rate_neuron_pyr( const rate_neuron_pyr& );
+  ~rate_neuron_pyr();
 
   /**
    * Import sets of overloaded virtual functions.
@@ -341,10 +340,10 @@ private:
 
   // Friends --------------------------------------------------------
 
-  friend int pp_cond_exp_mc_pyr_dynamics( double, const double*, double*, void* );
+  friend int rate_neuron_pyr_dynamics( double, const double*, double*, void* );
 
-  friend class RecordablesMap< pp_cond_exp_mc_pyr >;
-  friend class UniversalDataLogger< pp_cond_exp_mc_pyr >;
+  friend class RecordablesMap< rate_neuron_pyr >;
+  friend class UniversalDataLogger< rate_neuron_pyr >;
 
 
   // Parameters ------------------------------------------------------
@@ -357,7 +356,7 @@ private:
    * in a C++ struct with member functions, as long as we just pass
    * it by void* from C++ to C++ function. The struct must be public,
    * though, since the iteration function is a function with C-linkage,
-   * whence it cannot be a member function of pp_cond_exp_mc_pyr.
+   * whence it cannot be a member function of rate_neuron_pyr.
    * @note One could achieve proper encapsulation by an extra level
    *       of indirection: Define the iteration function as a member
    *       function, plus an additional wrapper function with C linkage.
@@ -372,7 +371,7 @@ private:
     double t_ref;        //!< Refractory period in ms
     double I_e[ NCOMP ]; //!< Constant Current in pA
 
-    pp_cond_exp_mc_pyr_parameters pyr_params;
+    rate_neuron_pyr_parameters pyr_params;
 
     /** Dead time in ms. */
     double dead_time_;
@@ -439,6 +438,12 @@ public:
     }
   };
 
+  double
+  get_V_m(int comp)
+  {
+    return S_.y_[ S_.idx( comp, State_::V_M ) ];
+  }
+
 private:
   // Internal buffers --------------------------------------------------------
 
@@ -447,12 +452,12 @@ private:
    */
   struct Buffers_
   {
-    Buffers_( pp_cond_exp_mc_pyr& ); //!< Sets buffer pointers to 0
+    Buffers_( rate_neuron_pyr& ); //!< Sets buffer pointers to 0
     //! Sets buffer pointers to 0
-    Buffers_( const Buffers_&, pp_cond_exp_mc_pyr& );
+    Buffers_( const Buffers_&, rate_neuron_pyr& );
 
     //! Logger for all analog data
-    UniversalDataLogger< pp_cond_exp_mc_pyr > logger_;
+    UniversalDataLogger< rate_neuron_pyr > logger_;
 
     /** buffers and sums up incoming spikes/currents
      *  @note Using STL vectors here to ensure initialization.
@@ -517,16 +522,6 @@ private:
     return Time::get_resolution().get_ms() * S_.r_;
   }
 
-  double
-  get_V_m(int comp)
-  {
-    double v =  S_.y_[ S_.idx( comp , State_::V_M ) ];
-    std::cout << "vcomp: " << this->get_node_id() << ", " << comp << ", " << v << std::endl;
-    if (std::isnan(v)) {
-      throw KernelException();
-    }
-    return v;
-  }
 
   // Data members ----------------------------------------------------
 
@@ -542,29 +537,22 @@ private:
   // static DictionaryDatum receptor_dict_;
 
   //! Mapping of recordables names to access functions
-  static RecordablesMap< pp_cond_exp_mc_pyr > recordablesMap_;
+  static RecordablesMap< rate_neuron_pyr > recordablesMap_;
 };
 
 
-// Inline functions of pp_cond_exp_mc_pyr_parameters
+// Inline functions of rate_neuron_pyr_parameters
 inline double
-pp_cond_exp_mc_pyr_parameters::phi( double u )
+rate_neuron_pyr_parameters::phi( double u )
 {
   return gamma * log(1 + exp (beta * (u - theta)));
   // return phi_max / ( 1.0 + gamma * exp( beta * ( theta - u ) ) );
   // TODO: which is the correct activation function for this?
 }
 
-inline double
-pp_cond_exp_mc_pyr_parameters::h( double u )
-{
-  return 15.0 * beta / ( 1.0 + ( 1.0 / gamma ) * exp( -beta * ( theta - u ) ) );
-}
-
-
-// Inline functions of pp_cond_exp_mc_pyr
+// Inline functions of rate_neuron_pyr
 inline port
-pp_cond_exp_mc_pyr::send_test_event( Node& target, rport receptor_type, synindex, bool )
+rate_neuron_pyr::send_test_event( Node& target, rport receptor_type, synindex, bool )
 {
   SpikeEvent e;
   e.set_sender( *this );
@@ -572,7 +560,7 @@ pp_cond_exp_mc_pyr::send_test_event( Node& target, rport receptor_type, synindex
 }
 
 inline port
-pp_cond_exp_mc_pyr::handles_test_event( SpikeEvent&, rport receptor_type )
+rate_neuron_pyr::handles_test_event( SpikeEvent&, rport receptor_type )
 {
   if ( receptor_type < MIN_SPIKE_RECEPTOR || receptor_type >= SUP_SPIKE_RECEPTOR )
   {
@@ -588,8 +576,10 @@ pp_cond_exp_mc_pyr::handles_test_event( SpikeEvent&, rport receptor_type )
   return receptor_type - MIN_SPIKE_RECEPTOR;
 }
 
+
+
 inline port
-pp_cond_exp_mc_pyr::handles_test_event( CurrentEvent&, rport receptor_type )
+rate_neuron_pyr::handles_test_event( CurrentEvent&, rport receptor_type )
 {
   if ( receptor_type < MIN_CURR_RECEPTOR || receptor_type >= SUP_CURR_RECEPTOR )
   {
@@ -606,7 +596,7 @@ pp_cond_exp_mc_pyr::handles_test_event( CurrentEvent&, rport receptor_type )
 }
 
 inline port
-pp_cond_exp_mc_pyr::handles_test_event( DataLoggingRequest& dlr, rport receptor_type )
+rate_neuron_pyr::handles_test_event( DataLoggingRequest& dlr, rport receptor_type )
 {
   if ( receptor_type != 0 )
   {
@@ -623,11 +613,10 @@ pp_cond_exp_mc_pyr::handles_test_event( DataLoggingRequest& dlr, rport receptor_
 }
 
 inline void
-pp_cond_exp_mc_pyr::get_status( DictionaryDatum& d ) const
+rate_neuron_pyr::get_status( DictionaryDatum& d ) const
 {
   P_.get( d );
   S_.get( d );
-  PyrArchivingNode< pp_cond_exp_mc_pyr_parameters >::get_status( d );
 
   ( *d )[ names::recordables ] = recordablesMap_.get_list();
 
@@ -653,18 +642,12 @@ pp_cond_exp_mc_pyr::get_status( DictionaryDatum& d ) const
 }
 
 inline void
-pp_cond_exp_mc_pyr::set_status( const DictionaryDatum& d )
+rate_neuron_pyr::set_status( const DictionaryDatum& d )
 {
   Parameters_ ptmp = P_; // temporary copy in case of errors
   ptmp.set( d );         // throws if BadProperty
   State_ stmp = S_;      // temporary copy in case of errors
   stmp.set( d, ptmp );   // throws if BadProperty
-
-  // We now know that (ptmp, stmp) are consistent. We do not
-  // write them back to (P_, S_) before we are also sure that
-  // the properties to be set in the parent class are internally
-  // consistent.
-  PyrArchivingNode< pp_cond_exp_mc_pyr_parameters >::set_status( d );
 
   // if we get here, temporaries contain consistent set of properties
   P_ = ptmp;
@@ -675,4 +658,4 @@ pp_cond_exp_mc_pyr::set_status( const DictionaryDatum& d )
 
 
 #endif // HAVE_GSL
-#endif // PP_COND_EXP_MC_PYR_H
+#endif // RATE_NEURON_PYR_H

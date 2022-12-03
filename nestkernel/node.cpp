@@ -489,6 +489,12 @@ nest::Node::get_tau_syn_in( int )
   throw UnexpectedEvent();
 }
 
+double
+nest::Node::get_V_m( int )
+{
+  throw UnexpectedEvent();
+}
+
 void
 Node::event_hook( DSSpikeEvent& e )
 {

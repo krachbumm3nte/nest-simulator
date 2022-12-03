@@ -696,6 +696,7 @@ public:
   virtual double get_tau_s( int comp );
   virtual double get_tau_syn_ex( int comp );
   virtual double get_tau_syn_in( int comp );
+  virtual double get_V_m (int comp);
 
   /**
    * Modify Event object parameters during event delivery.

@@ -109,6 +109,7 @@ set( models_sources
     rate_connection_instantaneous.h
     rate_neuron_opn.h rate_neuron_opn_impl.h
     rate_neuron_ipn.h rate_neuron_ipn_impl.h
+    rate_neuron_pyr.h rate_neuron_pyr.cpp
     rate_transformer_node.h rate_transformer_node_impl.h
     siegert_neuron.h siegert_neuron.cpp
     sigmoid_rate.h sigmoid_rate.cpp

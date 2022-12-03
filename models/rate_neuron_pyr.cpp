@@ -1,5 +1,5 @@
 /*
- *  pp_cond_exp_mc_pyr.cpp
+ *  rate_neuron_pyr.cpp
  *
  *  This file is part of NEST.
  *
@@ -21,7 +21,7 @@
  */
 
 
-#include "pp_cond_exp_mc_pyr.h"
+#include "rate_neuron_pyr.h"
 
 #ifdef HAVE_GSL
 
@@ -49,21 +49,21 @@
    He pointed out that the problem is avoided by defining the comp_names_
    vector with its final size. See also #348.
 */
-std::vector< Name > nest::pp_cond_exp_mc_pyr::comp_names_( NCOMP );
+std::vector< Name > nest::rate_neuron_pyr::comp_names_( NCOMP );
 
 /* ----------------------------------------------------------------
  * Receptor dictionary
  * ---------------------------------------------------------------- */
 
 // leads to seg fault on exit, see #328
-// DictionaryDatum nest::pp_cond_exp_mc_pyr::receptor_dict_ = new
+// DictionaryDatum nest::rate_neuron_pyr::receptor_dict_ = new
 // Dictionary();
 
 /* ----------------------------------------------------------------
  * Recordables map
  * ---------------------------------------------------------------- */
 
-nest::RecordablesMap< nest::pp_cond_exp_mc_pyr > nest::pp_cond_exp_mc_pyr::recordablesMap_;
+nest::RecordablesMap< nest::rate_neuron_pyr > nest::rate_neuron_pyr::recordablesMap_;
 
 namespace nest
 {
@@ -71,16 +71,14 @@ namespace nest
 
 template <>
 void
-RecordablesMap< pp_cond_exp_mc_pyr >::create()
+RecordablesMap< rate_neuron_pyr >::create()
 {
-  insert_(
-    Name( "V_m.s" ), &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::SOMA > );
-  insert_(
-    Name( "V_m.b" ), &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::BASAL > );
+  insert_( Name( "V_m.s" ), &rate_neuron_pyr::get_y_elem_< rate_neuron_pyr::State_::V_M, rate_neuron_pyr::SOMA > );
+  insert_( Name( "V_m.b" ), &rate_neuron_pyr::get_y_elem_< rate_neuron_pyr::State_::V_M, rate_neuron_pyr::BASAL > );
   // insert_( Name( "V_m.a_td" ),
-  //   &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::APICAL_TD > );
-  insert_( Name( "V_m.a_lat" ),
-    &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::APICAL_LAT > );
+  //   &rate_neuron_pyr::get_y_elem_< rate_neuron_pyr::State_::V_M, rate_neuron_pyr::APICAL_TD > );
+  insert_(
+    Name( "V_m.a_lat" ), &rate_neuron_pyr::get_y_elem_< rate_neuron_pyr::State_::V_M, rate_neuron_pyr::APICAL_LAT > );
 }
 }
 
@@ -89,15 +87,15 @@ RecordablesMap< pp_cond_exp_mc_pyr >::create()
  * ---------------------------------------------------------------- */
 
 extern "C" int
-nest::pp_cond_exp_mc_pyr_dynamics( double, const double y[], double f[], void* pnode )
+nest::rate_neuron_pyr_dynamics( double, const double y[], double f[], void* pnode )
 {
   // some shorthands
-  typedef nest::pp_cond_exp_mc_pyr N;
-  typedef nest::pp_cond_exp_mc_pyr::State_ S;
+  typedef nest::rate_neuron_pyr N;
+  typedef nest::rate_neuron_pyr::State_ S;
 
   // get access to node so we can work almost as in a member function
   assert( pnode );
-  const nest::pp_cond_exp_mc_pyr& node = *( reinterpret_cast< nest::pp_cond_exp_mc_pyr* >( pnode ) );
+  const nest::rate_neuron_pyr& node = *( reinterpret_cast< nest::rate_neuron_pyr* >( pnode ) );
 
   // computations written quite explicitly for clarity, assume compile
   // will optimized most stuff away ... TODO: understand the extent of this
@@ -148,7 +146,7 @@ nest::pp_cond_exp_mc_pyr_dynamics( double, const double y[], double f[], void* p
  * Default constructors defining default parameters and state
  * ---------------------------------------------------------------- */
 
-nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_()
+nest::rate_neuron_pyr::Parameters_::Parameters_()
   : t_ref( 3.0 ) // ms
 {
   // parameters for the transfer function
@@ -191,7 +189,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_()
   I_e[ APICAL_LAT ] = 0.0;            // pA
 }
 
-nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_( const Parameters_& p )
+nest::rate_neuron_pyr::Parameters_::Parameters_( const Parameters_& p )
   : t_ref( p.t_ref )
 {
   pyr_params.phi_max = p.pyr_params.phi_max;
@@ -216,8 +214,8 @@ nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_( const Parameters_& p )
   }
 }
 
-nest::pp_cond_exp_mc_pyr::Parameters_&
-nest::pp_cond_exp_mc_pyr::Parameters_::operator=( const Parameters_& p )
+nest::rate_neuron_pyr::Parameters_&
+nest::rate_neuron_pyr::Parameters_::operator=( const Parameters_& p )
 {
   assert( this != &p ); // would be bad logical error in program
 
@@ -244,7 +242,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::operator=( const Parameters_& p )
 }
 
 
-nest::pp_cond_exp_mc_pyr::State_::State_( const Parameters_& p )
+nest::rate_neuron_pyr::State_::State_( const Parameters_& p )
   : r_( 0 )
 {
   // for simplicity, we first initialize all values to 0,
@@ -259,7 +257,7 @@ nest::pp_cond_exp_mc_pyr::State_::State_( const Parameters_& p )
   }
 }
 
-nest::pp_cond_exp_mc_pyr::State_::State_( const State_& s )
+nest::rate_neuron_pyr::State_::State_( const State_& s )
   : r_( s.r_ )
 {
   for ( size_t i = 0; i < STATE_VEC_SIZE; ++i )
@@ -268,8 +266,8 @@ nest::pp_cond_exp_mc_pyr::State_::State_( const State_& s )
   }
 }
 
-nest::pp_cond_exp_mc_pyr::State_&
-nest::pp_cond_exp_mc_pyr::State_::operator=( const State_& s )
+nest::rate_neuron_pyr::State_&
+nest::rate_neuron_pyr::State_::operator=( const State_& s )
 {
   r_ = s.r_;
   for ( size_t i = 0; i < STATE_VEC_SIZE; ++i )
@@ -279,7 +277,7 @@ nest::pp_cond_exp_mc_pyr::State_::operator=( const State_& s )
   return *this;
 }
 
-nest::pp_cond_exp_mc_pyr::Buffers_::Buffers_( pp_cond_exp_mc_pyr& n )
+nest::rate_neuron_pyr::Buffers_::Buffers_( rate_neuron_pyr& n )
   : logger_( n )
   , s_( nullptr )
   , c_( nullptr )
@@ -289,7 +287,7 @@ nest::pp_cond_exp_mc_pyr::Buffers_::Buffers_( pp_cond_exp_mc_pyr& n )
   // init_buffers_().
 }
 
-nest::pp_cond_exp_mc_pyr::Buffers_::Buffers_( const Buffers_&, pp_cond_exp_mc_pyr& n )
+nest::rate_neuron_pyr::Buffers_::Buffers_( const Buffers_&, rate_neuron_pyr& n )
   : logger_( n )
   , s_( nullptr )
   , c_( nullptr )
@@ -304,7 +302,7 @@ nest::pp_cond_exp_mc_pyr::Buffers_::Buffers_( const Buffers_&, pp_cond_exp_mc_py
  * ---------------------------------------------------------------- */
 
 void
-nest::pp_cond_exp_mc_pyr::Parameters_::get( DictionaryDatum& d ) const
+nest::rate_neuron_pyr::Parameters_::get( DictionaryDatum& d ) const
 {
   def< double >( d, names::t_ref, t_ref );
   def< double >( d, names::phi_max, pyr_params.phi_max );
@@ -338,7 +336,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::get( DictionaryDatum& d ) const
 }
 
 void
-nest::pp_cond_exp_mc_pyr::Parameters_::set( const DictionaryDatum& d )
+nest::rate_neuron_pyr::Parameters_::set( const DictionaryDatum& d )
 {
   // allow setting the membrane potential
   updateValue< double >( d, names::t_ref, t_ref );
@@ -398,7 +396,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::set( const DictionaryDatum& d )
 }
 
 void
-nest::pp_cond_exp_mc_pyr::State_::get( DictionaryDatum& d ) const
+nest::rate_neuron_pyr::State_::get( DictionaryDatum& d ) const
 {
   // we assume here that State_::get() always is called after
   // Parameters_::get(), so that the per-compartment dictionaries exist
@@ -412,7 +410,7 @@ nest::pp_cond_exp_mc_pyr::State_::get( DictionaryDatum& d ) const
 }
 
 void
-nest::pp_cond_exp_mc_pyr::State_::set( const DictionaryDatum& d, const Parameters_& )
+nest::rate_neuron_pyr::State_::set( const DictionaryDatum& d, const Parameters_& )
 {
   // extract from sub-dictionaries
   for ( size_t n = 0; n < NCOMP; ++n )
@@ -430,8 +428,8 @@ nest::pp_cond_exp_mc_pyr::State_::set( const DictionaryDatum& d, const Parameter
  * Default and copy constructor for node, and destructor
  * ---------------------------------------------------------------- */
 
-nest::pp_cond_exp_mc_pyr::pp_cond_exp_mc_pyr()
-  : PyrArchivingNode< pp_cond_exp_mc_pyr_parameters >()
+nest::rate_neuron_pyr::rate_neuron_pyr()
+  : ArchivingNode()
   , P_()
   , S_( P_ )
   , B_( *this )
@@ -444,19 +442,17 @@ nest::pp_cond_exp_mc_pyr::pp_cond_exp_mc_pyr()
   comp_names_[ BASAL ] = Name( "basal" );
   // comp_names_[ APICAL_TD ] = Name( "apical_td" );
   comp_names_[ APICAL_LAT ] = Name( "apical_lat" );
-  PyrArchivingNode< pp_cond_exp_mc_pyr_parameters >::pyr_params = &P_.pyr_params;
 }
 
-nest::pp_cond_exp_mc_pyr::pp_cond_exp_mc_pyr( const pp_cond_exp_mc_pyr& n )
-  : PyrArchivingNode< pp_cond_exp_mc_pyr_parameters >( n )
+nest::rate_neuron_pyr::rate_neuron_pyr( const rate_neuron_pyr& n )
+  : ArchivingNode( n )
   , P_( n.P_ )
   , S_( n.S_ )
   , B_( n.B_, *this )
 {
-  PyrArchivingNode< pp_cond_exp_mc_pyr_parameters >::pyr_params = &P_.pyr_params;
 }
 
-nest::pp_cond_exp_mc_pyr::~pp_cond_exp_mc_pyr()
+nest::rate_neuron_pyr::~rate_neuron_pyr()
 {
   // GSL structs may not have been allocated, so we need to protect destruction
   if ( B_.s_ )
@@ -478,7 +474,7 @@ nest::pp_cond_exp_mc_pyr::~pp_cond_exp_mc_pyr()
  * ---------------------------------------------------------------- */
 
 void
-nest::pp_cond_exp_mc_pyr::init_buffers_()
+nest::rate_neuron_pyr::init_buffers_()
 {
   B_.spikes_.resize( NUM_SPIKE_RECEPTORS );
   for ( size_t n = 0; n < NUM_SPIKE_RECEPTORS; ++n )
@@ -493,7 +489,6 @@ nest::pp_cond_exp_mc_pyr::init_buffers_()
   }
 
   B_.logger_.reset();
-  ArchivingNode::clear_history();
 
   B_.step_ = Time::get_resolution().get_ms();
   B_.IntegrationStep_ = B_.step_;
@@ -525,7 +520,7 @@ nest::pp_cond_exp_mc_pyr::init_buffers_()
     gsl_odeiv_evolve_reset( B_.e_ );
   }
 
-  B_.sys_.function = pp_cond_exp_mc_pyr_dynamics;
+  B_.sys_.function = rate_neuron_pyr_dynamics;
   B_.sys_.jacobian = nullptr;
   B_.sys_.dimension = State_::STATE_VEC_SIZE;
   B_.sys_.params = reinterpret_cast< void* >( this );
@@ -536,7 +531,7 @@ nest::pp_cond_exp_mc_pyr::init_buffers_()
 }
 
 void
-nest::pp_cond_exp_mc_pyr::pre_run_hook()
+nest::rate_neuron_pyr::pre_run_hook()
 {
   // ensures initialization in case mm connected after Simulate
   B_.logger_.init();
@@ -548,7 +543,7 @@ nest::pp_cond_exp_mc_pyr::pre_run_hook()
   // since t_ref >= 0, this can only fail in error
   assert( V_.RefractoryCounts_ >= 0 );
 
-  assert( ( int ) NCOMP == ( int ) pp_cond_exp_mc_pyr_parameters::NCOMP );
+  assert( ( int ) NCOMP == ( int ) rate_neuron_pyr_parameters::NCOMP );
 }
 
 
@@ -557,7 +552,7 @@ nest::pp_cond_exp_mc_pyr::pre_run_hook()
  * ---------------------------------------------------------------- */
 
 void
-nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const long to )
+nest::rate_neuron_pyr::update( Time const& origin, const long from, const long to )
 {
 
   assert( to >= 0 and ( delay ) from < kernel().connection_manager.get_min_delay() );
@@ -594,6 +589,7 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       {
         throw GSLSolverFailure( get_name(), status );
       }
+      std::cout << "neuron state: " << S_.y_[ State_::idx( 1, State_::V_M ) ] << ", " << S_.y_[ State_::idx( 0, State_::V_M ) ] << "\n";
     }
 
 
@@ -606,79 +602,10 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       S_.y_[ State_::idx( n, State_::I ) ] += B_.spikes_[ n ].get_value( lag );
     }
 
-
-    SpikeEvent se;
-    se.set_sender(*this);
-    kernel().event_delivery_manager.send( *this, se, lag );
-    /*
-
-    // Declaration outside if statement because we need it later
-    unsigned long n_spikes = 0;
-
-    if ( S_.r_ == 0 )
-    {
-      // Neuron not refractory
-
-      // There is no reset of the membrane potential after a spike
-      double rate = P_.pyr_params.phi( S_.y_[ State_::V_M ] );
-
-      if ( rate > 0.0 )
-      {
-
-        if ( P_.t_ref > 0.0 )
-        {
-          // Draw random number and compare to prob to have a spike
-          if ( V_.rng_->drand() <= -numerics::expm1( -rate * V_.h_ ) )
-          {
-            n_spikes = 1;
-          }
-        }
-        else
-        {
-          // Draw Poisson random number of spikes
-          poisson_distribution::param_type param( rate * V_.h_ );
-          n_spikes = V_.poisson_dist_( V_.rng_, param );
-        }
-
-        if ( n_spikes > 0 ) // Is there a spike? Then set the new dead time.
-        {
-          // Set dead time interval according to parameters
-          S_.r_ = V_.RefractoryCounts_;
-
-          // And send the spike event
-          SpikeEvent se;
-          se.set_multiplicity( n_spikes );
-          kernel().event_delivery_manager.send( *this, se, lag );
-
-          // Set spike time in order to make plasticity rules work
-          for ( unsigned int i = 0; i < n_spikes; i++ )
-          {
-            set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
-          }
-        }
-      } // if (rate > 0.0)
-    }
-    else // Neuron is within dead time
-    {
-      --S_.r_;
-    }*/
-
-
-    // Store dendritic membrane potential for Urbanczik-Senn plasticity
-    write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ),
-      S_.y_[ S_.idx( BASAL, State_::V_M ) ],
-      S_.y_[ S_.idx( SOMA, State_::V_M ) ],
-      BASAL );
-    /*
-    write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ),
-      S_.y_[ S_.idx( APICAL_TD, State_::V_M ) ],
-      S_.y_[ S_.idx( SOMA, State_::V_M ) ],
-      APICAL_TD );
-    */
-    write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ),
-      S_.y_[ S_.idx( APICAL_LAT, State_::V_M ) ],
-      S_.y_[ S_.idx( SOMA, State_::V_M ) ],
-      APICAL_LAT );
+    SpikeEvent ce;
+    // TODO: Why the hell do I need to multiply by g_L? it gets me the right results, but it doesnt make sense...
+    ce.set_weight( P_.pyr_params.phi( S_.y_[ S_.idx( SOMA, State_::V_M ) ] ) );
+    kernel().event_delivery_manager.send( *this, ce, lag );
 
     // set new input currents
     for ( size_t n = 0; n < NCOMP; ++n )
@@ -712,7 +639,7 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
 }
 
 void
-nest::pp_cond_exp_mc_pyr::handle( SpikeEvent& e )
+nest::rate_neuron_pyr::handle( SpikeEvent& e )
 {
   assert( e.get_delay_steps() > 0 );
   assert( 0 <= e.get_rport() and e.get_rport() < 2 * NCOMP );
@@ -722,7 +649,7 @@ nest::pp_cond_exp_mc_pyr::handle( SpikeEvent& e )
 }
 
 void
-nest::pp_cond_exp_mc_pyr::handle( CurrentEvent& e )
+nest::rate_neuron_pyr::handle( CurrentEvent& e )
 {
   assert( e.get_delay_steps() > 0 );
   // TODO: not 100% clean, should look at MIN, SUP
@@ -734,7 +661,7 @@ nest::pp_cond_exp_mc_pyr::handle( CurrentEvent& e )
 }
 
 void
-nest::pp_cond_exp_mc_pyr::handle( DataLoggingRequest& e )
+nest::rate_neuron_pyr::handle( DataLoggingRequest& e )
 {
   B_.logger_.handle( e );
 }

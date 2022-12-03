@@ -79,10 +79,11 @@
 #include "mcculloch_pitts_neuron.h"
 #include "parrot_neuron.h"
 #include "parrot_neuron_ps.h"
-#include "pp_cond_exp_mc_urbanczik.h"
 #include "pp_cond_exp_mc_pyr.h"
+#include "pp_cond_exp_mc_urbanczik.h"
 #include "pp_pop_psc_delta.h"
 #include "pp_psc_delta.h"
+#include "rate_neuron_pyr.h"
 #include "siegert_neuron.h"
 #include "sigmoid_rate.h"
 #include "sigmoid_rate_gg_1998.h"
@@ -128,6 +129,7 @@
 #include "ht_synapse.h"
 #include "jonke_synapse.h"
 #include "pyr_synapse.h"
+#include "pyr_synapse_rate.h"
 #include "quantal_stp_synapse.h"
 #include "quantal_stp_synapse_impl.h"
 #include "rate_connection_delayed.h"
@@ -302,6 +304,7 @@ ModelsModule::init( SLIInterpreter* )
   kernel().model_manager.register_node_model< siegert_neuron >( "siegert_neuron" );
   kernel().model_manager.register_node_model< pp_cond_exp_mc_urbanczik >( "pp_cond_exp_mc_urbanczik" );
   kernel().model_manager.register_node_model< pp_cond_exp_mc_pyr >( "pp_cond_exp_mc_pyr" );
+  kernel().model_manager.register_node_model< rate_neuron_pyr >( "rate_neuron_pyr" );
 #endif
 
 #ifdef HAVE_MUSIC
@@ -324,6 +327,7 @@ ModelsModule::init( SLIInterpreter* )
   register_connection_model< jonke_synapse >( "jonke_synapse" );
   register_connection_model< pyr_synapse >(
     "pyr_synapse", default_connection_model_flags | RegisterConnectionModelFlags::REQUIRES_URBANCZIK_ARCHIVING );
+  register_connection_model< pyr_synapse_rate >( "pyr_synapse_rate" );
   register_connection_model< quantal_stp_synapse >( "quantal_stp_synapse" );
   register_connection_model< static_synapse >( "static_synapse" );
   register_connection_model< static_synapse_hom_w >( "static_synapse_hom_w" );

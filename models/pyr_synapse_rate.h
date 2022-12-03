@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef PYR_SYNAPSE_H
-#define PYR_SYNAPSE_H
+#ifndef PYR_SYNAPSE_RATE_H
+#define PYR_SYNAPSE_RATE_H
 
 // C++ includes:
 #include <cmath>
@@ -104,7 +104,7 @@ EndUserDocs */
 // target index addressing) derived from generic connection template
 
 template < typename targetidentifierT >
-class pyr_synapse : public Connection< targetidentifierT >
+class pyr_synapse_rate : public Connection< targetidentifierT >
 {
 
 public:
@@ -115,15 +115,15 @@ public:
    * Default Constructor.
    * Sets default values for all parameters. Needed by GenericConnectorModel.
    */
-  pyr_synapse();
+  pyr_synapse_rate();
 
 
   /**
    * Copy constructor.
    * Needs to be defined properly in order for GenericConnector to work.
    */
-  pyr_synapse( const pyr_synapse& ) = default;
-  pyr_synapse& operator=( const pyr_synapse& ) = default;
+  pyr_synapse_rate( const pyr_synapse_rate& ) = default;
+  pyr_synapse_rate& operator=( const pyr_synapse_rate& ) = default;
 
   // Explicitly declare all methods inherited from the dependent base
   // ConnectionBase. This avoids explicit name prefixes in all places these
@@ -152,6 +152,8 @@ public:
   void send( Event& e, thread t, const CommonSynapseProperties& cp );
 
 
+  double phi( double x );
+
   class ConnTestDummyNode : public ConnTestDummyNodeBase
   {
   public:
@@ -172,7 +174,7 @@ public:
 
     ConnectionBase::check_connection_( dummy_target, s, t, receptor_type );
 
-    t.register_stdp_connection( t_lastspike_ - get_delay(), get_delay() );
+    t.register_stdp_connection( -1 - get_delay(), get_delay() );
   }
 
   void
@@ -184,18 +186,23 @@ public:
 private:
   // data members of each connection
   double weight_;
+  double tilde_w;
   double init_weight_;
   double tau_Delta_;
   double eta_;
   double Wmin_;
   double Wmax_;
-  double PI_integral_;
-  double PI_exp_integral_;
-  double tau_L_trace_;
-  double tau_s_trace_;
-
-  double t_lastspike_;
 };
+
+template < typename targetidentifierT >
+inline double
+pyr_synapse_rate< targetidentifierT >::phi( double x )
+{
+  double gamma = 1;
+  double beta = 1;
+  double theta = 0;
+  return gamma * log( 1 + exp( beta * ( x - theta ) ) );
+}
 
 
 /**
@@ -206,50 +213,38 @@ private:
  */
 template < typename targetidentifierT >
 inline void
-pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseProperties& )
+pyr_synapse_rate< targetidentifierT >::send( Event& e, thread t, const CommonSynapseProperties& )
 {
-  double t_spike = e.get_stamp().get_ms();
-  // use accessor functions (inherited from Connection< >) to obtain delay and target
+
   Node* target = get_target( t );
-  double dendritic_delay = get_delay();
-
-  // get spike history in relevant range (t1, t2] from postsynaptic neuron
-  std::deque< histentry_extended >::iterator start;
-  std::deque< histentry_extended >::iterator finish;
-
+  
+  Node* sender = kernel().node_manager.get_node_or_proxy(e.retrieve_sender_node_id_from_source_table());
   int rport = get_rport();
+  double V_dend = target->get_V_m( rport );
+  double delta_tilde_w;
+  double v_m_sender = sender->get_V_m(0);
+  double phi_sender = phi(v_m_sender);
 
-  if ( rport < 1 or rport > 4 )
+  if ( rport == 1 )
   {
-    std::cout << "connection on port " << rport << " to neuron ";
-    std::cout << e.retrieve_sender_node_id_from_source_table() << "\n";
-    // throw IllegalConnection("Urbanczik synapse can only connect to dendrites!");
+    double V_som = target->get_V_m( 0 );
+    double const g_L = target->get_g_L( rport );
+    double g_D = target->get_g( 1 );
+    double g_A = target->get_g( 2 );
+    std::cout << "vars: " << g_L << ", " << g_D << ", " << g_A << std::endl;
+    double V_W_star = phi( ( g_D * V_dend ) / ( g_L + g_D + g_A ) );
+
+    delta_tilde_w = -tilde_w + ( phi( V_som ) - V_W_star ) * phi_sender;
   }
-
-
-  // const int comp = rport - 1; // compartment number linearly relates to receptor port
-  target->get_urbanczik_history( t_lastspike_ - dendritic_delay, t_spike - dendritic_delay, &start, &finish, rport );
-  // double const g_L = target->get_g_L( comp );
-  // double const tau_L = target->get_tau_L( 0 );
-  // double const C_m = target->get_C_m( comp );
-  // double const tau_s = target->get_tau_s( 0 );
-  double dPI_exp_integral = 0.0;
-
-  while ( start != finish )
+  else
   {
-    double const t_up = start->t_ + dendritic_delay;     // from t_lastspike to t_spike
-    double const minus_delta_t_up = t_lastspike_ - t_up; // from 0 to -delta t
-    double const minus_t_down = t_up - t_spike;          // from -t_spike to 0
-    double const PI = tau_s_trace_ * exp( minus_delta_t_up / tau_Delta_ ) * start->dw_;
-    PI_integral_ += PI;
-    dPI_exp_integral += exp( minus_t_down / tau_Delta_ ) * PI;
-    ++start;
+    delta_tilde_w = -tilde_w - V_dend * phi_sender;
   }
+  std::cout << "a: " << rport << ", " << tilde_w << ", " << V_dend << ", " << delta_tilde_w << std::endl;
+  // TODO: generalize delta_t
+  tilde_w = tilde_w + ( 0.1 / tau_Delta_ ) * delta_tilde_w;
 
-  PI_exp_integral_ = ( exp( ( t_lastspike_ - t_spike ) / tau_Delta_ ) * PI_exp_integral_ + dPI_exp_integral );
-  weight_ = PI_integral_ - PI_exp_integral_;
-  weight_ = init_weight_ + weight_ * eta_;
-
+  weight_ = weight_ + 0.1 * eta_ * tilde_w;
 
   if ( weight_ > Wmax_ )
   {
@@ -260,41 +255,31 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
     weight_ = Wmin_;
   }
 
+
+  std::cout << "b: " << phi_sender << ", " << weight_ << ", " << tilde_w << ", " << v_m_sender << std::endl << std::endl; 
   e.set_receiver( *target );
-  e.set_weight( weight_ );
-  // use accessor functions (inherited from Connection< >) to obtain delay in steps and rport
-  e.set_delay_steps( get_delay_steps() );
+  e.set_weight( weight_ * phi_sender);
   e.set_rport( rport );
   e();
-
-  // compute the trace of the presynaptic spike train
-  // tau_L_trace_ = tau_L_trace_ * std::exp( ( t_lastspike_ - t_spike ) / tau_L ) + 1.0;
-  tau_s_trace_ = tau_s_trace_ * std::exp( ( t_lastspike_ - t_spike ) / tau_Delta_ ) + 1.0;
-
-  t_lastspike_ = t_spike;
 }
 
 
 template < typename targetidentifierT >
-pyr_synapse< targetidentifierT >::pyr_synapse()
+pyr_synapse_rate< targetidentifierT >::pyr_synapse_rate()
   : ConnectionBase()
   , weight_( 1.0 )
+  , tilde_w( 0 )
   , init_weight_( 0.0 )
   , tau_Delta_( 100.0 )
   , eta_( 0.07 )
   , Wmin_( -1.0 )
   , Wmax_( 1.0 )
-  , PI_integral_( 0.0 )
-  , PI_exp_integral_( 0.0 )
-  , tau_L_trace_( 0.0 )
-  , tau_s_trace_( 0.0 )
-  , t_lastspike_( -1.0 )
 {
 }
 
 template < typename targetidentifierT >
 void
-pyr_synapse< targetidentifierT >::get_status( DictionaryDatum& d ) const
+pyr_synapse_rate< targetidentifierT >::get_status( DictionaryDatum& d ) const
 {
   ConnectionBase::get_status( d );
   def< double >( d, names::weight, weight_ );
@@ -307,7 +292,7 @@ pyr_synapse< targetidentifierT >::get_status( DictionaryDatum& d ) const
 
 template < typename targetidentifierT >
 void
-pyr_synapse< targetidentifierT >::set_status( const DictionaryDatum& d, ConnectorModel& cm )
+pyr_synapse_rate< targetidentifierT >::set_status( const DictionaryDatum& d, ConnectorModel& cm )
 {
   ConnectionBase::set_status( d, cm );
   updateValue< double >( d, names::weight, weight_ );
