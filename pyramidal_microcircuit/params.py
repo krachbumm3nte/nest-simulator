@@ -53,7 +53,7 @@ pyr_params = {
     # 'apical_td': deepcopy(comp_defaults),
     'apical_lat': deepcopy(comp_defaults),
     # parameters of rate function
-    'tau_syn': 1,
+    'tau_m': 1,
     'C_m': 1.0,
     'lambda': lam,
     'phi_max': 0.5,

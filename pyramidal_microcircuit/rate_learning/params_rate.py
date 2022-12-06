@@ -6,22 +6,22 @@ from pprint import pprint
 resolution = 0.1
 nest.resolution = resolution
 nest.set_verbosity("M_ERROR")
-nest.SetKernelStatus({"local_num_threads": 1, "use_wfr": False})
+nest.SetKernelStatus({"local_num_threads": 3, "use_wfr": False})
 nest.rng_seed = 15
 
 init_self_pred = True
-self_predicting_fb = True
-self_predicting_ff = True
+self_predicting_fb = False
+self_predicting_ff = False
 plasticity_fb = True
 plasticity_ff = True
 
 
-SIM_TIME = 3
-n_runs = 1500
+SIM_TIME = 100
+n_runs = 10000
 
 # Network parameters
-dims = [4, 4, 4]
-# dims = [2, 2, 2]
+# dims = [4, 4, 4]
+dims = [15, 10, 5]
 noise = True
 noise_std = 0.3
 target_amp = 10
@@ -30,7 +30,8 @@ nudging = True
 
 # Neuron parameters
 g_lk_dnd = 1
-g_lk_som = 0.2
+g_lk_som = 1.9 # As dictated by the Mathematica solution, actual leakage is g_lk + g_D + g_A
+tau_input = 1/3 # time constant for low-pass filtering the current injected into input neurons. see tests/test_curretn_injection_filter.py
 
 lam = 0.8
 
@@ -38,6 +39,7 @@ g_a = 0.8
 g_b_int = 1
 g_b_pyr = 1
 g_som = 0.8
+
 
 
 comp_defaults = {
@@ -53,7 +55,7 @@ pyr_params = {
     # 'apical_td': deepcopy(comp_defaults),
     'apical_lat': deepcopy(comp_defaults),
     # parameters of rate function
-    'tau_syn': 1,
+    'tau_m': resolution,
     'C_m': 1.0,
     'lambda': lam,
     'phi_max': 1,
@@ -78,9 +80,9 @@ intn_params['basal']['g'] = g_b_int
 # wr_ip = nest.Create('weight_recorder')
 # nest.CopyModel('pyr_synapse', 'record_syn_ip', {"weight_recorder": wr_ip})
 
-eta_pyr_int = 0.000237
-eta_int_pyr = 0.0005
-wmin_init, wmax_init = -0.1, 0.1
+eta_pyr_int = 0.0035
+eta_int_pyr = 0.003
+wmin_init, wmax_init = -1, 1
 wmin, wmax = -1, 1
 syn_params = {
     'synapse_model': 'pyr_synapse_rate',

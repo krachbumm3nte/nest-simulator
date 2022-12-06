@@ -35,6 +35,7 @@ print(in_id)
 print(hidden_id)
 print(out_id)
 print(intn_id)
+
 """conn = nest.GetConnections(net.pyr_pops[1][0], net.intn_pops[0][0])
 conn.eta = 0.00001
 conn.weight = -conn.weight"""
@@ -44,9 +45,9 @@ np.seterr('raise')
 print("setup complete, running simulations...")
 
 for run in range(n_runs):
-    input_index = int(np.random.random() * dims[0])
+    inputs = 2 * np.random.rand(dims[0]) -1 
     # input_index = 0
-    net.set_input([input_index])
+    net.set_input(inputs)
 
     start = time.time()
     nest.Simulate(SIM_TIME)
@@ -74,7 +75,7 @@ for run in range(n_runs):
     #     nest.GetConnections(net.pyr_pops[1], net.intn_pops[0]).set({"eta":  0.0004})
     #     nest.GetConnections(net.intn_pops[0], net.pyr_pops[1]).set({"eta":  0.00001})
 
-    if run % 25 == 0:
+    if run % 50 == 0:
         plot_start = time.time()
 
         time_progressed = run * SIM_TIME
@@ -96,11 +97,11 @@ for run in range(n_runs):
         for intn, pyr in zip(intn_id, out_id):
             data_intn = v_intn.get_group(intn)
             ax0.plot(data_intn['times'].array, uniform_filter1d(
-                data_intn["V_m.s"].array, size=2500), "--", color=cmap_2(intn % dims[2]), alpha=0.5)
+                data_intn["V_m.s"].array, size=250), "--", color=cmap_2(intn % dims[2]), alpha=0.5)
 
             data_pyr = v_pyr.get_group(pyr)
             ax0.plot(data_pyr['times'].array, uniform_filter1d(
-                data_pyr['V_m.s'].array, size=2500), color=cmap_2(pyr % dims[2]))
+                data_pyr['V_m.s'].array, size=250), color=cmap_2(pyr % dims[2]))
 
         # plot interneuron error
         errors = []
@@ -112,8 +113,8 @@ for run in range(n_runs):
             errors.append(error)
 
         for i, error in enumerate(errors):
-            ax1.plot(uniform_filter1d(error, size=1500), color=cmap_2(i % dims[2]), alpha=0.3)
-        mean_error = uniform_filter1d(np.mean(errors, axis=0), size=2000)
+            ax1.plot(uniform_filter1d(error, size=150), color=cmap_2(i % dims[2]), alpha=0.3)
+        mean_error = uniform_filter1d(np.mean(errors, axis=0), size=200)
         ax1.plot(mean_error, color="black")
         intn_error_now = np.mean(mean_error[-20:])
         ax1_2 = ax1.secondary_yaxis("right")
@@ -125,10 +126,10 @@ for run in range(n_runs):
 
         for id in hidden_id:
             v = apical_voltage.get_group(id)
-            ax2.plot(v['times'], uniform_filter1d(v["V_m.a_lat"], size=1500), label=id)
+            ax2.plot(v['times'], uniform_filter1d(v["V_m.a_lat"], size=150), label=id)
 
         # plot apical error
-        apical_err = uniform_filter1d(events.abs().groupby("times")["V_m.a_lat"].mean(), size=1500)
+        apical_err = uniform_filter1d(events.abs().groupby("times")["V_m.a_lat"].mean(), size=150)
         ax3.plot(apical_err, label="apical error")
         ax3_2 = ax3.secondary_yaxis("right")
         apical_err_now = np.mean(apical_err[-20:])
@@ -142,17 +143,17 @@ for run in range(n_runs):
 
         a = WHY.sort_values(["target", "source"])
         b = WHI.sort_values(["target", "source"])
-        w_ip_error = mse(a["weight"], -b["weight"])
+        w_ip_error = mse(a["weight"], -b["weight"]) * 10
         print(f"int_pyr error: {w_ip_error}")
         w_ip_errors.append((time_progressed, w_ip_error))
-        ax3.plot(*zip(*w_ip_errors), label=f"FB error {w_ip_error:.2f}")
+        ax3.plot(*zip(*w_ip_errors), label=f"FB error x10: {w_ip_error:.2f}")
 
         a = WYH.sort_values(["source", "target"])
         b = WIH.sort_values(["source", "target"])
-        w_pi_error = mse(a["weight"], b["weight"])
+        w_pi_error = mse(a["weight"], b["weight"]) * 10
         print(f"pyr_int error: {w_pi_error}")
         w_pi_errors.append((time_progressed, w_pi_error))
-        ax3.plot(*zip(*w_pi_errors), label=f"FF error {w_pi_error:.2f}")
+        ax3.plot(*zip(*w_pi_errors), label=f"FF error x10: {w_pi_error:.2f}")
 
         # plot weights
         for idx, row in WHY.iterrows():
@@ -179,14 +180,14 @@ for run in range(n_runs):
         ax4.set_title("Feedback weights")
         ax5.set_title("Feedforward weights")
 
-        ax4.set_ylim(wmin, wmax)
-        ax5.set_ylim(wmin, wmax)
+        # ax4.set_ylim(wmin, wmax)
+        # ax5.set_ylim(wmin, wmax)
         ax1.set_ylim(bottom=0)
         ax3.set_ylim(bottom=0)
 
         ax3.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15),
                    ncol=3, prop={'size': 5})
-        ax2.legend(loc='upper right', ncol=dims[1], prop={'size': 5})
+        # ax2.legend(loc='upper right', ncol=dims[1], prop={'size': 5})
         plt.savefig(f"{run}_weights.png")
         plt.close()
         plot_duration = time.time() - plot_start

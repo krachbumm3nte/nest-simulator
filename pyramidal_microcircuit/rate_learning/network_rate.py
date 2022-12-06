@@ -67,8 +67,17 @@ class Network:
 
                 self.intn_pops.append(int_l)
 
+        # Set special parameters for some of the populations:
+
         # output neurons are modeled without an apical compartment
         self.pyr_pops[-1].set({"apical_lat": {"g": 0}})
+
+        # to replace the low pass filtering of the input, input neurons have both
+        # injected current and leakage conductance attenuated.
+        # Additionally, the dendritic compartments are silenced, and membrane voltage is 
+        # transmitted without the nonlinearity phi.
+        self.pyr_pops[0].set({"soma": {"g_L": tau_input}, "use_phi": False, "basal": {"g": 0}, "apical_lat": {"g": 0}, "tau_m":tau_input})
+        
 
         self.nudge = nest.Create("dc_generator", self.dims[-1], {'amplitude': 0})
         # nest.Connect(self.nudge, self.pyr_pops[-1], "one_to_one", syn_spec={'receptor_type': pyr_comps['soma_curr']})
@@ -89,12 +98,10 @@ class Network:
         # nest.Connect(self.pyr_pops[1], self.sr_hidden)
         # nest.Connect(self.pyr_pops[2], self.sr_out)
 
-    def set_input(self, indices):
-        for i in range(self.dims[0]):
-            if i in indices:
-                self.pyr_pops[0][i].set({"soma": {"I_e": self.stim_amp}})
-            else:
-                self.pyr_pops[0][i].set({"soma": {"I_e": 0}})
+    def set_input(self, input_currents):
+
+        for i in range(dims[0]):
+            self.pyr_pops[0][i].set({"soma": {"I_e": input_currents[i] * tau_input}})
 
     def set_target(self, indices):
         for i in range(self.dims[-1]):
