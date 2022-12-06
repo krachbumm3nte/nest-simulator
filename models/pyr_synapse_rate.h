@@ -192,16 +192,15 @@ private:
   double eta_;
   double Wmin_;
   double Wmax_;
+  size_t counter;
 };
 
 template < typename targetidentifierT >
 inline double
 pyr_synapse_rate< targetidentifierT >::phi( double x )
 {
-  double gamma = 1;
-  double beta = 1;
-  double theta = 0;
-  return gamma * log( 1 + exp( beta * ( x - theta ) ) );
+  return 1 / ( 1 + exp( -x ) );
+  // return log( 1 + exp( x ) );
 }
 
 
@@ -217,32 +216,35 @@ pyr_synapse_rate< targetidentifierT >::send( Event& e, thread t, const CommonSyn
 {
 
   Node* target = get_target( t );
-  
-  Node* sender = kernel().node_manager.get_node_or_proxy(e.retrieve_sender_node_id_from_source_table());
+
+  Node* sender = kernel().node_manager.get_node_or_proxy( e.retrieve_sender_node_id_from_source_table() );
   int rport = get_rport();
   double V_dend = target->get_V_m( rport );
   double delta_tilde_w;
-  double v_m_sender = sender->get_V_m(0);
-  double phi_sender = phi(v_m_sender);
+  double v_m_sender = sender->get_V_m( 0 );
+  double phi_sender = phi( v_m_sender );
 
   if ( rport == 1 )
   {
     double V_som = target->get_V_m( 0 );
-    double const g_L = target->get_g_L( rport );
+    double const g_L = target->get_g_L( 0 );
     double g_D = target->get_g( 1 );
-    double g_A = target->get_g( 2 );
-    std::cout << "vars: " << g_L << ", " << g_D << ", " << g_A << std::endl;
-    double V_W_star = phi( ( g_D * V_dend ) / ( g_L + g_D + g_A ) );
+    // double g_A = target->get_g( 2 );
+    // std::cout << "vars: " << g_L << ", " << g_D << ", " << g_A << std::endl;
+    // TODO: this is scaled by g_L now, instead of the sum over g_L + g_A + g_D, as g_L is increased to match
+    // the Mathematica implementation
+    double V_W_star = phi( ( g_D * V_dend ) / ( g_L ) );
 
     delta_tilde_w = -tilde_w + ( phi( V_som ) - V_W_star ) * phi_sender;
+
   }
   else
   {
     delta_tilde_w = -tilde_w - V_dend * phi_sender;
   }
-  std::cout << "a: " << rport << ", " << tilde_w << ", " << V_dend << ", " << delta_tilde_w << std::endl;
-  // TODO: generalize delta_t
-  tilde_w = tilde_w + ( 0.1 / tau_Delta_ ) * delta_tilde_w;
+  // std::cout << "a: " << rport << ", " << tilde_w << ", " << V_dend << ", " << delta_tilde_w << std::endl;
+  //  TODO: generalize delta_t
+  tilde_w = tilde_w + 0.1 * ( delta_tilde_w / tau_Delta_ );
 
   weight_ = weight_ + 0.1 * eta_ * tilde_w;
 
@@ -255,10 +257,14 @@ pyr_synapse_rate< targetidentifierT >::send( Event& e, thread t, const CommonSyn
     weight_ = Wmin_;
   }
 
-
-  std::cout << "b: " << phi_sender << ", " << weight_ << ", " << tilde_w << ", " << v_m_sender << std::endl << std::endl; 
+  if ( counter % 10 == 0 )
+  {
+    std::cout << "b: " << phi_sender << ", " << weight_ << ", " << tilde_w << ", " << delta_tilde_w << std::endl;
+    counter = 0;
+  }
+  counter++;
   e.set_receiver( *target );
-  e.set_weight( weight_ * phi_sender);
+  e.set_weight( weight_ );
   e.set_rport( rport );
   e();
 }
@@ -274,6 +280,7 @@ pyr_synapse_rate< targetidentifierT >::pyr_synapse_rate()
   , eta_( 0.07 )
   , Wmin_( -1.0 )
   , Wmax_( 1.0 )
+  , counter( 0 )
 {
 }
 

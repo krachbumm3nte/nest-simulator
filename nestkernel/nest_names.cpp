@@ -570,6 +570,7 @@ const Name update_time_limit( "update_time_limit" );
 const Name upper_right( "upper_right" );
 const Name use_compressed_spikes( "use_compressed_spikes" );
 const Name use_wfr( "use_wfr" );
+const Name use_phi( "use_phi" );
 
 const Name V_T( "V_T" );
 const Name V_T_star( "V_T_star" );

@@ -106,8 +106,7 @@ nest::pp_cond_exp_mc_pyr_dynamics( double, const double y[], double f[], void* p
   const double V = y[ S::idx( N::SOMA, S::V_M ) ];
 
   // leak current of soma
-  // TODO: this still contains E_L but is only valid if set to zero
-  const double I_L = node.P_.pyr_params.g_L[ N::SOMA ] * ( V - node.P_.pyr_params.E_L[ N::SOMA ] );
+  const double I_L = node.P_.pyr_params.g_L[ N::SOMA ] * V;
 
   // coupling from dendrites to soma all summed up
   double I_conn_d_s = 0.0;
@@ -121,24 +120,28 @@ nest::pp_cond_exp_mc_pyr_dynamics( double, const double y[], double f[], void* p
     const double V_dnd = y[ S::idx( n, S::V_M ) ];
 
     // coupling current from dendrite to soma
-    I_conn_d_s += node.P_.pyr_params.g_conn[ n ] * ( V_dnd - V );
+    I_conn_d_s += node.P_.pyr_params.g_conn[ n ] * V_dnd;
 
     // dendritic current due to input
     const double I_dend = y[ S::idx( n, S::I ) ];
 
+    const double I_L_dend = -node.P_.pyr_params.g_L[ n ] * V_dnd;
+
     // derivative membrane potential
-    f[ S::idx( n, S::V_M ) ] = -node.P_.pyr_params.g_L[ n ] * V_dnd + I_dend;
+    f[ S::idx( n, S::V_M ) ] = ( I_L_dend + I_dend * 0.1 );
 
     // derivative dendritic current
-    f[ S::idx( n, S::I ) ] = -I_dend / node.P_.pyr_params.tau_syn;
+    f[ S::idx( n, S::I ) ] = -I_dend / node.P_.pyr_params.tau_m;
   }
 
   // derivative membrane potential
   // soma
   f[ S::idx( N::SOMA, S::V_M ) ] = -I_L + I_conn_d_s + node.B_.I_stim_[ N::SOMA ] + node.P_.I_e[ N::SOMA ];
+  // std::cout << I_L << ", " << I_conn_d_s << ", " << node.B_.I_stim_[ N::SOMA] << ", " << node.P_.I_e [N::SOMA] <<
+  // std::endl;
 
   // excitatory conductance soma
-  f[ S::idx( N::SOMA, S::I ) ] = -y[ S::idx( N::SOMA, S::I ) ] / node.P_.pyr_params.tau_syn;
+  f[ S::idx( N::SOMA, S::I ) ] = -y[ S::idx( N::SOMA, S::I ) ] / node.P_.pyr_params.tau_m;
   // std::cout << "soma curr " << y[ S::idx( N::SOMA, S::I)] << "\n";
 
   return GSL_SUCCESS;
@@ -158,12 +161,13 @@ nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_()
   pyr_params.theta = 0;
 
   // conductances between compartments
-  pyr_params.tau_syn = 3.0;
+  pyr_params.tau_m = 3.0;
 
 
-  pyr_params.curr_target = 0.0;
+  pyr_params.curr_target = 0;
   pyr_params.lambda_curr = 0.0;
   pyr_params.C_m = 1.0; // pF
+  pyr_params.use_phi = true;
 
 
   // soma parameters
@@ -201,9 +205,9 @@ nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_( const Parameters_& p )
 
   pyr_params.curr_target = p.pyr_params.curr_target;
   pyr_params.lambda_curr = p.pyr_params.lambda_curr;
-  pyr_params.tau_syn = p.pyr_params.tau_syn;
+  pyr_params.tau_m = p.pyr_params.tau_m;
   pyr_params.C_m = p.pyr_params.C_m;
-
+  pyr_params.use_phi = p.pyr_params.use_phi;
 
   // copy C-arrays
 
@@ -226,11 +230,12 @@ nest::pp_cond_exp_mc_pyr::Parameters_::operator=( const Parameters_& p )
   pyr_params.gamma = p.pyr_params.gamma;
   pyr_params.beta = p.pyr_params.beta;
   pyr_params.theta = p.pyr_params.theta;
-  pyr_params.tau_syn = p.pyr_params.tau_syn;
+  pyr_params.tau_m = p.pyr_params.tau_m;
 
   pyr_params.curr_target = p.pyr_params.curr_target;
   pyr_params.lambda_curr = p.pyr_params.lambda_curr;
   pyr_params.C_m = p.pyr_params.C_m;
+  pyr_params.use_phi = p.pyr_params.use_phi;
 
   for ( size_t n = 0; n < NCOMP; ++n )
   {
@@ -311,14 +316,13 @@ nest::pp_cond_exp_mc_pyr::Parameters_::get( DictionaryDatum& d ) const
   def< double >( d, names::gamma, pyr_params.gamma );
   def< double >( d, names::beta, pyr_params.beta );
   def< double >( d, names::theta, pyr_params.theta );
-  def< double >( d, names::tau_syn, pyr_params.tau_syn );
+  def< double >( d, names::tau_m, pyr_params.tau_m );
 
 
   def< double >( d, names::g_som, pyr_params.g_conn[ SOMA ] );
   def< double >( d, names::g_b, pyr_params.g_conn[ BASAL ] );
-  // def< double >( d, names::g_a, pyr_params.g_conn[ APICAL_TD ] );
+  def< double >( d, names::g_a, pyr_params.g_conn[ APICAL_LAT ] );
 
-  // TODO: why does this need to be a double???
   def< double >( d, names::lambda, pyr_params.lambda_curr );
   def< double >( d, names::target, pyr_params.curr_target );
 
@@ -346,7 +350,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::set( const DictionaryDatum& d )
   updateValue< double >( d, names::gamma, pyr_params.gamma );
   updateValue< double >( d, names::beta, pyr_params.beta );
   updateValue< double >( d, names::theta, pyr_params.theta );
-  updateValue< double >( d, names::tau_syn, pyr_params.tau_syn );
+  updateValue< double >( d, names::tau_m, pyr_params.tau_m );
   updateValue< double >( d, names::C_m, pyr_params.C_m );
 
 
@@ -356,6 +360,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::set( const DictionaryDatum& d )
 
   updateValue< double >( d, Name( names::target ), pyr_params.curr_target );
   updateValue< double >( d, Name( names::lambda ), pyr_params.lambda_curr );
+  updateValue< bool >( d, Name( names::use_phi ), pyr_params.use_phi );
 
 
   // extract from sub-dictionaries
@@ -391,7 +396,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::set( const DictionaryDatum& d )
     throw BadProperty( "Capacitance must be strictly positive." );
   }
 
-  if ( pyr_params.tau_syn <= 0 )
+  if ( pyr_params.tau_m <= 0 )
   {
     throw BadProperty( "Synaptic time constant must be strictly positive." );
   }
@@ -595,23 +600,21 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
         throw GSLSolverFailure( get_name(), status );
       }
     }
+    // std::cout  <<  S_.y_[ State_::idx( 0, State_::V_M ) ] << ", " << P_.I_e[0] << std::endl;
 
 
-    // add incoming spikes to soma
-    S_.y_[ State_::I ] += B_.spikes_[ SOMA ].get_value( lag );
-
-    // add incoming spikes to dendrites
-    for ( size_t n = 1; n < NCOMP; ++n )
+    // add incoming spikes to all compartmens
+    for ( size_t n = 0; n < NCOMP; ++n )
     {
       S_.y_[ State_::idx( n, State_::I ) ] += B_.spikes_[ n ].get_value( lag );
     }
 
 
     SpikeEvent se;
-    se.set_sender(*this);
+    se.set_sender( *this );
     kernel().event_delivery_manager.send( *this, se, lag );
-    /*
 
+    /*
     // Declaration outside if statement because we need it later
     unsigned long n_spikes = 0;
 
@@ -663,22 +666,22 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       --S_.r_;
     }*/
 
-
+    /*
     // Store dendritic membrane potential for Urbanczik-Senn plasticity
     write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ),
       S_.y_[ S_.idx( BASAL, State_::V_M ) ],
       S_.y_[ S_.idx( SOMA, State_::V_M ) ],
       BASAL );
-    /*
+
     write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ),
       S_.y_[ S_.idx( APICAL_TD, State_::V_M ) ],
       S_.y_[ S_.idx( SOMA, State_::V_M ) ],
       APICAL_TD );
-    */
     write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ),
       S_.y_[ S_.idx( APICAL_LAT, State_::V_M ) ],
       S_.y_[ S_.idx( SOMA, State_::V_M ) ],
       APICAL_LAT );
+    */
 
     // set new input currents
     for ( size_t n = 0; n < NCOMP; ++n )
@@ -695,15 +698,12 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
     if ( P_.pyr_params.curr_target != 0 )
     {
       CurrentEvent ce;
-      // TODO: Why the hell do I need to multiply by g_L? it gets me the right results, but it doesnt make sense...
-      ce.set_current( S_.y_[ S_.idx( SOMA, State_::V_M ) ] * P_.pyr_params.g_L[ SOMA ] );
-      // cast target id to int because parameters need to be floats for some reason?
-      Node* n = kernel().node_manager.get_node_or_proxy( ( int ) P_.pyr_params.curr_target );
+      ce.set_current( S_.y_[ S_.idx( SOMA, State_::V_M ) ] );
+      Node* n = kernel().node_manager.get_node_or_proxy( P_.pyr_params.curr_target );
       ce.set_receiver( *n );
       ce.set_sender_node_id( this->get_node_id() );
       ce.set_rport( 0 ); // TODO: make this flexible to target not only the soma!
       ce.set_sender( *this );
-      // ce.set_delay_steps(0);
       ce.set_stamp( Time::step( origin.get_steps() + lag + 1 ) );
       ce.set_weight( P_.pyr_params.lambda_curr );
       ce();
@@ -717,9 +717,17 @@ nest::pp_cond_exp_mc_pyr::handle( SpikeEvent& e )
   assert( e.get_delay_steps() > 0 );
   assert( 0 <= e.get_rport() and e.get_rport() < 2 * NCOMP );
 
+  // double spike_val = e.get_weight() * e.get_multiplicity();
+  // We multiply with the sender activity here because it allows us to track weights with a weight_recorder.
+  double spike_val = e.get_weight()
+    * P_.pyr_params.phi(
+      kernel().node_manager.get_node_or_proxy( e.retrieve_sender_node_id_from_source_table() )->get_V_m( 0 ) );
+
+
   B_.spikes_[ e.get_rport() ].add_value(
-    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), e.get_weight() * e.get_multiplicity() );
+    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), spike_val );
 }
+
 
 void
 nest::pp_cond_exp_mc_pyr::handle( CurrentEvent& e )

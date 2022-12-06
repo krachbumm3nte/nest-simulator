@@ -97,13 +97,13 @@ private:
   double phi( double u );
   double h( double u );
 
-  // target neuron for a singular current synapse
-  int curr_target;
+  int curr_target; // target neuron for a singular current synapse
   double lambda_curr;
+  bool use_phi;
 
 public:
   // The Urbanczik parameters need to be public within this class as they are passed to the GSL solver
-  double tau_syn;
+  double tau_m;
 
   double g_conn[ NCOMP ]; //!< Conductances connecting compartments in nS
   double g_L[ NCOMP ];    //!< Leak Conductance in nS
@@ -270,11 +270,13 @@ public:
   port send_test_event( Node&, rport, synindex, bool );
 
   void handle( SpikeEvent& );
+  void handle( ConductanceEvent& );
   void handle( CurrentEvent& );
   void handle( DataLoggingRequest& );
 
   port handles_test_event( SpikeEvent&, rport );
   port handles_test_event( CurrentEvent&, rport );
+  port handles_test_event( ConductanceEvent&, rport );
   port handles_test_event( DataLoggingRequest&, rport );
 
   void get_status( DictionaryDatum& ) const;
@@ -518,11 +520,12 @@ private:
   }
 
   double
-  get_V_m(int comp)
+  get_V_m( int comp )
   {
-    double v =  S_.y_[ S_.idx( comp , State_::V_M ) ];
-    std::cout << "vcomp: " << this->get_node_id() << ", " << comp << ", " << v << std::endl;
-    if (std::isnan(v)) {
+    double v = S_.y_[ S_.idx( comp, State_::V_M ) ];
+    // std::cout << "vcomp: " << this->get_node_id() << ", " << comp << ", " << v << std::endl;
+    if ( std::isnan( v ) )
+    {
       throw KernelException();
     }
     return v;
@@ -550,9 +553,18 @@ private:
 inline double
 pp_cond_exp_mc_pyr_parameters::phi( double u )
 {
-  return gamma * log(1 + exp (beta * (u - theta)));
-  // return phi_max / ( 1.0 + gamma * exp( beta * ( theta - u ) ) );
-  // TODO: which is the correct activation function for this?
+  // return gamma * log(1 + exp (beta * (u - theta)));
+  //  return phi_max / ( 1.0 + gamma * exp( beta * ( theta - u ) ) );
+  if ( use_phi )
+  {
+    return 1 / ( 1.0 + exp( -u ) );
+  }
+  else
+  {
+    return u;
+  }
+  // return log( 1 + exp( u ) );
+  //  TODO: which is the correct activation function for this?
 }
 
 inline double
@@ -586,6 +598,24 @@ pp_cond_exp_mc_pyr::handles_test_event( SpikeEvent&, rport receptor_type )
     }
   }
   return receptor_type - MIN_SPIKE_RECEPTOR;
+}
+
+
+inline port
+pp_cond_exp_mc_pyr::handles_test_event( ConductanceEvent&, rport receptor_type )
+{
+  if ( receptor_type < MIN_CURR_RECEPTOR || receptor_type >= SUP_CURR_RECEPTOR )
+  {
+    if ( receptor_type >= 0 && receptor_type < MIN_CURR_RECEPTOR )
+    {
+      throw IncompatibleReceptorType( receptor_type, get_name(), "CurrentEvent" );
+    }
+    else
+    {
+      throw UnknownReceptorType( receptor_type, get_name() );
+    }
+  }
+  return receptor_type - MIN_CURR_RECEPTOR;
 }
 
 inline port

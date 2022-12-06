@@ -106,7 +106,7 @@ public:
 
   /**
    * \fn double get_tau_s()
-   * Returns synaptic time constant tau_syn
+   * Returns synaptic time constant tau_m
    */
   double get_tau_s( int comp );
 
@@ -159,7 +159,7 @@ template < class pyr_parameters >
 inline double
 PyrArchivingNode< pyr_parameters >::get_tau_s( int comp )
 {
-  return pyr_params->tau_syn;
+  return pyr_params->tau_m;
 }
 
 
