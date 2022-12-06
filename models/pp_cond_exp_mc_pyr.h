@@ -270,7 +270,6 @@ public:
   port send_test_event( Node&, rport, synindex, bool );
 
   void handle( SpikeEvent& );
-  void handle( ConductanceEvent& );
   void handle( CurrentEvent& );
   void handle( DataLoggingRequest& );
 

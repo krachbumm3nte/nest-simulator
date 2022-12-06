@@ -223,6 +223,8 @@ pyr_synapse_rate< targetidentifierT >::send( Event& e, thread t, const CommonSyn
   double delta_tilde_w;
   double v_m_sender = sender->get_V_m( 0 );
   double phi_sender = phi( v_m_sender );
+  double dend_error = 0;
+  double V_W_star = 0;
 
   if ( rport == 1 )
   {
@@ -233,14 +235,15 @@ pyr_synapse_rate< targetidentifierT >::send( Event& e, thread t, const CommonSyn
     // std::cout << "vars: " << g_L << ", " << g_D << ", " << g_A << std::endl;
     // TODO: this is scaled by g_L now, instead of the sum over g_L + g_A + g_D, as g_L is increased to match
     // the Mathematica implementation
-    double V_W_star = phi( ( g_D * V_dend ) / ( g_L ) );
-
-    delta_tilde_w = -tilde_w + ( phi( V_som ) - V_W_star ) * phi_sender;
+    V_W_star = phi( ( g_D * V_dend ) / ( g_L ) );
+    dend_error = ( phi( V_som ) - V_W_star );
+    delta_tilde_w = -tilde_w + dend_error * phi_sender;
 
   }
   else
   {
-    delta_tilde_w = -tilde_w - V_dend * phi_sender;
+    dend_error = -V_dend;
+    delta_tilde_w = -tilde_w + dend_error * phi_sender;
   }
   // std::cout << "a: " << rport << ", " << tilde_w << ", " << V_dend << ", " << delta_tilde_w << std::endl;
   //  TODO: generalize delta_t
@@ -257,12 +260,11 @@ pyr_synapse_rate< targetidentifierT >::send( Event& e, thread t, const CommonSyn
     weight_ = Wmin_;
   }
 
-  if ( counter % 10 == 0 )
-  {
-    std::cout << "b: " << phi_sender << ", " << weight_ << ", " << tilde_w << ", " << delta_tilde_w << std::endl;
+
+    // std::cout << "syn: " << phi_sender << ", " << weight_ << ", " << tilde_w << ", " << delta_tilde_w << ", " << dend_error << ", " << V_W_star << std::endl;
     counter = 0;
-  }
-  counter++;
+
+
   e.set_receiver( *target );
   e.set_weight( weight_ );
   e.set_rport( rport );

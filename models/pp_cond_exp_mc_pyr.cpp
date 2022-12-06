@@ -132,13 +132,16 @@ nest::pp_cond_exp_mc_pyr_dynamics( double, const double y[], double f[], void* p
 
     // derivative dendritic current
     f[ S::idx( n, S::I ) ] = -I_dend / node.P_.pyr_params.tau_m;
+    if ( n == 1 )
+    {
+      std::cout << "foo: " << I_L_dend << ", " << I_conn_d_s << ", " << y[ S::idx( 1, S::V_M ) ] << ", "
+                << y[ S::idx( 0, S::V_M ) ] << std::endl;
+    }
   }
 
   // derivative membrane potential
   // soma
   f[ S::idx( N::SOMA, S::V_M ) ] = -I_L + I_conn_d_s + node.B_.I_stim_[ N::SOMA ] + node.P_.I_e[ N::SOMA ];
-  // std::cout << I_L << ", " << I_conn_d_s << ", " << node.B_.I_stim_[ N::SOMA] << ", " << node.P_.I_e [N::SOMA] <<
-  // std::endl;
 
   // excitatory conductance soma
   f[ S::idx( N::SOMA, S::I ) ] = -y[ S::idx( N::SOMA, S::I ) ] / node.P_.pyr_params.tau_m;
@@ -161,7 +164,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_()
   pyr_params.theta = 0;
 
   // conductances between compartments
-  pyr_params.tau_m = 3.0;
+  pyr_params.tau_m = 1.0;
 
 
   pyr_params.curr_target = 0;
@@ -172,7 +175,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_()
 
   // soma parameters
   pyr_params.g_conn[ SOMA ] = 0.0; // nS, soma-dendrite
-  pyr_params.g_L[ SOMA ] = 0.1;    // nS
+  pyr_params.g_L[ SOMA ] = 1.9;    // nS
   pyr_params.E_L[ SOMA ] = 0.0;    // mV
   I_e[ SOMA ] = 0.0;               // pA
 
@@ -570,6 +573,7 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
 
   for ( long lag = from; lag < to; ++lag )
   {
+    /*
 
     double t = 0.0;
 
@@ -601,6 +605,55 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       }
     }
     // std::cout  <<  S_.y_[ State_::idx( 0, State_::V_M ) ] << ", " << P_.I_e[0] << std::endl;
+    */
+
+
+    // membrane potential of soma
+    const double V = S_.y_[ State_::idx( P_.pyr_params.SOMA, State_::V_M ) ];
+
+    // leak current of soma
+    const double I_L = P_.pyr_params.g_L[ P_.pyr_params.SOMA ] * V;
+
+    // coupling from dendrites to soma all summed up
+    double I_conn_d_s = 0.0;
+
+    // compute dynamics for each dendritic compartment
+    // computations written quite explicitly for clarity, assume compile
+    // will optimized most stuff away ...
+    for ( size_t n = 1; n < P_.pyr_params.NCOMP; ++n )
+    {
+      // membrane potential of dendrite
+      const double V_dnd = S_.y_[ State_::idx( n, State_::V_M ) ];
+
+      // coupling current from dendrite to soma
+      I_conn_d_s += P_.pyr_params.g_conn[ n ] * V_dnd;
+
+      // dendritic current due to input
+      const double I_dend = S_.y_[ State_::idx( n, State_::I ) ];
+
+      const double I_L_dend = P_.pyr_params.g_L[ n ] * V_dnd;
+
+      // derivative membrane potential
+      S_.y_[ State_::idx( n, State_::V_M ) ] = V_dnd + ( - I_L_dend + I_dend );
+
+      // derivative dendritic current
+      S_.y_[ State_::idx( n, State_::I ) ] = I_dend - I_dend / P_.pyr_params.tau_m;
+      //if ( n == 10 )
+      //{
+      //  std::cout << I_L_dend << ", " << I_conn_d_s << ", " << S_.y_[ State_::idx( 1, State_::V_M ) ] << ", "
+      //            << S_.y_[ State_::idx( 0, State_::V_M ) ] << std::endl;
+      //}
+    }
+
+    // derivative membrane potential
+    // soma
+    S_.y_[ State_::idx( P_.pyr_params.SOMA, State_::V_M ) ] =
+      V + 0.1 * (- I_L + I_conn_d_s + B_.I_stim_[ P_.pyr_params.SOMA ] + P_.I_e[ P_.pyr_params.SOMA ]);
+
+    // excitatory conductance soma
+    S_.y_[ State_::idx( P_.pyr_params.SOMA, State_::I ) ] =
+      0; //-S_.y_[ State_::idx( P_.pyr_params.SOMA, State_::I ) ] / P_.pyr_params.tau_m;
+         // std::cout << "soma curr " << y[ S::idx( N::SOMA, S::I)] << "\n";
 
 
     // add incoming spikes to all compartmens
@@ -613,6 +666,13 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
     SpikeEvent se;
     se.set_sender( *this );
     kernel().event_delivery_manager.send( *this, se, lag );
+
+
+    for ( size_t n = 0; n < NCOMP; ++n )
+    {
+      B_.I_stim_[ n ] = 0.0;
+    }
+
 
     /*
     // Declaration outside if statement because we need it later
@@ -717,11 +777,11 @@ nest::pp_cond_exp_mc_pyr::handle( SpikeEvent& e )
   assert( e.get_delay_steps() > 0 );
   assert( 0 <= e.get_rport() and e.get_rport() < 2 * NCOMP );
 
-  // double spike_val = e.get_weight() * e.get_multiplicity();
+  //double spike_val = e.get_weight() * e.get_multiplicity();
   // We multiply with the sender activity here because it allows us to track weights with a weight_recorder.
   double spike_val = e.get_weight()
-    * P_.pyr_params.phi(
-      kernel().node_manager.get_node_or_proxy( e.retrieve_sender_node_id_from_source_table() )->get_V_m( 0 ) );
+   * P_.pyr_params.phi(
+     kernel().node_manager.get_node_or_proxy( e.retrieve_sender_node_id_from_source_table() )->get_V_m( 0 ) );
 
 
   B_.spikes_[ e.get_rport() ].add_value(

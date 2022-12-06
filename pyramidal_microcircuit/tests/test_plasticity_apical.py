@@ -5,7 +5,7 @@ from params_rate_test import *
 import numpy as np
 
 """
-This script shows that the neuron model handles a single dendritic input exactly like the analytical
+This script shows that the neuron model handles a single apical input exactly like the analytical
 solution if parameters are set correctly.
 """
 
@@ -15,7 +15,7 @@ def phi(x):
 
 wr = nest.Create('weight_recorder')
 nest.CopyModel("pyr_synapse_rate", "p_syn", {"weight_recorder": wr})
-syn_ff_pyr_pyr["synapse_model"] = "p_syn"
+syn_fb_pyr_pyr["synapse_model"] = "p_syn"
 
 
 tau_x = 3
@@ -24,7 +24,6 @@ input_filter = 1/tau_x
 pyr_params['basal']['g'] = 0
 pyr_params['apical_lat']['g'] = 0
 # Important realization: for voltages to match exactly, tau_m needs to be equal to simualtion resolution!
-pyr_params['tau_m'] = 1
 
 pyr_in = nest.Create(pyr_model, 1, pyr_params)
 mm_in = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
@@ -35,23 +34,23 @@ pyr_in.set({'soma': {'g_L': input_filter}, 'tau_m': input_filter})
 pyr_h = nest.Create(pyr_model, 1, pyr_params)
 mm_h = nest.Create("multimeter", 1, {'record_from': ["V_m.s", "V_m.b", "V_m.a_lat"]})
 nest.Connect(mm_h, pyr_h)
-pyr_h.set({'soma': {'g_L': g_lk_som}, 'apical_lat': {'g': 0}, 'basal': {'g': g_b_pyr, 'g_L': 1}})
+pyr_h.set({'soma': {'g_L': g_lk_som}, 'apical_lat': {'g': g_a, 'g_L': 1}, 'basal': {'g': 0}})
 
-eta = 0.0
+eta = 0.003
 w0 = 0.5
-syn_ff_pyr_pyr.update({"weight": w0, "eta": eta})
-nest.Connect(pyr_in, pyr_h, syn_spec=syn_ff_pyr_pyr)
+syn_fb_pyr_pyr.update({"weight": w0, "eta": eta})
+nest.Connect(pyr_in, pyr_h, syn_spec=syn_fb_pyr_pyr)
 
 
 U_i = 0
 U_h = 0
-U_bh = 0
+U_ah = 0
 
-# sim_times = [20 for i in range(3)]
-# stim_amps = [1, -1, 0]
-
-sim_times = [700 for i in range(3)]
+sim_times = [120 for i in range(3)]
 stim_amps = [1, -1, 0]
+
+# sim_times = [1 for i in range(1)]
+# stim_amps = [1]
 
 
 SIM_TIME = sum(sim_times)
@@ -59,7 +58,7 @@ SIM_TIME = sum(sim_times)
 
 UI = []
 UH = []
-UBH = []
+UAH = []
 W0 = []
 tilde_w = 0
 
@@ -72,22 +71,26 @@ for T, amp in zip(sim_times, stim_amps):
         delta_u_i = -U_i + amp
         U_i = U_i + (resolution/tau_x) * delta_u_i
         
-
-        delta_tilde_w = -tilde_w + (phi(U_h) - phi((g_b_pyr * U_bh)/(g_lk_som))) * phi(U_i)
+        vw_star = 0
+        dend_error = -U_ah
+        delta_tilde_w = -tilde_w + dend_error * phi(U_i)
         tilde_w = tilde_w + (resolution * delta_tilde_w) / tau_delta
         w0 = w0 + eta * resolution * tilde_w
 
-        if i % 10 == 0:
-            print(phi(U_i), w0, tilde_w, delta_tilde_w)
+
+        print(phi(U_i), w0, tilde_w, delta_tilde_w, dend_error, vw_star)
 
 
-        U_bh = phi(U_i) * w0
-        delta_u_h = -g_lk_som * U_h + U_bh * g_b_pyr
+        U_ah = phi(U_i) * w0
+        # print("s: ", U_i, U_bh, U_h)
+        delta_u_h = -g_lk_som * U_h + U_ah * g_a
         U_h = U_h + (resolution) * delta_u_h
+
+
 
         UI.append(U_i)
         UH.append(U_h)
-        UBH.append(U_bh)
+        UAH.append(U_ah)
         W0.append(w0)
 
 
@@ -99,15 +102,15 @@ ax0.plot(UI, label="analytical")
 ax1.plot(mm_h.get("events")["times"]/resolution , mm_h.get("events")['V_m.s'], label="NEST computed")
 ax1.plot(UH, label="analytical")
 
-ax2.plot(mm_h.get("events")['times']/resolution , mm_h.get("events")['V_m.b'], label="NEST computed")
-ax2.plot(UBH, label="analytical")
+ax2.plot(mm_h.get("events")['times']/resolution , mm_h.get("events")['V_m.a_lat'], label="NEST computed")
+ax2.plot(UAH, label="analytical")
 
 ax3.plot(wr.get("events")["times"]/resolution , wr.get("events")["weights"], label="NEST computed")
 ax3.plot(W0, label="analytical")
 
 ax0.set_title("input neuron voltage")
 ax1.set_title("output neuron somatic voltage")
-ax2.set_title("output neuron basal voltage")
+ax2.set_title("output neuron apical voltage")
 
 ax0.legend()
 ax1.legend()

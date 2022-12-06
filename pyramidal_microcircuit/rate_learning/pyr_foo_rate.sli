@@ -4,7 +4,11 @@
 /pp_cond_exp_mc_pyr 1 Create /pre Set
 /pp_cond_exp_mc_pyr 1 Create /post Set
 
-pre post << >> << /synapse_model /pyr_synapse_rate /receptor_type 1 /weight 0.5 /eta 0.3>> Connect
+pre << /use_phi false 
+    0 << /I_e 1 >> >> SetStatus
+
+
+pre post << >> << /synapse_model /pyr_synapse_rate /receptor_type 2 /weight 0.5 /eta 0.0>> Connect
 gex pre << >> << /receptor_type 4 >> Connect  % excitatory input
 
 1 Simulate

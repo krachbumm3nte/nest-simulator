@@ -6,14 +6,14 @@ from pprint import pprint
 resolution = 0.1
 nest.resolution = resolution
 nest.set_verbosity("M_ERROR")
-nest.SetKernelStatus({"local_num_threads": 3, "use_wfr": False})
+nest.SetKernelStatus({"local_num_threads": 1, "use_wfr": False})
 nest.rng_seed = 15
 
 init_self_pred = True
-self_predicting_fb = False
-self_predicting_ff = False
-plasticity_fb = True
-plasticity_ff = True
+self_predicting_fb = True
+self_predicting_ff = True
+plasticity_fb = False
+plasticity_ff = False
 
 
 SIM_TIME = 100
@@ -55,7 +55,7 @@ pyr_params = {
     # 'apical_td': deepcopy(comp_defaults),
     'apical_lat': deepcopy(comp_defaults),
     # parameters of rate function
-    'tau_m': resolution,
+    'tau_m': 1,
     'C_m': 1.0,
     'lambda': lam,
     'phi_max': 1,
@@ -84,9 +84,10 @@ eta_pyr_int = 0.0035
 eta_int_pyr = 0.003
 wmin_init, wmax_init = -1, 1
 wmin, wmax = -1, 1
+tau_delta = 30
 syn_params = {
     'synapse_model': 'pyr_synapse_rate',
-    'tau_Delta': 30,
+    'tau_Delta': tau_delta,
     'Wmin': wmin,
     'Wmax': wmax,
     'eta': 0.0,
@@ -100,18 +101,21 @@ pyr_comps = nest.GetDefaults(pyr_model)["receptor_types"]
 intn_model = 'pp_cond_exp_mc_pyr'
 intn_comps = nest.GetDefaults(intn_model)["receptor_types"]
 
+basal_comp = pyr_comps['basal']
+apical_comp = pyr_comps['apical_lat']
+
 syn_ff_pyr_pyr = deepcopy(syn_params)
-syn_ff_pyr_pyr['receptor_type'] = pyr_comps['basal']
+syn_ff_pyr_pyr['receptor_type'] = basal_comp
 
 syn_fb_pyr_pyr = deepcopy(syn_params)
-syn_fb_pyr_pyr['receptor_type'] = pyr_comps['apical_lat']
+syn_fb_pyr_pyr['receptor_type'] = apical_comp
 
 syn_laminar_pyr_intn = deepcopy(syn_params)
-syn_laminar_pyr_intn['receptor_type'] = intn_comps['basal']
+syn_laminar_pyr_intn['receptor_type'] = basal_comp
 # syn_laminar_pyr_intn['synapse_model'] = "record_syn_pi"
 
 syn_laminar_intn_pyr = deepcopy(syn_params)
-syn_laminar_intn_pyr['receptor_type'] = pyr_comps['apical_lat']
+syn_laminar_intn_pyr['receptor_type'] = apical_comp
 # syn_laminar_intn_pyr['synapse_model'] = "record_syn_ip"
 
 if plasticity_fb:

@@ -54,13 +54,14 @@ pyr_params = {
     # 'apical_td': deepcopy(comp_defaults),
     'apical_lat': deepcopy(comp_defaults),
     # parameters of rate function
-    'tau_m': resolution,
+    'tau_m': 1,
     'C_m': 1.0,
     'lambda': lam,
     'phi_max': 1,
     'gamma': 1,
     'beta': 1,
     'theta': 0,
+    'use_phi': True
 }
 
 pyr_params['basal']['g'] = g_b_pyr

@@ -21,8 +21,6 @@ input_filter = 1/tau_x
 
 pyr_params['basal']['g'] = 0
 pyr_params['apical_lat']['g'] = 0
-pyr_params['tau_m'] = resolution
-
 
 pyr_h = nest.Create(pyr_model, 1, pyr_params)
 mm_h = nest.Create("multimeter", 1, {'record_from': ["V_m.s", "V_m.b", "V_m.a_lat"]})
@@ -33,7 +31,7 @@ pyr_h.set({'soma': {'g_L': g_lk_som}, 'apical_lat': {'g': g_a}, 'basal': {'g': g
 pyr_in = nest.Create(pyr_model, 1, pyr_params)
 mm_in = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
 nest.Connect(mm_in, pyr_in)
-pyr_in.set({'soma': {'g_L': input_filter}, 'tau_m': 1/tau_x, 'target':pyr_h.global_id})
+pyr_in.set({'soma': {'g_L': input_filter}, 'tau_m': input_filter, 'target':pyr_h.global_id})
 
 
 pyr_out = nest.Create(pyr_model, 1, pyr_params)
