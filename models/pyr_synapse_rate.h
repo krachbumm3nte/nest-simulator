@@ -218,11 +218,12 @@ pyr_synapse_rate< targetidentifierT >::send( Event& e, thread t, const CommonSyn
   Node* target = get_target( t );
 
   Node* sender = kernel().node_manager.get_node_or_proxy( e.retrieve_sender_node_id_from_source_table() );
+  nest::rate_neuron_pyr* sender_pyr = static_cast<nest::rate_neuron_pyr*>(sender);
+  double v_m_sender = sender_pyr->get_V_m( 0 );
   int rport = get_rport();
   double V_dend = target->get_V_m( rport );
   double delta_tilde_w;
-  double v_m_sender = sender->get_V_m( 0 );
-  double phi_sender = phi( v_m_sender );
+  double phi_sender = sender_pyr->phi( v_m_sender );
   double dend_error = 0;
   double V_W_star = 0;
 
@@ -231,14 +232,14 @@ pyr_synapse_rate< targetidentifierT >::send( Event& e, thread t, const CommonSyn
     double V_som = target->get_V_m( 0 );
     double const g_L = target->get_g_L( 0 );
     double g_D = target->get_g( 1 );
-    // double g_A = target->get_g( 2 );
-    // std::cout << "vars: " << g_L << ", " << g_D << ", " << g_A << std::endl;
-    // TODO: this is scaled by g_L now, instead of the sum over g_L + g_A + g_D, as g_L is increased to match
-    // the Mathematica implementation
-    V_W_star = phi( ( g_D * V_dend ) / ( g_L ) );
+    double g_A = target->get_g( 2 );
+    V_W_star = phi( ( g_D * V_dend ) / ( g_L + g_D + g_A ) );
     dend_error = ( phi( V_som ) - V_W_star );
+    //if ( sender->get_node_id() == 3 and target->get_node_id() == 5 )
+    //{
+    //  std::cout << "vars: " << V_W_star << ", " << V_som << "," << V_dend << ", " << dend_error << std::endl;
+    //}
     delta_tilde_w = -tilde_w + dend_error * phi_sender;
-
   }
   else
   {
@@ -251,6 +252,7 @@ pyr_synapse_rate< targetidentifierT >::send( Event& e, thread t, const CommonSyn
 
   weight_ = weight_ + 0.1 * eta_ * tilde_w;
 
+
   if ( weight_ > Wmax_ )
   {
     weight_ = Wmax_;
@@ -261,14 +263,18 @@ pyr_synapse_rate< targetidentifierT >::send( Event& e, thread t, const CommonSyn
   }
 
 
-    // std::cout << "syn: " << phi_sender << ", " << weight_ << ", " << tilde_w << ", " << delta_tilde_w << ", " << dend_error << ", " << V_W_star << std::endl;
-    counter = 0;
-
-
+  // std::cout << "syn: " << phi_sender << ", " << weight_ << ", " << tilde_w << ", " << delta_tilde_w << ", " <<
+  // dend_error << ", " << V_W_star << std::endl;
+  counter = 0;
+  // if ( sender->get_node_id() == 3 and target->get_node_id() == 5 )
+  // {
+  //   std::cout << "syn: " << weight_ << ", " << tilde_w << ", " << delta_tilde_w << std::endl;
+  // }
   e.set_receiver( *target );
   e.set_weight( weight_ );
   e.set_rport( rport );
   e();
+
 }
 
 

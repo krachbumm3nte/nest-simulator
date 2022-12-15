@@ -74,20 +74,24 @@ class Network:
 
         # to replace the low pass filtering of the input, input neurons have both
         # injected current and leakage conductance attenuated.
-        # Additionally, the dendritic compartments are silenced, and membrane voltage is 
+        # Additionally, the dendritic compartments are silenced, and membrane voltage is
         # transmitted without the nonlinearity phi.
-        self.pyr_pops[0].set({"soma": {"g_L": tau_input}, "use_phi": False, "basal": {"g": 0}, "apical_lat": {"g": 0}, "tau_m":tau_input})
+        # TODO: i really need to get rid of these magic numbers
+        self.pyr_pops[0].set({"soma": {"g_L": tau_input - 0.8}, "use_phi": False, "basal": {
+                             "g": 0}, "apical_lat": {"g": 0}, "tau_m": tau_input})
         
-
         self.nudge = nest.Create("dc_generator", self.dims[-1], {'amplitude': 0})
         # nest.Connect(self.nudge, self.pyr_pops[-1], "one_to_one", syn_spec={'receptor_type': pyr_comps['soma_curr']})
 
-        self.mm_intn = nest.Create('multimeter', 1, {'record_from': ["V_m.s"]})
-        self.mm_hidden = nest.Create('multimeter', 1, {'record_from': ["V_m.a_lat", "V_m.s"]})
-        self.mm_out = nest.Create('multimeter', 1, {'record_from': ["V_m.s"]})
-        nest.Connect(self.mm_intn, self.intn_pops[0])
-        nest.Connect(self.mm_hidden, self.pyr_pops[1])
-        nest.Connect(self.mm_out, self.pyr_pops[2])
+        self.mm_x = nest.Create('multimeter', 1, {'record_from': ["V_m.s", "V_m.b"]})
+        self.mm_i = nest.Create('multimeter', 1, {'record_from': ["V_m.s", "V_m.b"]})
+        self.mm_h = nest.Create('multimeter', 1, {'record_from': ["V_m.a_lat", "V_m.s", "V_m.b"]})
+        self.mm_y = nest.Create('multimeter', 1, {'record_from': ["V_m.s", "V_m.b"]})
+
+        nest.Connect(self.mm_x, self.pyr_pops[0])
+        nest.Connect(self.mm_i, self.intn_pops[0])
+        nest.Connect(self.mm_h, self.pyr_pops[1])
+        nest.Connect(self.mm_y, self.pyr_pops[2])
 
         # self.sr_in = nest.Create("spike_recorder", 1)
         # self.sr_intn = nest.Create("spike_recorder", 1)

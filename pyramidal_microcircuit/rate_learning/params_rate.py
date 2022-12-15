@@ -1,53 +1,54 @@
 import nest
 from copy import deepcopy
-from pprint import pprint
+import numpy as np
 
 # Simulation parameters
-resolution = 0.1
-nest.resolution = resolution
+delta_t = 0.1
+nest.resolution = delta_t
 nest.set_verbosity("M_ERROR")
-nest.SetKernelStatus({"local_num_threads": 1, "use_wfr": False})
+nest.SetKernelStatus({"local_num_threads": 3, "use_wfr": False})
 nest.rng_seed = 15
 
 init_self_pred = True
-self_predicting_fb = True
-self_predicting_ff = True
-plasticity_fb = False
-plasticity_ff = False
+self_predicting_fb = False
+self_predicting_ff = False
+plasticity_fb = True
+plasticity_ff = True
 
 
-SIM_TIME = 100
+SIM_TIME = 200
 n_runs = 10000
 
 # Network parameters
-# dims = [4, 4, 4]
-dims = [15, 10, 5]
+# dims = [1, 1, 1]
+dims = [4, 3, 2]
+# dims = [15, 10, 5]
 noise = True
-noise_std = 0.3
+noise_std = 0.2
 target_amp = 10
 stim_amp = 1
 nudging = True
 
-# Neuron parameters
-g_lk_dnd = 1
-g_lk_som = 1.9 # As dictated by the Mathematica solution, actual leakage is g_lk + g_D + g_A
-tau_input = 1/3 # time constant for low-pass filtering the current injected into input neurons. see tests/test_curretn_injection_filter.py
+tau_x = 3
+tau_input = 1/3  # time constant for low-pass filtering the current injected into input neurons. see tests/test_curretn_injection_filter.py
 
 lam = 0.8
 
 g_a = 0.8
-g_b_int = 1
-g_b_pyr = 1
+g_d = 1
 g_som = 0.8
 
+g_l = 0.1
+# Neuron parameters
+g_lk_dnd = 1
 
 
 comp_defaults = {
-        'V_m': 0.0,
-        'E_L': 0.0,
-        'g_L': g_lk_dnd,
-        'g': g_som
-    }
+    'V_m': 0.0,
+    'E_L': 0.0,
+    'g_L': g_lk_dnd,
+    'g': g_som
+}
 
 pyr_params = {
     'soma': deepcopy(comp_defaults),
@@ -62,36 +63,40 @@ pyr_params = {
     'gamma': 1,
     'beta': 1,
     'theta': 0,
+    'use_phi': True
 }
 
-pyr_params['basal']['g'] = g_b_pyr
+pyr_params['basal']['g'] = g_d
 # pyr_params['apical_td']['g'] = 0.0
 pyr_params['apical_lat']['g'] = g_a
-pyr_params['soma']['g_L'] = g_lk_som
+pyr_params['soma']['g_L'] = g_l
 
 intn_params = deepcopy(pyr_params)
+pyr_params['soma']['g_L'] = g_l
 intn_params['apical_lat']['g'] = 0.0
-intn_params['basal']['g'] = g_b_int
+intn_params['basal']['g'] = g_d
 
 # synapse parameters
-# wr_pi = nest.Create('weight_recorder')
-# nest.CopyModel('pyr_synapse', 'record_syn_pi', {"weight_recorder": wr_pi})
+wr = nest.Create('weight_recorder')
+nest.CopyModel('pyr_synapse_rate', 'record_syn', {"weight_recorder": wr})
 
 # wr_ip = nest.Create('weight_recorder')
 # nest.CopyModel('pyr_synapse', 'record_syn_ip', {"weight_recorder": wr_ip})
 
-eta_pyr_int = 0.0035
-eta_int_pyr = 0.003
+eta_pyr_int = 0.025
+eta_int_pyr = 0.013
 wmin_init, wmax_init = -1, 1
 wmin, wmax = -1, 1
 tau_delta = 30
+
+# TODO: set up weight recorder.
 syn_params = {
     'synapse_model': 'pyr_synapse_rate',
     'tau_Delta': tau_delta,
     'Wmin': wmin,
     'Wmax': wmax,
     'eta': 0.0,
-    'delay': resolution,
+    'delay': delta_t,
 }
 
 # neuron parameters
@@ -112,11 +117,9 @@ syn_fb_pyr_pyr['receptor_type'] = apical_comp
 
 syn_laminar_pyr_intn = deepcopy(syn_params)
 syn_laminar_pyr_intn['receptor_type'] = basal_comp
-# syn_laminar_pyr_intn['synapse_model'] = "record_syn_pi"
 
 syn_laminar_intn_pyr = deepcopy(syn_params)
 syn_laminar_intn_pyr['receptor_type'] = apical_comp
-# syn_laminar_intn_pyr['synapse_model'] = "record_syn_ip"
 
 if plasticity_fb:
     syn_laminar_intn_pyr['eta'] = eta_int_pyr
@@ -127,3 +130,7 @@ if plasticity_ff:
 # all_syns = [syn_ff_pyr_pyr, syn_fb_pyr_pyr, syn_laminar_intn_pyr, syn_laminar_pyr_intn]
 # for s in all_syns:
 #     s['weight'] = nest.random.uniform(-0.5, 0.5)
+
+
+def phi(x):
+    return 1 / (1.0 + np.exp(-x))

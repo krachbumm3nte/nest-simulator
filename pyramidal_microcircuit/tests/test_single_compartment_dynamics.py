@@ -25,7 +25,7 @@ pyr_in = nest.Create(pyr_model, 1, pyr_params)
 mm_in = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
 nest.Connect(mm_in, pyr_in)
 # In the input neuron, tau_m needs to be increased to match the low-pass filtering of input changes.
-pyr_in.set({'soma': {'g_L': input_filter}, 'tau_m': input_filter})
+pyr_in.set({'soma': {'g_L': input_filter}, 'tau_m': input_filter, 'use_phi':False})
 
 pyr_h = nest.Create(pyr_model, 1, pyr_params)
 mm_h = nest.Create("multimeter", 1, {'record_from': ["V_m.s", "V_m.b", "V_m.a_lat"]})

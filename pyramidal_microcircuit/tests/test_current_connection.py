@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import sys
 from params_rate_test import *
 
-# This script shows that the current connection implemented in the pp_cond_exp_mc_pyr
+# This script shows that the current connection which transmits somatic voltage to a single target neuron
 # neuron model behaves as intended and causes appropriate changes in the neuron dynamics.
 
 
@@ -56,25 +56,16 @@ for T, amp in zip(sim_times, stim_amps):
 
 fig, (ax0, ax1) = plt.subplots(1, 2, sharey=True)
 som_in = mm_in.get("events")['V_m.s']
-ax0.plot(som_in, label="soma_0")
+ax0.plot(mm_in.get("events")["times"]/resolution, som_in, label="NEST")
+ax0.plot(UY, label="analytical")
 
 som_out = mm_out.get("events")['V_m.s']
-ax0.plot(som_out, label="soma_1")
+ax1.plot(mm_out.get("events")["times"]/resolution, som_out, label="NEST")
 
-ax1.plot(UY, label="input")
-ax1.plot(UI, label="connected")
+ax1.plot(UI, label="analytical")
 
-a = (min(UI), max(UI))
-b = (min(UY), max(UY))
-
-ax0.hlines(a, 0, SIM_TIME, color="b")
-ax1.hlines(a, 0, SIM_TIME/resolution, color="b")
-
-ax0.hlines(b, 0, SIM_TIME, color="r")
-ax1.hlines(b, 0, SIM_TIME/resolution, color="r")
-
-ax0.set_title("NEST simulation")
-ax1.set_title("analytical computation")
+ax0.set_title("input neuron")
+ax1.set_title("output neuron")
 
 ax0.legend()
 ax1.legend()

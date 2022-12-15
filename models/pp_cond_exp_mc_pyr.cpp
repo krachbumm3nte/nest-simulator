@@ -612,7 +612,8 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
     const double V = S_.y_[ State_::idx( P_.pyr_params.SOMA, State_::V_M ) ];
 
     // leak current of soma
-    const double I_L = P_.pyr_params.g_L[ P_.pyr_params.SOMA ] * V;
+    // TODO: magic number to match the Mathematica simulation.
+    const double I_L = (P_.pyr_params.g_L[ P_.pyr_params.SOMA ] + P_.pyr_params.g_conn[ pyr_params->BASAL ] + 0.8)  * V;
 
     // coupling from dendrites to soma all summed up
     double I_conn_d_s = 0.0;

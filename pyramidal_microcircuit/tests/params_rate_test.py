@@ -40,13 +40,12 @@ g_b_pyr = 1
 g_som = 0.8
 
 
-
 comp_defaults = {
-        'V_m': 0.0,
-        'E_L': 0.0,
-        'g_L': g_lk_dnd,
-        'g': g_som
-    }
+    'V_m': 0.0,
+    'E_L': 0.0,
+    'g_L': g_lk_dnd,
+    'g': g_som
+}
 
 pyr_params = {
     'soma': deepcopy(comp_defaults),
