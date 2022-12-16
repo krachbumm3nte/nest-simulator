@@ -6,12 +6,12 @@ import numpy as np
 delta_t = 0.1
 nest.resolution = delta_t
 nest.set_verbosity("M_ERROR")
-nest.SetKernelStatus({"local_num_threads": 1, "use_wfr": False})
+nest.SetKernelStatus({"local_num_threads": 3, "use_wfr": False})
 nest.rng_seed = 15
 
 init_self_pred = True
-self_predicting_fb = True
-self_predicting_ff = True
+self_predicting_fb = False
+self_predicting_ff = False
 plasticity_fb = True
 plasticity_ff = True
 
@@ -21,12 +21,11 @@ n_runs = 10000
 
 # Network parameters
 # dims = [1, 1, 1]
-dims = [4, 3, 2]
-dims = [7, 4, 3]
-
-# dims = [15, 10, 5]
+# dims = [4, 3, 2]
+# dims = [7, 4, 3]
+dims = [15, 10, 5]
 noise = False
-noise_std = 0.2
+noise_std = 0.15
 target_amp = 10
 stim_amp = 1
 nudging = True

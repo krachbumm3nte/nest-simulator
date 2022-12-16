@@ -17,6 +17,9 @@ class MathematicaNetwork:
         self.intn_pops = []
         self.parrots = None
         self.gauss = None
+        self.V_ah_record =[]
+        self.U_i_record = []
+        self.U_y_record = []
         self.setup_populations(init_self_pred)
 
     def gen_weights(self, lr, next_lr, w_min=wmin_init, w_max=wmax_init):
@@ -96,6 +99,10 @@ class MathematicaNetwork:
                 d["t_w"] = d["t_w"] + (delta_t/tau_delta) * d["dt_w"]
                 d["w"] = d["w"] + d["eta"] * delta_t * d["t_w"]
                 d["record"].append(d["w"])
+
+            self.V_ah_record.append(self.V_ah)
+            self.U_i_record.append(self.U_i)
+            self.U_y_record.append(self.U_y)
 
     def set_input(self, input_currents):
         self.I_x = input_currents
