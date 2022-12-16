@@ -439,7 +439,7 @@ public:
   };
 
   double
-  get_V_m(int comp)
+  get_V_m( int comp )
   {
     return S_.y_[ S_.idx( comp, State_::V_M ) ];
   }
@@ -545,7 +545,7 @@ private:
 inline double
 rate_neuron_pyr_parameters::phi( double u )
 {
-  return gamma * log(1 + exp (beta * (u - theta)));
+  return gamma * log( 1 + exp( beta * ( u - theta ) ) );
   // return phi_max / ( 1.0 + gamma * exp( beta * ( theta - u ) ) );
   // TODO: which is the correct activation function for this?
 }
@@ -575,7 +575,6 @@ rate_neuron_pyr::handles_test_event( SpikeEvent&, rport receptor_type )
   }
   return receptor_type - MIN_SPIKE_RECEPTOR;
 }
-
 
 
 inline port

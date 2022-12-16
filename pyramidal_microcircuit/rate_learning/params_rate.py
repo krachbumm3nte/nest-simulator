@@ -6,12 +6,12 @@ import numpy as np
 delta_t = 0.1
 nest.resolution = delta_t
 nest.set_verbosity("M_ERROR")
-nest.SetKernelStatus({"local_num_threads": 3, "use_wfr": False})
+nest.SetKernelStatus({"local_num_threads": 1, "use_wfr": False})
 nest.rng_seed = 15
 
 init_self_pred = True
-self_predicting_fb = False
-self_predicting_ff = False
+self_predicting_fb = True
+self_predicting_ff = True
 plasticity_fb = True
 plasticity_ff = True
 
@@ -22,8 +22,10 @@ n_runs = 10000
 # Network parameters
 # dims = [1, 1, 1]
 dims = [4, 3, 2]
+dims = [7, 4, 3]
+
 # dims = [15, 10, 5]
-noise = True
+noise = False
 noise_std = 0.2
 target_amp = 10
 stim_amp = 1
@@ -86,12 +88,12 @@ nest.CopyModel('pyr_synapse_rate', 'record_syn', {"weight_recorder": wr})
 eta_pyr_int = 0.025
 eta_int_pyr = 0.013
 wmin_init, wmax_init = -1, 1
-wmin, wmax = -1, 1
+wmin, wmax = -2, 2
 tau_delta = 30
 
 # TODO: set up weight recorder.
 syn_params = {
-    'synapse_model': 'pyr_synapse_rate',
+    'synapse_model': 'record_syn',
     'tau_Delta': tau_delta,
     'Wmin': wmin,
     'Wmax': wmax,

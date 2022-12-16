@@ -218,12 +218,12 @@ pyr_synapse_rate< targetidentifierT >::send( Event& e, thread t, const CommonSyn
   Node* target = get_target( t );
 
   Node* sender = kernel().node_manager.get_node_or_proxy( e.retrieve_sender_node_id_from_source_table() );
-  nest::rate_neuron_pyr* sender_pyr = static_cast<nest::rate_neuron_pyr*>(sender);
+  nest::pp_cond_exp_mc_pyr* sender_pyr = static_cast<nest::pp_cond_exp_mc_pyr*>(sender);
   double v_m_sender = sender_pyr->get_V_m( 0 );
   int rport = get_rport();
   double V_dend = target->get_V_m( rport );
   double delta_tilde_w;
-  double phi_sender = sender_pyr->phi( v_m_sender );
+  double phi_sender = sender_pyr->P_.pyr_params.phi( v_m_sender );
   double dend_error = 0;
   double V_W_star = 0;
 

@@ -66,7 +66,7 @@ class MathematicaNetwork:
 
             delta_u_x = -self.U_x + self.I_x
             delta_u_h = -(g_l + g_d + g_a) * self.U_h + g_d * self.V_bh + g_a * self.V_ah
-            delta_u_y = -(g_l + g_d + g_a) * self.U_y + g_d * self.V_by  # + target activation if we want that
+            delta_u_y = -(g_l + g_d + g_a) * self.U_y + g_d * self.V_by  # TODO + target activation if we want that
             delta_u_i = -(g_l + g_d + g_a) * self.U_i + g_d * self.V_bi + lam * self.U_y
 
             self.conns["hx"]["dt_w"] = -self.conns["hx"]["t_w"] + np.outer(self.r_h - phi((g_d * self.V_bh)/(g_l + g_d + g_a)), self.r_x)
@@ -93,8 +93,8 @@ class MathematicaNetwork:
             self.r_i = phi(self.U_i)
 
             for name, d in self.conns.items():
-                d["t_w"] += (delta_t/tau_delta) * d["dt_w"]
-                d["w"] += d["eta"] * delta_t * d["t_w"]
+                d["t_w"] = d["t_w"] + (delta_t/tau_delta) * d["dt_w"]
+                d["w"] = d["w"] + d["eta"] * delta_t * d["t_w"]
                 d["record"].append(d["w"])
 
     def set_input(self, input_currents):

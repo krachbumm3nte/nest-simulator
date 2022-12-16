@@ -94,7 +94,6 @@ private:
   double gamma;   //!< Parameter of the rate function
   double beta;    //!< Parameter of the rate function
   double theta;   //!< Parameter of the rate function
-  double phi( double u );
   double h( double u );
 
   int curr_target; // target neuron for a singular current synapse
@@ -104,6 +103,7 @@ private:
 public:
   // The Urbanczik parameters need to be public within this class as they are passed to the GSL solver
   double tau_m;
+  double phi( double u );
 
   double g_conn[ NCOMP ]; //!< Conductances connecting compartments in nS
   double g_L[ NCOMP ];    //!< Leak Conductance in nS
@@ -440,6 +440,18 @@ public:
     }
   };
 
+  double
+  get_V_m( int comp )
+  {
+    double v = S_.y_[ S_.idx( comp, State_::V_M ) ];
+    // std::cout << "vcomp: " << this->get_node_id() << ", " << comp << ", " << v << std::endl;
+    if ( std::isnan( v ) )
+    {
+      throw KernelException();
+    }
+    return v;
+  }
+
 private:
   // Internal buffers --------------------------------------------------------
 
@@ -518,20 +530,9 @@ private:
     return Time::get_resolution().get_ms() * S_.r_;
   }
 
-  double
-  get_V_m( int comp )
-  {
-    double v = S_.y_[ S_.idx( comp, State_::V_M ) ];
-    // std::cout << "vcomp: " << this->get_node_id() << ", " << comp << ", " << v << std::endl;
-    if ( std::isnan( v ) )
-    {
-      throw KernelException();
-    }
-    return v;
-  }
 
   // Data members ----------------------------------------------------
-
+public:
   Parameters_ P_;
   State_ S_;
   Variables_ V_;
