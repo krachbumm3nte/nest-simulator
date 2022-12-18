@@ -219,33 +219,39 @@ pyr_synapse_rate< targetidentifierT >::send( Event& e, thread t, const CommonSyn
 
   Node* sender = kernel().node_manager.get_node_or_proxy( e.retrieve_sender_node_id_from_source_table() );
   nest::pp_cond_exp_mc_pyr* sender_pyr = static_cast<nest::pp_cond_exp_mc_pyr*>(sender);
-  double v_m_sender = sender_pyr->get_V_m( 0 );
+  double U_sender = sender_pyr->get_V_m( 0 );
   int rport = get_rport();
   double V_dend = target->get_V_m( rport );
   double delta_tilde_w;
-  double phi_sender = sender_pyr->P_.pyr_params.phi( v_m_sender );
+  double phi_sender = sender_pyr->P_.pyr_params.phi( U_sender );
   double dend_error = 0;
   double V_W_star = 0;
 
   if ( rport == 1 )
   {
-    double V_som = target->get_V_m( 0 );
+    double U_target = target->get_V_m( 0 );
     double const g_L = target->get_g_L( 0 );
     double g_D = target->get_g( 1 );
     double g_A = target->get_g( 2 );
-    V_W_star = phi( ( g_D * V_dend ) / ( g_L + g_D + g_A ) );
-    dend_error = ( phi( V_som ) - V_W_star );
+    V_W_star =  ( g_D * V_dend ) / ( g_L + g_D + g_A );
+    dend_error = ( phi( U_target ) - phi( V_W_star ));
     //if ( sender->get_node_id() == 3 and target->get_node_id() == 5 )
     //{
-    //  std::cout << "vars: " << V_W_star << ", " << V_som << "," << V_dend << ", " << dend_error << std::endl;
+    //  std::cout << "vars: " << V_W_star << ", " << U_target << "," << V_dend << ", " << dend_error << std::endl;
     //}
-    delta_tilde_w = -tilde_w + dend_error * phi_sender;
   }
-  else
+  else if ( rport == 2)
   {
     dend_error = -V_dend;
-    delta_tilde_w = -tilde_w + dend_error * phi_sender;
   }
+  else if (rport == 3) 
+  {
+    //TODO: this is unverified as of yet, but would enable learning of feedback pyr-pyr weights
+    double U_target = target->get_V_m( 0 );
+    double V_W_star = weight_ * phi(U_sender);
+    dend_error = (phi( U_target ) - phi( V_W_star ));
+  }
+  delta_tilde_w = -tilde_w + dend_error * phi_sender;
   // std::cout << "a: " << rport << ", " << tilde_w << ", " << V_dend << ", " << delta_tilde_w << std::endl;
   //  TODO: generalize delta_t
   tilde_w = tilde_w + 0.1 * ( delta_tilde_w / tau_Delta_ );

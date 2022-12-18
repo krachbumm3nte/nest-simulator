@@ -77,10 +77,10 @@ RecordablesMap< pp_cond_exp_mc_pyr >::create()
     Name( "V_m.s" ), &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::SOMA > );
   insert_(
     Name( "V_m.b" ), &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::BASAL > );
-  // insert_( Name( "V_m.a_td" ),
-  //   &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::APICAL_TD > );
   insert_( Name( "V_m.a_lat" ),
     &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::APICAL_LAT > );
+  //insert_( Name( "V_m.a_td" ),
+  //  &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::APICAL_TD > );
 }
 }
 
@@ -185,17 +185,17 @@ nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_()
   pyr_params.E_L[ BASAL ] = 0.0; // mV
   I_e[ BASAL ] = 0.0;            // pA
 
-  // apical dendrite parameters
-  // pyr_params.g_conn[ APICAL_TD ] = 0.8;
-  // pyr_params.g_L[ APICAL_TD ] = 0.0;
-  // pyr_params.E_L[ APICAL_TD ] = 0.0; // mV
-  // I_e[ APICAL_TD ] = 0.0;            // pA
-
-  // apical dendrite parameters
+  // proximal apical dendrite parameters
   pyr_params.g_conn[ APICAL_LAT ] = 0.8;
   pyr_params.g_L[ APICAL_LAT ] = 0.0;
   pyr_params.E_L[ APICAL_LAT ] = 0.0; // mV
   I_e[ APICAL_LAT ] = 0.0;            // pA
+
+  // distal apical dendrite parameters
+  // pyr_params.g_conn[ APICAL_TD ] = 0.8;
+  // pyr_params.g_L[ APICAL_TD ] = 0.0;
+  // pyr_params.E_L[ APICAL_TD ] = 0.0; // mV
+  // I_e[ APICAL_TD ] = 0.0;            // pA
 }
 
 nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_( const Parameters_& p )
@@ -359,7 +359,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::set( const DictionaryDatum& d )
 
   updateValue< double >( d, Name( names::g_som ), pyr_params.g_conn[ SOMA ] );
   updateValue< double >( d, Name( names::g_b ), pyr_params.g_conn[ BASAL ] );
-  // updateValue< double >( d, Name( names::g_a ), pyr_params.g_conn[ APICAL_TD ] );
+  updateValue< double >( d, Name( names::g_a ), pyr_params.g_conn[ APICAL_LAT ] );
 
   updateValue< double >( d, Name( names::target ), pyr_params.curr_target );
   updateValue< double >( d, Name( names::lambda ), pyr_params.lambda_curr );
@@ -450,8 +450,8 @@ nest::pp_cond_exp_mc_pyr::pp_cond_exp_mc_pyr()
   // comp_names_.resize(NCOMP); --- Fixed size, see comment on definition
   comp_names_[ SOMA ] = Name( "soma" );
   comp_names_[ BASAL ] = Name( "basal" );
-  // comp_names_[ APICAL_TD ] = Name( "apical_td" );
   comp_names_[ APICAL_LAT ] = Name( "apical_lat" );
+  // comp_names_[ APICAL_TD ] = Name( "apical_td" );
   PyrArchivingNode< pp_cond_exp_mc_pyr_parameters >::pyr_params = &P_.pyr_params;
 }
 

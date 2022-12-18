@@ -32,7 +32,7 @@ class Network:
         for l in range(1, self.L):
             pyr_l = nest.Create(pyr_model, self.dims[l], pyr_params)
 
-            syn_spec_ff_pp = syn_ff_pyr_pyr
+            syn_spec_ff_pp = syn_yh
             syn_spec_ff_pp['weight'] = self.gen_weights(self.dims[l-1], self.dims[l])
 
             pyr_prev = self.pyr_pops[-1]
@@ -42,7 +42,7 @@ class Network:
             nest.Connect(pyr_prev, pyr_l, syn_spec=syn_spec_ff_pp)
 
             if l > 1:
-                syn_spec_fb_pp = syn_fb_pyr_pyr
+                syn_spec_fb_pp = syn_hy
                 syn_spec_fb_pp['weight'] = self.gen_weights(self.dims[l], self.dims[l-1])
                 nest.Connect(pyr_l, pyr_prev, syn_spec=syn_spec_fb_pp)
 
@@ -55,12 +55,12 @@ class Network:
                         id = int_l[i].get("global_id")
                         pyr_l[i].target = id
 
-                syn_spec_ff_pi = syn_laminar_pyr_intn
+                syn_spec_ff_pi = syn_ih
                 syn_spec_ff_pi['weight'] = (
                     syn_spec_ff_pp['weight'] if self_predicting_ff else self.gen_weights(self.dims[l-1], self.dims[l]))
                 nest.Connect(pyr_prev, int_l, syn_spec=syn_spec_ff_pi)
 
-                syn_spec_fb_pi = syn_laminar_intn_pyr
+                syn_spec_fb_pi = syn_hi
                 syn_spec_fb_pi['weight'] = (-1 * syn_spec_fb_pp['weight']
                                             if self_predicting_fb else self.gen_weights(self.dims[l], self.dims[l-1]))
                 nest.Connect(int_l, pyr_prev, syn_spec=syn_spec_fb_pi)

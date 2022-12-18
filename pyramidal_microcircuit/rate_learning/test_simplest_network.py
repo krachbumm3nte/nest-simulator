@@ -1,22 +1,18 @@
 import nest
 import matplotlib.pyplot as plt
 import pandas as pd
+import params_rate
 from params_rate import *
 import numpy as np
 from network_rate import Network
 
 cmap = plt.cm.get_cmap('hsv', 5)
 
-
-def phi(x):
-    return 1 / (1.0 + np.exp(-x))
-
-
 tau_x = 3
 input_filter = 1/tau_x
 
-n_runs = 500
-sim_duration = 100
+n_runs = 15
+sim_duration = 150
 sim_times = [sim_duration for i in range(n_runs)]
 stim_amps = 2*np.random.random(n_runs)-1
 SIM_TIME = sum(sim_times)
@@ -60,7 +56,7 @@ for T, amp in zip(sim_times, stim_amps):
         delta_u_x = -U_x + amp
         delta_u_h = -(g_l + g_d + g_a) * U_h + g_d * V_bh + g_a * V_ah
         delta_u_y = -(g_l + g_d + g_a) * U_y + g_d * V_by  # + target activation if we want that
-        delta_u_i = -(g_l + g_d + g_a) * U_i + g_d * V_bi + lam * U_y
+        delta_u_i = -(g_l + g_d + g_a) * U_i + g_d * V_bi + g_si * U_y
 
         conns["hx"]["delta_tilde_w"] = -conns["hx"]["tilde_w"] + (r_h - phi((g_d * V_bh)/(g_l + g_d + g_a))) * r_x
         conns["yh"]["delta_tilde_w"] = -conns["yh"]["tilde_w"] + (r_y - phi((g_d * V_by)/(g_l + g_d))) * r_h

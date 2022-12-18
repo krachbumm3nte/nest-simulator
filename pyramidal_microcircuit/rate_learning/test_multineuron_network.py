@@ -25,6 +25,7 @@ c_yh = nest.GetConnections(nest_net.pyr_pops[1], nest_net.pyr_pops[2])
 c_ih = nest.GetConnections(nest_net.pyr_pops[1], nest_net.intn_pops[0])
 c_hi = nest.GetConnections(nest_net.intn_pops[0], nest_net.pyr_pops[1])
 c_hy = nest.GetConnections(nest_net.pyr_pops[2], nest_net.pyr_pops[1])
+nest_conns = [c_hx, c_yh, c_ih, c_hi, c_hy, ]
 
 """
 math_net.conns["hx"]["w"] = np.asmatrix(np.ones((dims[1], dims[0])))
@@ -32,13 +33,12 @@ math_net.conns["yh"]["w"] = np.asmatrix(np.ones((dims[2], dims[1])))
 math_net.conns["ih"]["w"] = np.asmatrix(np.ones((dims[2], dims[1])))
 math_net.conns["hi"]["w"] = np.asmatrix(np.ones((dims[1], dims[2])))
 math_net.conns["hy"]["w"] = np.asmatrix(np.ones((dims[1], dims[2])))
+
 c_hx.set({"weight": np.squeeze(np.asarray(math_net.conns["hx"]["w"])).flatten("F"), "eta": math_net.conns["hx"]["eta"]})
 c_yh.set({"weight": np.squeeze(np.asarray(math_net.conns["yh"]["w"])).flatten("F"), "eta": math_net.conns["yh"]["eta"]})
 c_ih.set({"weight": np.squeeze(np.asarray(math_net.conns["ih"]["w"])).flatten("F"), "eta": math_net.conns["ih"]["eta"]})
 c_hi.set({"weight": np.squeeze(np.asarray(math_net.conns["hi"]["w"])).flatten("F"), "eta": math_net.conns["hi"]["eta"]})
 c_hy.set({"weight": np.squeeze(np.asarray(math_net.conns["hy"]["w"])).flatten("F"), "eta": math_net.conns["hy"]["eta"]})
-
-
 
 math_net.conns["hx"]["w"] = np.asmatrix(np.random.random((dims[1], dims[0])) * 2 - 1)
 math_net.conns["yh"]["w"] = np.asmatrix(np.random.random((dims[2], dims[1])) * 2 - 1)
@@ -70,7 +70,6 @@ math_net.conns["ih"]["w"] = matrix_from_connection(c_ih)
 math_net.conns["hi"]["w"] = matrix_from_connection(c_hi)
 math_net.conns["hy"]["w"] = matrix_from_connection(c_hy)
 
-nest_conns = [c_hx, c_yh, c_ih, c_hi, c_hy, ]
 
 for i in range(n_runs):
     if i % 5 == 0:
