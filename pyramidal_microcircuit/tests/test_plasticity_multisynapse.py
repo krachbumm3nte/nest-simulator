@@ -10,22 +10,10 @@ The neuron in the hidden layer (pyr_h) recieves synaptic input to both apical an
 somatic current connection from one of the input neurons.
 """
 
-
-def phi(x):
-    return 1 / (1.0 + np.exp(-x))
-
-
-# TODO: find out which combination of paramters gets the right result here, and DOCUMENT YOUR SHIT!
-tau_x = 3
-input_filter = 1/tau_x
-
-pyr_params['basal']['g'] = 0
-pyr_params['apical_lat']['g'] = 0
-
 pyr_h = nest.Create(pyr_model, 1, pyr_params)
 mm_h = nest.Create("multimeter", 1, {'record_from': ["V_m.s", "V_m.b", "V_m.a_lat"]})
 nest.Connect(mm_h, pyr_h)
-pyr_h.set({'soma': {'g_L': g_lk_som}, 'apical_lat': {'g': g_a}, 'basal': {'g': g_b_pyr, 'g_L': 1}})
+pyr_h.set({'soma': {'g_L': g_l}, 'apical_lat': {'g': g_a}, 'basal': {'g': g_d}})
 
 
 pyr_i = nest.Create(pyr_model, 1, pyr_params)
@@ -37,7 +25,6 @@ pyr_i.set({'soma': {'g_L': input_filter}, 'tau_m': input_filter})
 pyr_y = nest.Create(pyr_model, 1, pyr_params)
 mm_y = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
 nest.Connect(mm_y, pyr_y)
-pyr_y.set({'soma': {'g_L': input_filter}, 'tau_m': 1/tau_x})
 
 
 w0 = 1
