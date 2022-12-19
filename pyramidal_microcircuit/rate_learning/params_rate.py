@@ -12,19 +12,14 @@ nest.rng_seed = 15
 init_self_pred = True
 self_predicting_fb = False
 self_predicting_ff = False
-plasticity_fb = True
-plasticity_ff = True
-added_plasticity = True
+plasticity = True
+bogo_plasticity =True
 
 
 SIM_TIME = 200
 n_runs = 10000
 
 # Network parameters
-dims = [1, 1, 1]
-# dims = [4, 3, 2]
-# dims = [7, 4, 3]
-# dims = [15, 10, 5]
 noise = False
 noise_std = 0.15
 target_amp = 10
@@ -64,7 +59,7 @@ comp_defaults = {
 pyr_params = {
     'soma': deepcopy(comp_defaults),
     'basal': deepcopy(comp_defaults),
-    'apical_td': deepcopy(comp_defaults),
+    # 'apical_td': deepcopy(comp_defaults),
     'apical_lat': deepcopy(comp_defaults),
     # parameters of rate function
     'tau_m': 1,
@@ -81,11 +76,22 @@ pyr_params['basal']['g'] = g_d
 # pyr_params['apical_td']['g'] = 0.0
 pyr_params['apical_lat']['g'] = g_a
 pyr_params['soma']['g_L'] = g_l
+pyr_params['soma']['g'] = g_l + g_d + g_si # misappropriation of somatic conductance. this is the effective leakage conductance now!
 
 intn_params = deepcopy(pyr_params)
-pyr_params['soma']['g_L'] = g_l
 intn_params['apical_lat']['g'] = 0.0
-intn_params['basal']['g'] = g_d
+
+# to replace the low pass filtering of the input, input neurons have both
+# injected current and leakage conductance attenuated.
+# Additionally, the dendritic compartments are silenced, and membrane voltage is
+# transmitted to the hidden layer without the nonlinearity phi.
+input_params = deepcopy(pyr_params)
+input_params["soma"]["g"] = tau_input
+input_params["use_phi"] = False
+input_params['basal']['g'] = 0
+input_params['tau_m'] = tau_input
+
+
 
 # synapse parameters
 wr = nest.Create('weight_recorder')
@@ -94,11 +100,24 @@ nest.CopyModel('pyr_synapse_rate', 'record_syn', {"weight_recorder": wr})
 # wr_ip = nest.Create('weight_recorder')
 # nest.CopyModel('pyr_synapse', 'record_syn_ip', {"weight_recorder": wr_ip})
 
+if plasticity:
+    eta_yh = 0.01
+    eta_hx = eta_yh / lambda_ah
+    eta_hi = 0.01 / lambda_ah
+    eta_ih = 5 * eta_hi
+else:
+    eta_yh = 0
+    eta_hx = 0
+    eta_hi = 0
+    eta_ih = 0
+eta_hy = 0
+if bogo_plasticity:
+    eta_yh *= 10
+    eta_hx *= 10
+    eta_hi *= 10
+    eta_ih *= 10
 
-eta_yh = 0.01
-eta_hx = eta_yh / lambda_ah
-eta_hi = 0.01 / lambda_ah
-eta_ih = 5 * eta_hi
+
 
 wmin_init, wmax_init = -1, 1
 wmin, wmax = -2, 2
@@ -139,13 +158,10 @@ syn_ih['receptor_type'] = basal_dendrite
 syn_hi = deepcopy(syn_params)
 syn_hi['receptor_type'] = apical_dendrite
 
-if plasticity_fb:
-    syn_hi['eta'] = eta_hi
-if plasticity_ff:
-    syn_ih['eta'] = eta_ih
-if added_plasticity:
-    syn_hx['eta'] = eta_hx
-    syn_yh['eta'] = eta_yh
+syn_hi['eta'] = eta_hi
+syn_ih['eta'] = eta_ih
+syn_hx['eta'] = eta_hx
+syn_yh['eta'] = eta_yh
 
 # set weights after the fact because deepcopy does not enjoy copying functions.
 # all_syns = [syn_ff_pyr_pyr, syn_fb_pyr_pyr, syn_laminar_intn_pyr, syn_laminar_pyr_intn]

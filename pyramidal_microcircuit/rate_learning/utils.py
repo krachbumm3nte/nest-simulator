@@ -1,0 +1,20 @@
+import pandas as pd
+import numpy as np
+
+def matrix_from_connection(conn):
+    conn_data = conn.get(["weight", "source", "target"])
+    if type(conn_data["weight"]) is not list:
+        conn_data = [conn_data] # pandas throws a fit if one-dimensional data isn't indexed. this solves the issue.
+    df = pd.DataFrame.from_dict(conn_data)
+    n_out = len(set(df["target"]))
+    n_in = len(set(df["source"]))
+    weights = np.reshape(df.sort_values(by=["source", "target"])["weight"].values, (n_out, n_in), "F")
+    return np.asmatrix(weights)
+
+
+def matrix_from_wr(data, conn):
+    n_out = len(set(conn.get("target")))
+    n_in = len(set(conn.get("source")))
+    filtered_data = data[(data.targets.isin(set(conn.target)) & data.senders.isin(set(conn.source)))]
+    sorted_data = filtered_data.sort_values(by=["senders", "targets"])["weights"].values
+    return np.reshape(sorted_data, (-1, n_out, n_in), "F")

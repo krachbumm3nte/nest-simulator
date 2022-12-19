@@ -5,7 +5,7 @@ import numpy as np
 
 class Network:
 
-    def __init__(self) -> None:
+    def __init__(self, dims) -> None:
         self.dims = dims
         self.noise = noise
         self.noise_std = noise_std
@@ -24,7 +24,7 @@ class Network:
 
     def setup_populations(self, self_predicting):
 
-        self.pyr_pops.append(nest.Create(pyr_model, self.dims[0], pyr_params))
+        self.pyr_pops.append(nest.Create(pyr_model, self.dims[0], input_params))
 
         if self.noise:
             gauss = nest.Create("noise_generator", 1, {"mean": 0., "std": self.noise_std})
@@ -34,7 +34,7 @@ class Network:
 
             syn_spec_ff_pp = syn_yh
             syn_spec_ff_pp['weight'] = self.gen_weights(self.dims[l-1], self.dims[l])
-
+            syn_spec_ff_pp['eta'] = eta_hx if l == 1 else eta_yh
             pyr_prev = self.pyr_pops[-1]
             if self.noise:
                 nest.Connect(gauss, pyr_l, syn_spec={"receptor_type": pyr_comps["soma_curr"]})
@@ -70,27 +70,16 @@ class Network:
         # Set special parameters for some of the populations:
 
         # output neurons are modeled without an apical compartment
-        self.pyr_pops[-1].set({"apical_lat": {"g": 0}})
+        self.pyr_pops[-1].set({"apical_lat": {"g": 0}, })
 
-        # to replace the low pass filtering of the input, input neurons have both
-        # injected current and leakage conductance attenuated.
-        # Additionally, the dendritic compartments are silenced, and membrane voltage is
-        # transmitted without the nonlinearity phi.
-        # TODO: i really need to get rid of these magic numbers
-        self.pyr_pops[0].set({"soma": {"g_L": tau_input - 0.8}, "use_phi": False, "basal": {
-                             "g": 0}, "apical_lat": {"g": 0}, "tau_m": tau_input})
-        
-        self.nudge = nest.Create("dc_generator", self.dims[-1], {'amplitude': 0})
-        # nest.Connect(self.nudge, self.pyr_pops[-1], "one_to_one", syn_spec={'receptor_type': pyr_comps['soma_curr']})
-
-        self.mm_x = nest.Create('multimeter', 1, {'record_from': ["V_m.s", "V_m.b"]})
-        self.mm_i = nest.Create('multimeter', 1, {'record_from': ["V_m.s", "V_m.b"]})
+        self.mm_x = nest.Create('multimeter', 1, {'record_from': ["V_m.s"]})
         self.mm_h = nest.Create('multimeter', 1, {'record_from': ["V_m.a_lat", "V_m.s", "V_m.b"]})
+        self.mm_i = nest.Create('multimeter', 1, {'record_from': ["V_m.s", "V_m.b"]})
         self.mm_y = nest.Create('multimeter', 1, {'record_from': ["V_m.s", "V_m.b"]})
 
         nest.Connect(self.mm_x, self.pyr_pops[0])
-        nest.Connect(self.mm_i, self.intn_pops[0])
         nest.Connect(self.mm_h, self.pyr_pops[1])
+        nest.Connect(self.mm_i, self.intn_pops[0])
         nest.Connect(self.mm_y, self.pyr_pops[2])
 
         # self.sr_in = nest.Create("spike_recorder", 1)
@@ -103,13 +92,28 @@ class Network:
         # nest.Connect(self.pyr_pops[2], self.sr_out)
 
     def set_input(self, input_currents):
+        """Inject a constant current into all neurons in the input layer.
 
-        for i in range(dims[0]):
+        @note: Before injection, currents are attenuated by the input time constant
+        in order to match the simulation exactly.
+
+        Arguments:
+            input_currents -- Iterable of length equal to the input dimension.
+        """
+        for i in range(self.dims[0]):
             self.pyr_pops[0][i].set({"soma": {"I_e": input_currents[i] * tau_input}})
 
     def set_target(self, indices):
+        """Inject a constant current into all neurons in the output layer.
+
+        @note: Before injection, currents are attenuated by the output neuron
+        nudging conductance in order to match the simulation exactly.
+
+        Arguments:
+            indices -- Iterable of length equal to the output dimension.
+        """
         for i in range(self.dims[-1]):
             if i in indices:
-                self.pyr_pops[-1][i].set({"soma": {"I_e": self.stim_amp}})
+                self.pyr_pops[-1][i].set({"soma": {"I_e": self.stim_amp * g_s}})
             else:
                 self.pyr_pops[-1][i].set({"soma": {"I_e": 0}})

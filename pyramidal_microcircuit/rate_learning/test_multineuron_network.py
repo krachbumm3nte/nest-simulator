@@ -1,24 +1,23 @@
 import nest
 import matplotlib.pyplot as plt
 import pandas as pd
+from utils import *
 from params_rate import *
 import numpy as np
 from network_rate import Network
 from network_mathematica import MathematicaNetwork
 from sklearn.metrics import mean_squared_error as mse
 
-
 cmap = plt.cm.get_cmap('hsv', 7)
 styles = ["solid", "dotted", "dashdot", "dashed"]
 
-tau_x = 3
-input_filter = 1/tau_x
+n_runs = 40
+SIM_TIME = 120
 
-n_runs = 35
-SIM_TIME = 150
+dims = [4,3,2]
 
-nest_net = Network()
-math_net = MathematicaNetwork()
+nest_net = Network(dims)
+math_net = MathematicaNetwork(dims)
 
 c_hx = nest.GetConnections(nest_net.pyr_pops[0], nest_net.pyr_pops[1])
 c_yh = nest.GetConnections(nest_net.pyr_pops[1], nest_net.pyr_pops[2])
@@ -26,42 +25,6 @@ c_ih = nest.GetConnections(nest_net.pyr_pops[1], nest_net.intn_pops[0])
 c_hi = nest.GetConnections(nest_net.intn_pops[0], nest_net.pyr_pops[1])
 c_hy = nest.GetConnections(nest_net.pyr_pops[2], nest_net.pyr_pops[1])
 nest_conns = [c_hx, c_yh, c_ih, c_hi, c_hy, ]
-
-"""
-math_net.conns["hx"]["w"] = np.asmatrix(np.ones((dims[1], dims[0])))
-math_net.conns["yh"]["w"] = np.asmatrix(np.ones((dims[2], dims[1])))
-math_net.conns["ih"]["w"] = np.asmatrix(np.ones((dims[2], dims[1])))
-math_net.conns["hi"]["w"] = np.asmatrix(np.ones((dims[1], dims[2])))
-math_net.conns["hy"]["w"] = np.asmatrix(np.ones((dims[1], dims[2])))
-
-c_hx.set({"weight": np.squeeze(np.asarray(math_net.conns["hx"]["w"])).flatten("F"), "eta": math_net.conns["hx"]["eta"]})
-c_yh.set({"weight": np.squeeze(np.asarray(math_net.conns["yh"]["w"])).flatten("F"), "eta": math_net.conns["yh"]["eta"]})
-c_ih.set({"weight": np.squeeze(np.asarray(math_net.conns["ih"]["w"])).flatten("F"), "eta": math_net.conns["ih"]["eta"]})
-c_hi.set({"weight": np.squeeze(np.asarray(math_net.conns["hi"]["w"])).flatten("F"), "eta": math_net.conns["hi"]["eta"]})
-c_hy.set({"weight": np.squeeze(np.asarray(math_net.conns["hy"]["w"])).flatten("F"), "eta": math_net.conns["hy"]["eta"]})
-
-math_net.conns["hx"]["w"] = np.asmatrix(np.random.random((dims[1], dims[0])) * 2 - 1)
-math_net.conns["yh"]["w"] = np.asmatrix(np.random.random((dims[2], dims[1])) * 2 - 1)
-math_net.conns["ih"]["w"] = np.asmatrix(np.random.random((dims[2], dims[1])) * 2 - 1)
-math_net.conns["hi"]["w"] = np.asmatrix(np.random.random((dims[1], dims[2])) * 2 - 1)
-math_net.conns["hy"]["w"] = np.asmatrix(np.random.random((dims[1], dims[2])) * 2 - 1)
-"""
-
-
-def matrix_from_connection(conn):
-    df = pd.DataFrame.from_dict(conn.get(["weight", "source", "target"]))
-    n_out = len(set(df["target"]))
-    n_in = len(set(df["source"]))
-    weights = np.reshape(df.sort_values(by=["source", "target"])["weight"].values, (n_out, n_in), "F")
-    return np.asmatrix(weights)
-
-
-def matrix_from_wr(data, conn):
-    n_out = len(set(conn.get("target")))
-    n_in = len(set(conn.get("source")))
-    filtered_data = data[(data.targets.isin(set(conn.target)) & data.senders.isin(set(conn.source)))]
-    sorted_data = filtered_data.sort_values(by=["senders", "targets"])["weights"].values
-    return np.reshape(sorted_data, (-1, n_out, n_in), "F")
 
 
 math_net.conns["hx"]["w"] = matrix_from_connection(c_hx)
@@ -79,7 +42,7 @@ for i in range(n_runs):
     nest_net.set_input(amp)
     nest.Simulate(SIM_TIME)
 
-    math_net.set_input([amp])
+    math_net.set_input(amp)
     math_net.simulate(SIM_TIME)
 
 fig, axes = plt.subplots(2, 6, sharey="col")
@@ -141,7 +104,7 @@ for c, (name, conn) in enumerate(math_net.conns.items()):
             # axes[1][c].legend()
 
 # plot apical error
-axes[0][4].plot(np.linalg.norm(np.array(math_net.V_ah_record), axis=(1,2)))
+axes[0][4].plot(np.linalg.norm(math_net.V_ah_record, axis=1))
 axes[0][4].set_title("apical voltage")
 
 events = pd.DataFrame.from_dict(nest_net.mm_h.events).sort_values("times")
@@ -152,8 +115,8 @@ axes[1][4].plot(np.linalg.norm(apical_err, axis=1), label="apical error")
 
 # plot interneuron error
 
-U_intn = np.array(math_net.U_i_record).squeeze().swapaxes(0,1)
-U_out = np.array(math_net.U_y_record).squeeze().swapaxes(0,1)
+U_intn = np.asarray(math_net.U_i_record).swapaxes(0,1)
+U_out = np.asarray(math_net.U_y_record).swapaxes(0,1)
 
 
 intn_error = mse(U_intn, U_out, multioutput="raw_values")
