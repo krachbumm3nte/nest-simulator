@@ -250,6 +250,7 @@ pyr_synapse_rate< targetidentifierT >::send( Event& e, thread t, const CommonSyn
     double U_target = target->get_V_m( 0 );
     double V_W_star = weight_ * phi(U_sender);
     dend_error = (phi( U_target ) - phi( V_W_star ));
+    rport -= 1; // send all top-down signals to the apical compartment by changing rport
   }
   delta_tilde_w = -tilde_w + dend_error * phi_sender;
   // std::cout << "a: " << rport << ", " << tilde_w << ", " << V_dend << ", " << delta_tilde_w << std::endl;

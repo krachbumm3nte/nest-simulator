@@ -79,8 +79,8 @@ RecordablesMap< pp_cond_exp_mc_pyr >::create()
     Name( "V_m.b" ), &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::BASAL > );
   insert_( Name( "V_m.a_lat" ),
     &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::APICAL_LAT > );
-  //insert_( Name( "V_m.a_td" ),
-  //  &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::APICAL_TD > );
+  // insert_( Name( "V_m.a_td" ),
+  //   &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::APICAL_TD > );
 }
 }
 
@@ -612,8 +612,8 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
     const double V = S_.y_[ State_::idx( P_.pyr_params.SOMA, State_::V_M ) ];
 
     // leak current of soma
-    // TODO: magic number to match the Mathematica simulation.
-    const double I_L = (P_.pyr_params.g_L[ P_.pyr_params.SOMA ] + P_.pyr_params.g_conn[ pyr_params->BASAL ] + 0.8)  * V;
+    // TODO: I am misappropriating g_som here, because I am too lazy to create another neuron parameter.
+    const double I_L = P_.pyr_params.g_conn[ pyr_params->SOMA ] * V;
 
     // coupling from dendrites to soma all summed up
     double I_conn_d_s = 0.0;
@@ -635,21 +635,21 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       const double I_L_dend = P_.pyr_params.g_L[ n ] * V_dnd;
 
       // derivative membrane potential
-      S_.y_[ State_::idx( n, State_::V_M ) ] = V_dnd + ( - I_L_dend + I_dend );
+      S_.y_[ State_::idx( n, State_::V_M ) ] = V_dnd + ( -I_L_dend + I_dend );
 
       // derivative dendritic current
       S_.y_[ State_::idx( n, State_::I ) ] = I_dend - I_dend / P_.pyr_params.tau_m;
-      //if ( n == 10 )
+      // if ( n == 10 )
       //{
-      //  std::cout << I_L_dend << ", " << I_conn_d_s << ", " << S_.y_[ State_::idx( 1, State_::V_M ) ] << ", "
-      //            << S_.y_[ State_::idx( 0, State_::V_M ) ] << std::endl;
-      //}
+      //   std::cout << I_L_dend << ", " << I_conn_d_s << ", " << S_.y_[ State_::idx( 1, State_::V_M ) ] << ", "
+      //             << S_.y_[ State_::idx( 0, State_::V_M ) ] << std::endl;
+      // }
     }
 
     // derivative membrane potential
     // soma
     S_.y_[ State_::idx( P_.pyr_params.SOMA, State_::V_M ) ] =
-      V + 0.1 * (- I_L + I_conn_d_s + B_.I_stim_[ P_.pyr_params.SOMA ] + P_.I_e[ P_.pyr_params.SOMA ]);
+      V + 0.1 * ( -I_L + I_conn_d_s + B_.I_stim_[ P_.pyr_params.SOMA ] + P_.I_e[ P_.pyr_params.SOMA ] );
 
     // excitatory conductance soma
     S_.y_[ State_::idx( P_.pyr_params.SOMA, State_::I ) ] =
@@ -778,11 +778,13 @@ nest::pp_cond_exp_mc_pyr::handle( SpikeEvent& e )
   assert( e.get_delay_steps() > 0 );
   assert( 0 <= e.get_rport() and e.get_rport() < 2 * NCOMP );
 
-  //double spike_val = e.get_weight() * e.get_multiplicity();
-  // We multiply with the sender activity here because it allows us to track weights with a weight_recorder.
-  double spike_val = e.get_weight()
-   * P_.pyr_params.phi(
-     kernel().node_manager.get_node_or_proxy( e.retrieve_sender_node_id_from_source_table() )->get_V_m( 0 ) );
+  // double spike_val = e.get_weight() * e.get_multiplicity();
+  //  We multiply with the sender activity here because it allows us to track weights with a weight_recorder.
+
+  Node* sender = kernel().node_manager.get_node_or_proxy( e.retrieve_sender_node_id_from_source_table() );
+  nest::pp_cond_exp_mc_pyr* sender_pyr = static_cast< nest::pp_cond_exp_mc_pyr* >( sender );
+
+  double spike_val = e.get_weight() * sender_pyr->pyr_params->phi( sender_pyr->get_V_m( 0 ) );
 
 
   B_.spikes_[ e.get_rport() ].add_value(

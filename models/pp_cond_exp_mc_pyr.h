@@ -447,7 +447,8 @@ public:
     // std::cout << "vcomp: " << this->get_node_id() << ", " << comp << ", " << v << std::endl;
     if ( std::isnan( v ) )
     {
-      throw KernelException();
+      std::cout << "pyramidal neuron compartment " << comp << " voltage is NaN!" << std::endl;
+      throw KernelException("pyramidal neuron compartment  voltage is NaN!");
     }
     return v;
   }
