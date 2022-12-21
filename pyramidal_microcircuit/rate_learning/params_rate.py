@@ -6,14 +6,14 @@ import numpy as np
 delta_t = 0.1
 nest.resolution = delta_t
 nest.set_verbosity("M_ERROR")
-nest.SetKernelStatus({"local_num_threads": 3, "use_wfr": False})
+nest.SetKernelStatus({"local_num_threads": 1, "use_wfr": False})
 nest.rng_seed = 15
 
 init_self_pred = True
 self_predicting_fb = False
 self_predicting_ff = False
 plasticity = True
-bogo_plasticity =True
+bogo_plasticity = True
 
 
 SIM_TIME = 200
@@ -116,8 +116,6 @@ if bogo_plasticity:
     eta_hx *= 10
     eta_hi *= 10
     eta_ih *= 10
-
-
 
 wmin_init, wmax_init = -1, 1
 wmin, wmax = -2, 2

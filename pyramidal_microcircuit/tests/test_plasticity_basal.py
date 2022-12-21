@@ -7,7 +7,7 @@ This script shows that the neuron model handles a single basal input exactly lik
 solution if parameters are set correctly.
 """
 # TODO: figure out why this is needed!
-magic_plasticity_factor = 2.06
+magic_plasticity_factor = 1 #2.06
 # plasticity in the simulator is slightly faster than in the analytical model! this is due to information
 # in the synapse being delayed. For this proof of concept I have multiplied the weight changes in the 
 # analytical solution with this magic number.

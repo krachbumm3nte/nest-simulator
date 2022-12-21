@@ -11,8 +11,8 @@ from sklearn.metrics import mean_squared_error as mse
 cmap = plt.cm.get_cmap('hsv', 7)
 styles = ["solid", "dotted", "dashdot", "dashed"]
 
-n_runs = 5
-SIM_TIME = 130
+n_runs = 50
+SIM_TIME = 10
 SIM_TIME_TOTAL = n_runs * SIM_TIME
 
 dims = [1, 1, 1]
@@ -43,7 +43,7 @@ for i in range(n_runs):
     nest.Simulate(SIM_TIME)
 
     math_net.set_input([amp])
-    math_net.simulate(SIM_TIME)
+    math_net.train(SIM_TIME)
 
 fig, axes = plt.subplots(2, 5, sharex=True)
 
@@ -80,25 +80,22 @@ axes[1][3].plot(nest_net.mm_y.get("events")["times"]/delta_t, nest_net.mm_y.get(
 axes[1][3].plot(np.asarray(math_net.V_by_record).squeeze(), label="analytical")
 axes[1][3].set_title("VBY")
 
-for i, (k, v) in enumerate(math_net.conns.items()):
-    axes[0][4].plot(v["record"].squeeze(), color=cmap(i), label=k)
-axes[0][4].set_title("analytical weights")
-axes[0][4].legend()
-
-why = -math_net.conns["hy"]["w"].squeeze()
-wih = (g_d + g_l)/(g_d + g_a + g_l) * math_net.conns["yh"]["w"].squeeze()
-
-axes[0][4].hlines([why, wih], 0, SIM_TIME_TOTAL/delta_t)
-
-
 wgts = pd.DataFrame.from_dict(wr.get("events"))
-for i, conn in enumerate(nest_conns):
+for i, (k, v) in enumerate(math_net.conns.items()):
+    math_weight = v["record"].squeeze()
+    axes[0][4].plot(math_weight, color=cmap(i), label=k)
+
+    conn = nest_conns[i]
     s = conn.source
     t = conn.target
     df_weight = wgts[(wgts.senders == s) & (wgts.targets == t)].sort_values(by=['times'])
-    axes[1][4].plot(df_weight['times'].array/delta_t, df_weight['weights'], color=cmap(i))
+    nest_weight = df_weight['weights']
+    axes[0][4].plot(df_weight['times'].array/delta_t, nest_weight, color=cmap(i), linestyle="--")
 
-axes[1][4].hlines([why, wih], 0, SIM_TIME_TOTAL/delta_t)
-axes[1][4].set_title("NEST weights")
+    axes[1][4].plot(df_weight['times'].array/delta_t, nest_weight - math_weight, color = cmap(i))
+
+axes[0][4].set_title("weights: nest(--), other(-)")
+axes[0][4].legend()
+axes[1][4].set_title("nest weights - math weights")
 
 plt.show()
