@@ -6,6 +6,7 @@ import nest
 from params import *
 from utils import *
 
+
 def phi(x):
     return 1 / (1 + np.exp(-x))
 
@@ -29,6 +30,8 @@ def phi_old(x):
     return phi_max / (1.0 + gamma * np.exp(beta * (theta - x)))
 
 # phi function from sacramento (2018) Fig S1
+
+
 def phi_sac(x):
     return np.log(1 + np.exp(x))
 
@@ -51,18 +54,18 @@ sr = nest.Create("spike_recorder")
 nest.Connect(par, sr)
 nest.Connect(pyr, sr)
 
-gen.amplitude=voltage
+gen.amplitude = voltage
 
 nest.Simulate(25)
 
 spikes = regroup_records(sr.events, "senders")
 print(spikes)
 c = ["r", "g"]
-for i, (k,v) in enumerate(spikes.items()):
+for i, (k, v) in enumerate(spikes.items()):
     plt.vlines(v["times"], 0, 1, c[i], label=k)
 
-#plt.plot(x, p_spike(x), label="p_spike_1")
-#plt.plot(x, p_spike_2(x), label="p_spike_2")
+# plt.plot(x, p_spike(x), label="p_spike_1")
+# plt.plot(x, p_spike_2(x), label="p_spike_2")
 
 plt.legend()
 plt.show()

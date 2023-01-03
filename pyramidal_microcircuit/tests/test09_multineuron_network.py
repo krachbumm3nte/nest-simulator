@@ -1,20 +1,23 @@
 import nest
 import matplotlib.pyplot as plt
 import pandas as pd
-from utils import *
-from params_rate import *
+import sys
 import numpy as np
-from network_rate import Network
-from network_mathematica import MathematicaNetwork
 from sklearn.metrics import mean_squared_error as mse
+sys.path.append("..")
+# sys.path.append("/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit")
+from rate_learning.params_rate import *  # nopep8
+from rate_learning.utils import *  # nopep8
+from rate_learning.network_rate import Network  # nopep8
+from rate_learning.network_mathematica import MathematicaNetwork  # nopep8
 
 cmap = plt.cm.get_cmap('hsv', 7)
 styles = ["solid", "dotted", "dashdot", "dashed"]
 
-n_runs = 40
-SIM_TIME = 120
+n_runs = 50
+SIM_TIME = 100
 
-dims = [4,3,2]
+dims = [4, 3, 2]
 
 nest_net = Network(dims)
 math_net = MathematicaNetwork(dims)
@@ -43,7 +46,7 @@ for i in range(n_runs):
     nest.Simulate(SIM_TIME)
 
     math_net.set_input(amp)
-    math_net.simulate(SIM_TIME)
+    math_net.train(SIM_TIME)
 
 fig, axes = plt.subplots(2, 6, sharey="col")
 
@@ -76,7 +79,8 @@ axes[0][1].set_title("WHI + WHY (fb) error")
 axes[0][1].set_ylim(0,)
 axes[0][1].plot(fb_weight_error)
 axes[1][1].plot(fb_weight_error_nest)
-
+print(fb_weight_error)
+print(fb_weight_error_nest)
 
 for c, (name, conn) in enumerate(math_net.conns.items()):
     if c not in [2, 3]:
@@ -108,15 +112,14 @@ axes[0][4].plot(np.linalg.norm(math_net.V_ah_record, axis=1))
 axes[0][4].set_title("apical voltage")
 
 events = pd.DataFrame.from_dict(nest_net.mm_h.events).sort_values("times")
-apical_err = events["V_m.a_lat"].values.reshape(-1,dims[1])
+apical_err = events["V_m.a_lat"].values.reshape(-1, dims[1])
 axes[1][4].plot(np.linalg.norm(apical_err, axis=1), label="apical error")
-
 
 
 # plot interneuron error
 
-U_intn = np.asarray(math_net.U_i_record).swapaxes(0,1)
-U_out = np.asarray(math_net.U_y_record).swapaxes(0,1)
+U_intn = np.asarray(math_net.U_i_record).swapaxes(0, 1)
+U_out = np.asarray(math_net.U_y_record).swapaxes(0, 1)
 
 
 intn_error = mse(U_intn, U_out, multioutput="raw_values")
@@ -125,10 +128,10 @@ axes[0][5].plot(intn_error)
 axes[0][5].set_title("interneuron error")
 
 U_intn = pd.DataFrame.from_dict(nest_net.mm_i.events).sort_values(["times", "senders"])
-U_intn = np.reshape(U_intn["V_m.s"].values, (-1,dims[2])).swapaxes(0,1)
+U_intn = np.reshape(U_intn["V_m.s"].values, (-1, dims[2])).swapaxes(0, 1)
 
 U_out = pd.DataFrame.from_dict(nest_net.mm_y.events).sort_values(["times", "senders"])
-U_out = np.reshape(U_out["V_m.s"].values, (-1,dims[2])).swapaxes(0,1)
+U_out = np.reshape(U_out["V_m.s"].values, (-1, dims[2])).swapaxes(0, 1)
 
 axes[1][5].plot(mse(U_out, U_intn, multioutput="raw_values"))
 

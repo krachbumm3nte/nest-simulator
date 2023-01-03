@@ -58,7 +58,7 @@ for T, amp in zip(sim_times, stim_amps):
         UBH.append(U_bh)
 
 
-fig, (ax0, ax1, ax2) = plt.subplots(1, 3, sharey=True)
+fig, (ax0, ax1, ax2) = plt.subplots(1, 3, sharex=True)
 
 ax0.plot(mm_in.get("events")["times"]/delta_t, mm_in.get("events")['V_m.s'], label="NEST computed")
 ax0.plot(UI, label="analytical")

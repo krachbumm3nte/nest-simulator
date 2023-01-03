@@ -1,18 +1,21 @@
 import nest
 import matplotlib.pyplot as plt
 import pandas as pd
-from params_rate import *
-from utils import *
+import sys
 import numpy as np
-from network_rate import Network
-from network_mathematica import MathematicaNetwork
 from sklearn.metrics import mean_squared_error as mse
+sys.path.append("..")
+# sys.path.append("/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit")
+from rate_learning.params_rate import *  # nopep8
+from rate_learning.utils import *  # nopep8
+from rate_learning.network_rate import Network  # nopep8
+from rate_learning.network_mathematica import MathematicaNetwork  # nopep8
 
 cmap = plt.cm.get_cmap('hsv', 7)
 styles = ["solid", "dotted", "dashdot", "dashed"]
 
-n_runs = 50
-SIM_TIME = 10
+n_runs = 25
+SIM_TIME = 200
 SIM_TIME_TOTAL = n_runs * SIM_TIME
 
 dims = [1, 1, 1]
@@ -47,36 +50,44 @@ for i in range(n_runs):
 
 fig, axes = plt.subplots(2, 5, sharex=True)
 
-axes[0][0].plot(nest_net.mm_x.get("events")["times"]/delta_t, nest_net.mm_x.get("events")['V_m.s'], label="NEST computed")
+axes[0][0].plot(nest_net.mm_x.get("events")["times"]/delta_t,
+                nest_net.mm_x.get("events")['V_m.s'], label="NEST computed")
 axes[0][0].plot(np.asarray(math_net.U_x_record).squeeze(), label="analytical")
 axes[0][0].legend()
 axes[0][0].set_title("UX")
 
-axes[0][1].plot(nest_net.mm_h.get("events")["times"]/delta_t, nest_net.mm_h.get("events")['V_m.s'], label="NEST computed")
+axes[0][1].plot(nest_net.mm_h.get("events")["times"]/delta_t,
+                nest_net.mm_h.get("events")['V_m.s'], label="NEST computed")
 axes[0][1].plot(np.asarray(math_net.U_h_record).squeeze(), label="analytical")
 axes[0][1].set_title("UH")
 
-axes[0][2].plot(nest_net.mm_h.get("events")["times"]/delta_t, nest_net.mm_h.get("events")['V_m.b'], label="NEST computed")
+axes[0][2].plot(nest_net.mm_h.get("events")["times"]/delta_t,
+                nest_net.mm_h.get("events")['V_m.b'], label="NEST computed")
 axes[0][2].plot(np.asarray(math_net.V_bh_record).squeeze(), label="analytical")
 axes[0][2].set_title("VBH")
 
-axes[0][3].plot(nest_net.mm_h.get("events")["times"]/delta_t, nest_net.mm_h.get("events")['V_m.a_lat'], label="NEST computed")
+axes[0][3].plot(nest_net.mm_h.get("events")["times"]/delta_t,
+                nest_net.mm_h.get("events")['V_m.a_lat'], label="NEST computed")
 axes[0][3].plot(np.asarray(math_net.V_ah_record).squeeze(), label="analytical")
 axes[0][3].set_title("VAH")
 
-axes[1][0].plot(nest_net.mm_i.get("events")["times"]/delta_t, nest_net.mm_i.get("events")['V_m.s'], label="NEST computed")
+axes[1][0].plot(nest_net.mm_i.get("events")["times"]/delta_t,
+                nest_net.mm_i.get("events")['V_m.s'], label="NEST computed")
 axes[1][0].plot(np.asarray(math_net.U_i_record).squeeze(), label="analytical")
 axes[1][0].set_title("UI")
 
-axes[1][1].plot(nest_net.mm_i.get("events")["times"]/delta_t, nest_net.mm_i.get("events")['V_m.b'], label="NEST computed")
+axes[1][1].plot(nest_net.mm_i.get("events")["times"]/delta_t,
+                nest_net.mm_i.get("events")['V_m.b'], label="NEST computed")
 axes[1][1].plot(np.asarray(math_net.V_bi_record).squeeze(), label="analytical")
 axes[1][1].set_title("VBI")
 
-axes[1][2].plot(nest_net.mm_y.get("events")["times"]/delta_t, nest_net.mm_y.get("events")['V_m.s'], label="NEST computed")
+axes[1][2].plot(nest_net.mm_y.get("events")["times"]/delta_t,
+                nest_net.mm_y.get("events")['V_m.s'], label="NEST computed")
 axes[1][2].plot(np.asarray(math_net.U_y_record).squeeze(), label="analytical")
 axes[1][2].set_title("UY")
 
-axes[1][3].plot(nest_net.mm_y.get("events")["times"]/delta_t, nest_net.mm_y.get("events")['V_m.b'], label="NEST computed")
+axes[1][3].plot(nest_net.mm_y.get("events")["times"]/delta_t,
+                nest_net.mm_y.get("events")['V_m.b'], label="NEST computed")
 axes[1][3].plot(np.asarray(math_net.V_by_record).squeeze(), label="analytical")
 axes[1][3].set_title("VBY")
 
@@ -92,7 +103,7 @@ for i, (k, v) in enumerate(math_net.conns.items()):
     nest_weight = df_weight['weights']
     axes[0][4].plot(df_weight['times'].array/delta_t, nest_weight, color=cmap(i), linestyle="--")
 
-    axes[1][4].plot(df_weight['times'].array/delta_t, nest_weight - math_weight, color = cmap(i))
+    axes[1][4].plot(df_weight['times'].array/delta_t, nest_weight - math_weight, color=cmap(i))
 
 axes[0][4].set_title("weights: nest(--), other(-)")
 axes[0][4].legend()

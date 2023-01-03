@@ -26,6 +26,7 @@ def phi_new(x):
 def rate(x):
     return 1 - np.exp(-x * timestep)
 
+
 x = np.linspace(-2, 50, 500)
 
 fig, ax = plt.subplots(1, 2)

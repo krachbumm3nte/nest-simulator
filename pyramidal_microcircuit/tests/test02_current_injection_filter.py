@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import nest
 from params_rate_test import *
 import numpy as np
+
 # this script shows that a neuron with attenuated leakage conductance and injected
 # current behaves like a low pass filter on injected current. From this, parameters for
 # neurons in the input layer can be derived.
@@ -25,7 +26,6 @@ for T, amp in zip(sim_times, stim_amps):
         delta_u = -ux + amp
         ux = ux + (delta_t/tau_x) * delta_u
         y.append(ux)
-
 
     pyr_in.set({"soma": {"I_e": amp*tau_input}})
     nest.Simulate(T)
