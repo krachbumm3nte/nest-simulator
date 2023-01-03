@@ -1,20 +1,20 @@
 import nest
 import matplotlib.pyplot as plt
 import pandas as pd
-import numpy as np
-from sklearn.metrics import mean_squared_error as mse
 from utils import *
 from params_rate import *
+import numpy as np
 from network_rate import Network
 from network_mathematica import MathematicaNetwork
+from sklearn.metrics import mean_squared_error as mse
 
 cmap = plt.cm.get_cmap('hsv', 7)
 styles = ["solid", "dotted", "dashdot", "dashed"]
 
-n_runs = 3
+n_runs = 260
 SIM_TIME = 100
 
-dims = [2, 2, 2]
+dims = [1, 1, 1]
 
 nest_net = Network(dims)
 math_net = MathematicaNetwork(dims)
@@ -42,6 +42,8 @@ for i in range(n_runs):
     math_net.set_input(amp)
     math_net.train(SIM_TIME)
 
+plt.plot(math_net.output_loss)
+plt.show()
 fig, axes = plt.subplots(2, 6, sharey="col")
 
 

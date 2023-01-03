@@ -9,7 +9,7 @@ nest.set_verbosity("M_ERROR")
 nest.SetKernelStatus({"local_num_threads": 1, "use_wfr": False})
 nest.rng_seed = 15
 
-init_self_pred = True
+init_self_pred = False
 self_predicting_fb = False
 self_predicting_ff = False
 plasticity = True
@@ -20,7 +20,7 @@ SIM_TIME = 200
 n_runs = 10000
 
 # Network parameters
-noise = False
+noise = True
 noise_std = 0.15
 target_amp = 10
 stim_amp = 1
@@ -33,10 +33,10 @@ theta = 3
 
 
 tau_x = 3
-tau_input = 1/3  # time constant for low-pass filtering the current injected into input neurons. see tests/test_current_injection_filter.py
+tau_input = 1/3  # time constant for low-pass filtering the current injected into input neurons.
 
 g_si = 0.8  # interneuron nudging conductance
-g_s = 0.8 # output neuron nudging conductance
+g_s = 0.8  # output neuron nudging conductance
 
 g_a = 0.8
 g_d = 1
@@ -76,7 +76,8 @@ pyr_params['basal']['g'] = g_d
 # pyr_params['apical_td']['g'] = 0.0
 pyr_params['apical_lat']['g'] = g_a
 pyr_params['soma']['g_L'] = g_l
-pyr_params['soma']['g'] = g_l + g_d + g_si # misappropriation of somatic conductance. this is the effective leakage conductance now!
+# misappropriation of somatic conductance. this is the effective leakage conductance now!
+pyr_params['soma']['g'] = g_l + g_d + g_si
 
 intn_params = deepcopy(pyr_params)
 intn_params['apical_lat']['g'] = 0.0
@@ -90,7 +91,6 @@ input_params["soma"]["g"] = tau_input
 input_params["use_phi"] = False
 input_params['basal']['g'] = 0
 input_params['tau_m'] = tau_input
-
 
 
 # synapse parameters
@@ -165,7 +165,6 @@ syn_yh['eta'] = eta_yh
 # all_syns = [syn_ff_pyr_pyr, syn_fb_pyr_pyr, syn_laminar_intn_pyr, syn_laminar_pyr_intn]
 # for s in all_syns:
 #     s['weight'] = nest.random.uniform(-0.5, 0.5)
-
 
 
 def phi(x):

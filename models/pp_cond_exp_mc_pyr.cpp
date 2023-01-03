@@ -613,6 +613,9 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
 
     // leak current of soma
     // TODO: I am misappropriating g_som here, because I am too lazy to create another neuron parameter.
+    // The gist of it is, that all neuron types have effective leakage conductance of (g_l + g_D + g_A),
+    // yet in- and output neurons have an apical conductance of zero. Thus we need to store this sum separately.
+    // as it serves no other purpose, the somatic conductance is used here (temporarily?)
     const double I_L = P_.pyr_params.g_conn[ pyr_params->SOMA ] * V;
 
     // coupling from dendrites to soma all summed up

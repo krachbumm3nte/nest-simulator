@@ -70,7 +70,7 @@ class Network:
         # Set special parameters for some of the populations:
 
         # output neurons are modeled without an apical compartment
-        self.pyr_pops[-1].set({"apical_lat": {"g": 0}, })
+        # self.pyr_pops[-1].set({"apical_lat": {"g": 0}, })
 
         self.mm_x = nest.Create('multimeter', 1, {'record_from': ["V_m.s"]})
         self.mm_h = nest.Create('multimeter', 1, {'record_from': ["V_m.a_lat", "V_m.s", "V_m.b"]})
@@ -103,17 +103,14 @@ class Network:
         for i in range(self.dims[0]):
             self.pyr_pops[0][i].set({"soma": {"I_e": input_currents[i] * tau_input}})
 
-    def set_target(self, indices):
+    def set_target(self, target_currents):
         """Inject a constant current into all neurons in the output layer.
 
         @note: Before injection, currents are attenuated by the output neuron
         nudging conductance in order to match the simulation exactly.
 
         Arguments:
-            indices -- Iterable of length equal to the output dimension.
+            input_currents -- Iterable of length equal to the output dimension.
         """
         for i in range(self.dims[-1]):
-            if i in indices:
-                self.pyr_pops[-1][i].set({"soma": {"I_e": self.stim_amp * g_s}})
-            else:
-                self.pyr_pops[-1][i].set({"soma": {"I_e": 0}})
+            self.pyr_pops[-1][i].set({"soma": {"I_e": phi_inverse(target_currents[i]) * g_s}})
