@@ -8,7 +8,7 @@ class Network:
     def __init__(self, dims) -> None:
         self.dims = dims
         self.noise = noise
-        self.noise_std = noise_std
+        self.noise_std = sigma
         self.stim_amp = stim_amp
         self.target_amp = target_amp
         self.L = len(dims)
@@ -17,6 +17,7 @@ class Network:
         self.intn_pops = []
         self.parrots = None
         self.gauss = None
+        self.iteration = 0
         self.setup_populations(init_self_pred)
 
     def gen_weights(self, lr, next_lr, w_min=wmin_init, w_max=wmax_init):
@@ -72,24 +73,15 @@ class Network:
         # output neurons are modeled without an apical compartment
         # self.pyr_pops[-1].set({"apical_lat": {"g": 0}, })
 
-        self.mm_x = nest.Create('multimeter', 1, {'record_from': ["V_m.s"]})
-        self.mm_h = nest.Create('multimeter', 1, {'record_from': ["V_m.a_lat", "V_m.s", "V_m.b"]})
-        self.mm_i = nest.Create('multimeter', 1, {'record_from': ["V_m.s", "V_m.b"]})
-        self.mm_y = nest.Create('multimeter', 1, {'record_from': ["V_m.s", "V_m.b"]})
+        self.mm_x = nest.Create('multimeter', 1, {'record_to': 'ascii', 'record_from': ["V_m.s"]})
+        self.mm_h = nest.Create('multimeter', 1, {'record_to': 'ascii', 'record_from': ["V_m.a_lat", "V_m.s", "V_m.b"]})
+        self.mm_i = nest.Create('multimeter', 1, {'record_to': 'ascii', 'record_from': ["V_m.s", "V_m.b"]})
+        self.mm_y = nest.Create('multimeter', 1, {'record_to': 'ascii', 'record_from': ["V_m.s", "V_m.b"]})
 
         nest.Connect(self.mm_x, self.pyr_pops[0])
         nest.Connect(self.mm_h, self.pyr_pops[1])
         nest.Connect(self.mm_i, self.intn_pops[0])
         nest.Connect(self.mm_y, self.pyr_pops[2])
-
-        # self.sr_in = nest.Create("spike_recorder", 1)
-        # self.sr_intn = nest.Create("spike_recorder", 1)
-        # self.sr_hidden = nest.Create("spike_recorder", 1)
-        # self.sr_out = nest.Create("spike_recorder", 1)
-        # nest.Connect(self.pyr_pops[0], self.sr_in)
-        # nest.Connect(self.intn_pops[0], self.sr_intn)
-        # nest.Connect(self.pyr_pops[1], self.sr_hidden)
-        # nest.Connect(self.pyr_pops[2], self.sr_out)
 
     def set_input(self, input_currents):
         """Inject a constant current into all neurons in the input layer.
@@ -114,3 +106,11 @@ class Network:
         """
         for i in range(self.dims[-1]):
             self.pyr_pops[-1][i].set({"soma": {"I_e": phi_inverse(target_currents[i]) * g_s}})
+
+    def simulate(self, T):
+        # mm_in.set({"filenames": [os.path.join(os.getcwd(), f"mm_in_{i}.dat") for i in range(threads)]})
+
+        nest.SetKernelStatus({"data_prefix": f"it{self.iteration}_"})
+        nest.Simulate(T)
+
+        self.iteration += 1

@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import glob
+import re
 
 
 def regroup_records(records, group_key):
@@ -28,3 +30,14 @@ def matrix_from_wr(data, conn):
     filtered_data = data[(data.targets.isin(set(conn.target)) & data.senders.isin(set(conn.source)))]
     sorted_data = filtered_data.sort_values(by=["senders", "targets"])["weights"].values
     return np.reshape(sorted_data, (-1, n_out, n_in), "F")
+
+
+def read_data(device_id, path):
+    device_re = f"/it(.+)-{device_id}-(.+)dat"
+    files = glob.glob(path + "/*")
+    frames = []
+    for f in files:
+        if re.search(device_re, f):
+            frames.append(pd.read_csv(f, sep="\s+", comment='#'))
+
+    return pd.concat(frames)

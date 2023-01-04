@@ -1,27 +1,48 @@
 import nest
 from copy import deepcopy
 import numpy as np
+import os
+from datetime import datetime
+
+# environment parameters
+root = f"/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/runs/{datetime.now().strftime('%Y_%m_%d-%H_%M_%S')}"
+print(root)
+
+imgdir = os.path.join(root, "plots")
+datadir = os.path.join(root, "data")
+for p in [root, imgdir, datadir]:
+    os.mkdir(p)
 
 # Simulation parameters
 delta_t = 0.1
-nest.resolution = delta_t
+sqrt_dt = np.sqrt(delta_t)
+threads = 6
+record_interval = 50
+
 nest.set_verbosity("M_ERROR")
-nest.SetKernelStatus({"local_num_threads": 1, "use_wfr": False})
+nest.resolution = delta_t
+nest.SetKernelStatus({"local_num_threads": threads, "use_wfr": False})
 nest.rng_seed = 15
+
+nest.SetDefaults("multimeter", {'interval': record_interval})
+
+nest.SetKernelStatus({"data_path": datadir})
+
 
 init_self_pred = False
 self_predicting_fb = False
 self_predicting_ff = False
-plasticity = True
+plasticity = False
 bogo_plasticity = True
 
 
-SIM_TIME = 200
+SIM_TIME = 100
 n_runs = 10000
 
 # Network parameters
 noise = True
-noise_std = 0.15
+sigma = 0.1
+noise_factor = sigma * sqrt_dt
 target_amp = 10
 stim_amp = 1
 nudging = True
@@ -32,20 +53,19 @@ beta = 1
 theta = 3
 
 
+# Neuron parameters
 tau_x = 3
 tau_input = 1/3  # time constant for low-pass filtering the current injected into input neurons.
 
-g_si = 0.8  # interneuron nudging conductance
-g_s = 0.8  # output neuron nudging conductance
+g_l = 0.1
+g_lk_dnd = 1
 
 g_a = 0.8
 g_d = 1
 g_som = 0.8
 
-
-g_l = 0.1
-# Neuron parameters
-g_lk_dnd = 1
+g_si = 0.8  # interneuron nudging conductance
+g_s = 0.8  # output neuron nudging conductance
 
 lambda_ah = g_a / (g_d + g_a + g_l)
 
@@ -59,7 +79,6 @@ comp_defaults = {
 pyr_params = {
     'soma': deepcopy(comp_defaults),
     'basal': deepcopy(comp_defaults),
-    # 'apical_td': deepcopy(comp_defaults),
     'apical_lat': deepcopy(comp_defaults),
     # parameters of rate function
     'tau_m': 1,
@@ -94,8 +113,8 @@ input_params['tau_m'] = tau_input
 
 
 # synapse parameters
-wr = nest.Create('weight_recorder')
-nest.CopyModel('pyr_synapse_rate', 'record_syn', {"weight_recorder": wr})
+# wr = nest.Create('weight_recorder')
+# nest.CopyModel('pyr_synapse_rate', 'record_syn', {"weight_recorder": wr})
 
 # wr_ip = nest.Create('weight_recorder')
 # nest.CopyModel('pyr_synapse', 'record_syn_ip', {"weight_recorder": wr_ip})
@@ -103,8 +122,8 @@ nest.CopyModel('pyr_synapse_rate', 'record_syn', {"weight_recorder": wr})
 if plasticity:
     eta_yh = 0.01
     eta_hx = eta_yh / lambda_ah
-    eta_hi = 0.01 / lambda_ah
-    eta_ih = 5 * eta_hi
+    eta_ih = 0.01 / lambda_ah
+    eta_hi = 5 * eta_ih
 else:
     eta_yh = 0
     eta_hx = 0
@@ -112,10 +131,14 @@ else:
     eta_ih = 0
 eta_hy = 0
 if bogo_plasticity:
-    eta_yh *= 10
-    eta_hx *= 10
-    eta_hi *= 10
-    eta_ih *= 10
+    eta_yh *= 100
+    eta_hx *= 100
+    eta_hi *= 100
+    eta_ih *= 100
+
+
+eta_ih = 0.0002
+eta_hi = 0.0005
 
 wmin_init, wmax_init = -1, 1
 wmin, wmax = -2, 2
@@ -123,7 +146,7 @@ tau_delta = 30
 
 # TODO: set up weight recorder.
 syn_params = {
-    'synapse_model': 'record_syn',
+    'synapse_model': 'pyr_synapse_rate',
     'tau_Delta': tau_delta,
     'Wmin': wmin,
     'Wmax': wmax,
@@ -168,6 +191,7 @@ syn_yh['eta'] = eta_yh
 
 
 def phi(x):
+    return np.log(1 + np.exp(x))
     return gamma * np.log(1 + np.exp(beta * (x - theta)))
     return 1 / (1.0 + np.exp(-x))
 

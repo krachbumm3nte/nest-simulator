@@ -4,24 +4,28 @@ import numpy as np
 
 # Simulation parameters
 delta_t = 0.1
-nest.resolution = delta_t
+sqrt_dt = np.sqrt(delta_t)
+threads = 6
+
 nest.set_verbosity("M_ERROR")
-nest.SetKernelStatus({"local_num_threads": 1, "use_wfr": False})
+nest.resolution = delta_t
+nest.SetKernelStatus({"local_num_threads": threads, "use_wfr": False})
 nest.rng_seed = 15
 
-init_self_pred = True
+init_self_pred = False
 self_predicting_fb = False
 self_predicting_ff = False
-plasticity = True
-bogo_plasticity = False
+plasticity = False
+bogo_plasticity = True
 
 
-SIM_TIME = 200
+SIM_TIME = 100
 n_runs = 10000
 
 # Network parameters
-noise = False
-noise_std = 0.15
+noise = True
+sigma = 0.1
+noise_factor = sigma * sqrt_dt
 target_amp = 10
 stim_amp = 1
 nudging = True
@@ -32,20 +36,19 @@ beta = 1
 theta = 3
 
 
+# Neuron parameters
 tau_x = 3
 tau_input = 1/3  # time constant for low-pass filtering the current injected into input neurons.
 
-g_si = 0.8  # interneuron nudging conductance
-g_s = 0.8  # output neuron nudging conductance
+g_l = 0.1
+g_lk_dnd = 1
 
 g_a = 0.8
 g_d = 1
 g_som = 0.8
 
-
-g_l = 0.1
-# Neuron parameters
-g_lk_dnd = 1
+g_si = 0.8  # interneuron nudging conductance
+g_s = 0.8  # output neuron nudging conductance
 
 lambda_ah = g_a / (g_d + g_a + g_l)
 
@@ -102,8 +105,8 @@ nest.CopyModel('pyr_synapse_rate', 'record_syn', {"weight_recorder": wr})
 if plasticity:
     eta_yh = 0.01
     eta_hx = eta_yh / lambda_ah
-    eta_hi = 0.01 / lambda_ah
-    eta_ih = 5 * eta_hi
+    eta_ih = 0.01 / lambda_ah
+    eta_hi = 5 * eta_ih
 else:
     eta_yh = 0
     eta_hx = 0
@@ -111,10 +114,14 @@ else:
     eta_ih = 0
 eta_hy = 0
 if bogo_plasticity:
-    eta_yh *= 10
-    eta_hx *= 10
-    eta_hi *= 10
-    eta_ih *= 10
+    eta_yh *= 100
+    eta_hx *= 100
+    eta_hi *= 100
+    eta_ih *= 100
+
+
+eta_ih = 0.0002
+eta_hi = 0.0005
 
 wmin_init, wmax_init = -1, 1
 wmin, wmax = -2, 2
