@@ -25,13 +25,13 @@ net = MathematicaNetwork(dims)
 
 print("setup complete, running simulations...")
 
-for run in range(n_runs):
+for run in range(n_runs + 1):
     inputs = 2 * np.random.rand(dims[0]) - 1
     # input_index = 0
     net.set_input(inputs)
 
     start = time()
-    net.simulate(SIM_TIME)
+    net.train(SIM_TIME)
     t = time() - start
     T.append(t)
 
@@ -127,6 +127,6 @@ for run in range(n_runs):
         plot_duration = time() - start
         print(f"mean simulation time: {np.mean(T[-50:]):.2f}s. plot time:{plot_duration:.2f}s. \
 apical error: {apical_err_now:.2f}.")
-        print(f"ff error: {w_pi_error:.2f}, fb error: {w_ip_error:.2f}, interneuron error: {intn_error_now:.2f}\n")
+        print(f"ff error: {w_pi_error[-1]:.2f}, fb error: {w_ip_error[-1]:.2f}, interneuron error: {intn_error_now:.2f}\n")
     elif run % 50 == 0:
         print(f"run {run} completed.")

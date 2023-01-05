@@ -37,7 +37,7 @@ interneurons = net.intn_pops[0]
 intn_id = interneurons.get("global_id")
 print("setup complete, running simulations...")
 
-for run in range(n_runs):
+for run in range(n_runs + 1):
     inputs = 2 * np.random.rand(dims[0]) - 1
     # input_index = 0
     net.set_input(inputs)
