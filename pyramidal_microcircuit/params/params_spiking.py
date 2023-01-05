@@ -4,31 +4,13 @@ import numpy as np
 import os
 from datetime import datetime
 
-# environment parameters
-root = f"/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/runs/{datetime.now().strftime('%Y_%m_%d-%H_%M_%S')}"
-
-imgdir = os.path.join(root, "plots")
-datadir = os.path.join(root, "data")
-for p in [root, imgdir, datadir]:
-    os.mkdir(p)
-
 # Simulation parameters
 delta_t = 0.1
 sqrt_dt = np.sqrt(delta_t)
 threads = 6
 record_interval = 75
 
-nest.set_verbosity("M_ERROR")
-nest.resolution = delta_t
-nest.SetKernelStatus({"local_num_threads": threads, "use_wfr": False})
-nest.rng_seed = 15
-
-nest.SetDefaults("multimeter", {'interval': record_interval})
-
-nest.SetKernelStatus({"data_path": datadir})
-
-
-init_self_pred = False
+init_self_pred = True
 self_predicting_fb = False
 self_predicting_ff = False
 plasticity = False
@@ -139,8 +121,8 @@ if bogo_plasticity:
     eta_ih *= 100
 
 
-eta_ih = 0.0002
-eta_hi = 0.0005
+eta_ih = 0.02
+eta_hi = 0.05
 
 wmin_init, wmax_init = -1, 1
 wmin, wmax = -2, 2
@@ -148,7 +130,7 @@ tau_delta = 30
 
 # TODO: set up weight recorder.
 syn_params = {
-    'synapse_model': 'pyr_synapse_rate',
+    'synapse_model': 'pyr_synapse',
     'tau_Delta': tau_delta,
     'Wmin': wmin,
     'Wmax': wmax,
@@ -193,7 +175,6 @@ syn_yh['eta'] = eta_yh
 
 
 def phi(x):
-    return np.log(1 + np.exp(x))
     return gamma * np.log(1 + np.exp(beta * (x - theta)))
     return 1 / (1.0 + np.exp(-x))
 

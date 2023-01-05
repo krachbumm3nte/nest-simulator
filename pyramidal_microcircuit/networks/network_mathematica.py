@@ -1,7 +1,7 @@
-from params_rate import *
 import numpy as np
 from sklearn.metrics import mean_squared_error as mse
 from time import time
+from params_rate import *
 
 
 class MathematicaNetwork:

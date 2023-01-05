@@ -2,10 +2,10 @@ import time
 import nest
 import matplotlib.pyplot as plt
 import numpy as np
-from params_rate import *
+from pyramidal_microcircuit.params.params_rate import *
 from scipy.ndimage import uniform_filter1d
 import pandas as pd
-from network_rate import Network
+from pyramidal_microcircuit.networks.network_rate import Network
 from pympler.tracker import SummaryTracker
 from sklearn.metrics import mean_squared_error as mse
 

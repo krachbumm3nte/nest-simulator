@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.misc import derivative
 import nest
-from params import *
+from pyramidal_microcircuit.params.params_spiking import *
 from utils import *
 
 

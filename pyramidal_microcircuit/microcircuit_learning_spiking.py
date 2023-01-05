@@ -1,21 +1,24 @@
 import nest
 import matplotlib.pyplot as plt
 import numpy as np
-from params_rate import *
+from params.params_spiking import *
 from scipy.ndimage import uniform_filter1d as rolling_avg
 import pandas as pd
-from network_rate import Network
+from networks.network_spiking import Network
 from sklearn.metrics import mean_squared_error as mse
 from time import time
-import utils
+import utils as utils
 
+
+imgdir, datadir = utils.setup_simulation()
+utils.setup_nest(delta_t, threads, record_interval, datadir)
 
 dims = [30, 20, 10]
 
 cmap_1 = plt.cm.get_cmap('hsv', dims[1]+1)
 cmap_2 = plt.cm.get_cmap('hsv', dims[2]+1)
 
-plot_interval = 1000
+plot_interval = 50
 
 T = []
 w_pi_errors = []

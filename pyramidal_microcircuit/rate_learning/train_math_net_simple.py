@@ -1,11 +1,11 @@
 import nest
 import matplotlib.pyplot as plt
 import pandas as pd
-from utils import *
-from params_rate import *
+from pyramidal_microcircuit.utils import *
+from pyramidal_microcircuit.params.params_rate import *
 import numpy as np
-from network_rate import Network
-from network_mathematica import MathematicaNetwork
+from pyramidal_microcircuit.networks.network_rate import Network
+from pyramidal_microcircuit.networks.network_mathematica import MathematicaNetwork
 from sklearn.metrics import mean_squared_error as mse
 
 cmap = plt.cm.get_cmap('hsv', 7)

@@ -3,10 +3,10 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from sklearn.metrics import mean_squared_error as mse
-from utils import *
-from params_rate import *
-from network_rate import Network
-from network_mathematica import MathematicaNetwork
+from pyramidal_microcircuit.utils import *
+from pyramidal_microcircuit.params.params_rate import *
+from pyramidal_microcircuit.networks.network_rate import Network
+from pyramidal_microcircuit.networks.network_mathematica import MathematicaNetwork
 
 cmap = plt.cm.get_cmap('hsv', 7)
 styles = ["solid", "dotted", "dashdot", "dashed"]

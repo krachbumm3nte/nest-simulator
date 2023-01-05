@@ -6,10 +6,10 @@ import numpy as np
 from sklearn.metrics import mean_squared_error as mse
 sys.path.append("..")
 # sys.path.append("/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit")
-from rate_learning.params_rate import *  # nopep8
-from rate_learning.utils import *  # nopep8
-from rate_learning.network_rate import Network  # nopep8
-from rate_learning.network_mathematica import MathematicaNetwork  # nopep8
+from pyramidal_microcircuit.params.params_rate import *  # nopep8
+from pyramidal_microcircuit.utils import *  # nopep8
+from pyramidal_microcircuit.networks.network_rate import Network  # nopep8
+from pyramidal_microcircuit.networks.network_mathematica import MathematicaNetwork  # nopep8
 
 cmap = plt.cm.get_cmap('hsv', 7)
 styles = ["solid", "dotted", "dashdot", "dashed"]

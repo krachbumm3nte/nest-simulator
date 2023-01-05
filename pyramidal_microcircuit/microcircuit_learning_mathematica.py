@@ -1,9 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from params_rate import *
+from params.params_rate import *
 from scipy.ndimage import uniform_filter1d as rolling_avg
 import pandas as pd
-from network_mathematica import MathematicaNetwork
+from networks.network_mathematica import MathematicaNetwork
 from sklearn.metrics import mean_squared_error as mse
 from time import time
 
