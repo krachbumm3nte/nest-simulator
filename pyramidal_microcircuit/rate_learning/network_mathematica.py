@@ -16,7 +16,6 @@ class MathematicaNetwork:
         self.record_voltages = True
         self.output_loss = []
         self.train_epoch = 0
-        self.record_interval = 50
 
         self.U_x_record = np.asmatrix(np.zeros((0, dims[0])))
         self.U_h_record = np.asmatrix(np.zeros((0, dims[1])))
@@ -153,12 +152,12 @@ class MathematicaNetwork:
         # print(stop - start)
         # start = time()
 
-        record_iteration = self.train_epoch % self.record_interval == 0
+        store_state = self.record_voltages and self.train_epoch % (record_interval//delta_t) == 0
 
         for name, d in self.conns.items():
             d["t_w"] = d["t_w"] + (delta_t/tau_delta) * d["dt_w"]
             d["w"] = d["w"] + d["eta"] * delta_t * d["t_w"]
-            if record_iteration:
+            if store_state:
                 d["record"] = np.append(d["record"], np.expand_dims(d["w"], axis=0), axis=0)
             # if name == "ih":
             #     print(f"syn2: {d['w'][0,0]:.5f}, {d['t_w'][0,0]:.5f}, {d['dt_w'][0,0]:.5f}")
@@ -166,7 +165,7 @@ class MathematicaNetwork:
         # stop = time()
         # print(f"{stop - start}")
         # start = time()
-        if self.record_voltages and record_iteration:
+        if store_state:
             self.U_x_record = np.append(self.U_x_record, self.U_x, axis=0)
             self.U_h_record = np.append(self.U_h_record, self.U_h, axis=0)
             self.V_ah_record = np.append(self.V_ah_record, self.V_ah, axis=0)

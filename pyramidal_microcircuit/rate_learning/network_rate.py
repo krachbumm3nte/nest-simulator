@@ -68,17 +68,12 @@ class Network:
 
                 self.intn_pops.append(int_l)
 
-        # Set special parameters for some of the populations:
+        # self.mm_x = nest.Create('multimeter', 1, {'record_to': 'ascii', 'record_from': ["V_m.s"]})
+        self.mm_h = nest.Create('multimeter', 1, {'record_to': 'ascii', 'record_from': ["V_m.a_lat", "V_m.s"]})
+        self.mm_i = nest.Create('multimeter', 1, {'record_to': 'ascii', 'record_from': ["V_m.s"]})
+        self.mm_y = nest.Create('multimeter', 1, {'record_to': 'ascii', 'record_from': ["V_m.s"]})
 
-        # output neurons are modeled without an apical compartment
-        # self.pyr_pops[-1].set({"apical_lat": {"g": 0}, })
-
-        self.mm_x = nest.Create('multimeter', 1, {'record_to': 'ascii', 'record_from': ["V_m.s"]})
-        self.mm_h = nest.Create('multimeter', 1, {'record_to': 'ascii', 'record_from': ["V_m.a_lat", "V_m.s", "V_m.b"]})
-        self.mm_i = nest.Create('multimeter', 1, {'record_to': 'ascii', 'record_from': ["V_m.s", "V_m.b"]})
-        self.mm_y = nest.Create('multimeter', 1, {'record_to': 'ascii', 'record_from': ["V_m.s", "V_m.b"]})
-
-        nest.Connect(self.mm_x, self.pyr_pops[0])
+        # nest.Connect(self.mm_x, self.pyr_pops[0])
         nest.Connect(self.mm_h, self.pyr_pops[1])
         nest.Connect(self.mm_i, self.intn_pops[0])
         nest.Connect(self.mm_y, self.pyr_pops[2])

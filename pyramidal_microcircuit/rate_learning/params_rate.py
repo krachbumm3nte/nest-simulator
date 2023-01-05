@@ -6,7 +6,6 @@ from datetime import datetime
 
 # environment parameters
 root = f"/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/runs/{datetime.now().strftime('%Y_%m_%d-%H_%M_%S')}"
-print(root)
 
 imgdir = os.path.join(root, "plots")
 datadir = os.path.join(root, "data")
@@ -17,7 +16,7 @@ for p in [root, imgdir, datadir]:
 delta_t = 0.1
 sqrt_dt = np.sqrt(delta_t)
 threads = 6
-record_interval = 50
+record_interval = 75
 
 nest.set_verbosity("M_ERROR")
 nest.resolution = delta_t
@@ -48,9 +47,12 @@ stim_amp = 1
 nudging = True
 
 # transfer function parameters
-gamma = 0.1
+gamma = 1
 beta = 1
-theta = 3
+theta = 0
+# gamma = 0.1
+# beta = 1
+# theta = 3
 
 
 # Neuron parameters
