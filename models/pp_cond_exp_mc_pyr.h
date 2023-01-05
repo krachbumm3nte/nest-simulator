@@ -40,8 +40,8 @@
 #include "connection.h"
 #include "event.h"
 #include "nest_types.h"
-#include "pyr_archiving_node.cpp"
 #include "pyr_archiving_node.h"
+#include "pyr_archiving_node_impl.h"
 #include "random_generators.h"
 #include "recordables_map.h"
 #include "ring_buffer.h"
@@ -86,7 +86,7 @@ private:
     SOMA = 0,
     BASAL,
     APICAL_LAT,
-    //APICAL_TD,
+    // APICAL_TD,
     NCOMP
   };
 
@@ -275,7 +275,6 @@ public:
 
   port handles_test_event( SpikeEvent&, rport );
   port handles_test_event( CurrentEvent&, rport );
-  port handles_test_event( ConductanceEvent&, rport );
   port handles_test_event( DataLoggingRequest&, rport );
 
   void get_status( DictionaryDatum& ) const;
@@ -294,7 +293,7 @@ private:
     SOMA = 0,
     BASAL,
     APICAL_LAT,
-    //APICAL_TD,
+    // APICAL_TD,
     NCOMP
   };
 
@@ -334,7 +333,7 @@ private:
     I_SOMA = MIN_CURR_RECEPTOR,
     I_BASAL,
     I_APICAL_LAT,
-    I_APICAL_TD,
+    // I_APICAL_TD,
     SUP_CURR_RECEPTOR
   };
 
@@ -448,7 +447,7 @@ public:
     if ( std::isnan( v ) )
     {
       std::cout << "pyramidal neuron compartment " << comp << " voltage is NaN!" << std::endl;
-      throw KernelException("pyramidal neuron compartment  voltage is NaN!");
+      throw KernelException( "pyramidal neuron compartment  voltage is NaN!" );
     }
     return v;
   }
@@ -557,7 +556,7 @@ pp_cond_exp_mc_pyr_parameters::phi( double u )
   //  return phi_max / ( 1.0 + gamma * exp( beta * ( theta - u ) ) );
   if ( use_phi )
   {
-    return gamma * log(1 + exp (beta * (u - theta)));
+    return gamma * log( 1 + exp( beta * ( u - theta ) ) );
     return 1 / ( 1.0 + exp( -u ) );
   }
   else
@@ -601,23 +600,6 @@ pp_cond_exp_mc_pyr::handles_test_event( SpikeEvent&, rport receptor_type )
   return receptor_type - MIN_SPIKE_RECEPTOR;
 }
 
-
-inline port
-pp_cond_exp_mc_pyr::handles_test_event( ConductanceEvent&, rport receptor_type )
-{
-  if ( receptor_type < MIN_CURR_RECEPTOR || receptor_type >= SUP_CURR_RECEPTOR )
-  {
-    if ( receptor_type >= 0 && receptor_type < MIN_CURR_RECEPTOR )
-    {
-      throw IncompatibleReceptorType( receptor_type, get_name(), "CurrentEvent" );
-    }
-    else
-    {
-      throw UnknownReceptorType( receptor_type, get_name() );
-    }
-  }
-  return receptor_type - MIN_CURR_RECEPTOR;
-}
 
 inline port
 pp_cond_exp_mc_pyr::handles_test_event( CurrentEvent&, rport receptor_type )
@@ -676,9 +658,9 @@ pp_cond_exp_mc_pyr::get_status( DictionaryDatum& d ) const
 
   ( *receptor_dict_ )[ names::apical_lat ] = S_APICAL_LAT;
   ( *receptor_dict_ )[ names::apical_lat_curr ] = I_APICAL_LAT;
-  
-  ( *receptor_dict_ )[ names::apical_td ] = S_APICAL_TD;
-  ( *receptor_dict_ )[ names::apical_td_curr ] = I_APICAL_TD;
+
+  //( *receptor_dict_ )[ names::apical_td ] = S_APICAL_TD;
+  //( *receptor_dict_ )[ names::apical_td_curr ] = I_APICAL_TD;
 
   ( *d )[ names::receptor_types ] = receptor_dict_;
 }

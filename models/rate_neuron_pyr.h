@@ -37,11 +37,11 @@
 #include <gsl/gsl_odeiv.h>
 
 // Includes from nestkernel:
-#include "archiving_node.h"
+#include "pyr_archiving_node.h"
+#include "pyr_archiving_node_impl.h"
 #include "connection.h"
 #include "event.h"
 #include "nest_types.h"
-#include "node.h"
 #include "random_generators.h"
 #include "recordables_map.h"
 #include "ring_buffer.h"
@@ -68,7 +68,7 @@ Name: rate_neuron_pyr_parameters - Helper class for rate_neuron_pyr
 Description:
 ``rate_neuron_pyr_parameters`` is a helper class for the ``rate_neuron_pyr`` neuron model
 that contains all parameters of the model that are needed to compute the weight changes of a
-connected ``urbanczik_synapse`` in the base class PyrArchivingNode.
+connected ``urbanczik_synapse`` in the base class ArchivingNode.
 
 Author: Jonas Stapmanns, David Dahmen, Jan Hahne
 
@@ -77,6 +77,7 @@ SeeAlso: rate_neuron_pyr
 class rate_neuron_pyr_parameters
 {
   friend class rate_neuron_pyr;
+  friend class PyrArchivingNode < rate_neuron_pyr_parameters>;
 
 private:
   //! Compartments, NCOMP is number
@@ -84,8 +85,8 @@ private:
   {
     SOMA = 0,
     BASAL,
-    // APICAL_TD,
     APICAL_LAT,
+    // APICAL_TD,
     NCOMP
   };
 
@@ -93,16 +94,16 @@ private:
   double gamma;   //!< Parameter of the rate function
   double beta;    //!< Parameter of the rate function
   double theta;   //!< Parameter of the rate function
-  double phi( double u );
   double h( double u );
 
-  // target neuron for a singular current synapse
-  int curr_target;
+  int curr_target; // target neuron for a singular current synapse
   double lambda_curr;
+  bool use_phi;
 
 public:
   // The Urbanczik parameters need to be public within this class as they are passed to the GSL solver
-  double tau_syn;
+  double tau_m;
+  double phi( double u );
 
   double g_conn[ NCOMP ]; //!< Conductances connecting compartments in nS
   double g_L[ NCOMP ];    //!< Leak Conductance in nS
@@ -248,7 +249,7 @@ urbanczik_synapse
 
 EndUserDocs */
 
-class rate_neuron_pyr : public ArchivingNode
+class rate_neuron_pyr : public PyrArchivingNode < rate_neuron_pyr_parameters>
 {
 
   // Boilerplate function declarations --------------------------------
@@ -291,8 +292,8 @@ private:
   {
     SOMA = 0,
     BASAL,
-    // APICAL_TD,
     APICAL_LAT,
+    // APICAL_TD,
     NCOMP
   };
 
@@ -310,8 +311,8 @@ private:
   {
     S_SOMA = MIN_SPIKE_RECEPTOR,
     S_BASAL,
-    // S_APICAL_TD,
     S_APICAL_LAT,
+    S_APICAL_TD,
     SUP_SPIKE_RECEPTOR
   };
 
@@ -331,8 +332,8 @@ private:
   {
     I_SOMA = MIN_CURR_RECEPTOR,
     I_BASAL,
-    // I_APICAL_TD,
     I_APICAL_LAT,
+    // I_APICAL_TD,
     SUP_CURR_RECEPTOR
   };
 
@@ -441,7 +442,14 @@ public:
   double
   get_V_m( int comp )
   {
-    return S_.y_[ S_.idx( comp, State_::V_M ) ];
+    double v = S_.y_[ S_.idx( comp, State_::V_M ) ];
+    // std::cout << "vcomp: " << this->get_node_id() << ", " << comp << ", " << v << std::endl;
+    if ( std::isnan( v ) )
+    {
+      std::cout << "pyramidal neuron compartment " << comp << " voltage is NaN!" << std::endl;
+      throw KernelException( "pyramidal neuron compartment  voltage is NaN!" );
+    }
+    return v;
   }
 
 private:
@@ -524,7 +532,7 @@ private:
 
 
   // Data members ----------------------------------------------------
-
+public:
   Parameters_ P_;
   State_ S_;
   Variables_ V_;
@@ -545,9 +553,18 @@ private:
 inline double
 rate_neuron_pyr_parameters::phi( double u )
 {
-  return gamma * log( 1 + exp( beta * ( u - theta ) ) );
-  // return phi_max / ( 1.0 + gamma * exp( beta * ( theta - u ) ) );
-  // TODO: which is the correct activation function for this?
+  //  return phi_max / ( 1.0 + gamma * exp( beta * ( theta - u ) ) );
+  if ( use_phi )
+  {
+    return gamma * log( 1 + exp( beta * ( u - theta ) ) );
+    return 1 / ( 1.0 + exp( -u ) );
+  }
+  else
+  {
+    return u;
+  }
+  // return log( 1 + exp( u ) );
+  //  TODO: which is the correct activation function for this?
 }
 
 // Inline functions of rate_neuron_pyr
@@ -616,6 +633,7 @@ rate_neuron_pyr::get_status( DictionaryDatum& d ) const
 {
   P_.get( d );
   S_.get( d );
+  PyrArchivingNode < rate_neuron_pyr_parameters>::get_status( d );
 
   ( *d )[ names::recordables ] = recordablesMap_.get_list();
 
@@ -631,11 +649,11 @@ rate_neuron_pyr::get_status( DictionaryDatum& d ) const
   ( *receptor_dict_ )[ names::basal ] = S_BASAL;
   ( *receptor_dict_ )[ names::basal_curr ] = I_BASAL;
 
-  //( *receptor_dict_ )[ names::apical_td ] = S_APICAL_TD;
-  //( *receptor_dict_ )[ names::apical_td_curr ] = I_APICAL_TD;
-
   ( *receptor_dict_ )[ names::apical_lat ] = S_APICAL_LAT;
   ( *receptor_dict_ )[ names::apical_lat_curr ] = I_APICAL_LAT;
+
+  //( *receptor_dict_ )[ names::apical_td ] = S_APICAL_TD;
+  //( *receptor_dict_ )[ names::apical_td_curr ] = I_APICAL_TD;
 
   ( *d )[ names::receptor_types ] = receptor_dict_;
 }
@@ -647,6 +665,12 @@ rate_neuron_pyr::set_status( const DictionaryDatum& d )
   ptmp.set( d );         // throws if BadProperty
   State_ stmp = S_;      // temporary copy in case of errors
   stmp.set( d, ptmp );   // throws if BadProperty
+
+  // We now know that (ptmp, stmp) are consistent. We do not
+  // write them back to (P_, S_) before we are also sure that
+  // the properties to be set in the parent class are internally
+  // consistent.
+  PyrArchivingNode < rate_neuron_pyr_parameters>::set_status( d );
 
   // if we get here, temporaries contain consistent set of properties
   P_ = ptmp;

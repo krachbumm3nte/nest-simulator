@@ -20,6 +20,9 @@
  *
  */
 
+#ifndef PYR_ARCHIVING_NODE_IMPL_H
+#define PYR_ARCHIVING_NODE_IMPL_H
+
 #include "pyr_archiving_node.h"
 
 // Includes from nestkernel:
@@ -164,3 +167,5 @@ nest::PyrArchivingNode< pyr_parameters >::write_urbanczik_history( Time const& t
 }
 
 } // of namespace nest
+
+#endif

@@ -175,7 +175,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_()
 
   // soma parameters
   pyr_params.g_conn[ SOMA ] = 0.0; // nS, soma-dendrite
-  pyr_params.g_L[ SOMA ] = 1.9;    // nS
+  pyr_params.g_L[ SOMA ] = 1;    // nS
   pyr_params.E_L[ SOMA ] = 0.0;    // mV
   I_e[ SOMA ] = 0.0;               // pA
 
@@ -401,7 +401,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::set( const DictionaryDatum& d )
 
   if ( pyr_params.tau_m <= 0 )
   {
-    throw BadProperty( "Synaptic time constant must be strictly positive." );
+    throw BadProperty( "Membrane time constant must be strictly positive." );
   }
 }
 
@@ -667,18 +667,12 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
     }
 
 
-    SpikeEvent se;
-    se.set_sender( *this );
-    kernel().event_delivery_manager.send( *this, se, lag );
-
-
     for ( size_t n = 0; n < NCOMP; ++n )
     {
       B_.I_stim_[ n ] = 0.0;
     }
+    
 
-
-    /*
     // Declaration outside if statement because we need it later
     unsigned long n_spikes = 0;
 
@@ -728,9 +722,8 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
     else // Neuron is within dead time
     {
       --S_.r_;
-    }*/
-
-    /*
+    }
+    
     // Store dendritic membrane potential for Urbanczik-Senn plasticity
     write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ),
       S_.y_[ S_.idx( BASAL, State_::V_M ) ],
@@ -738,15 +731,10 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       BASAL );
 
     write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ),
-      S_.y_[ S_.idx( APICAL_TD, State_::V_M ) ],
-      S_.y_[ S_.idx( SOMA, State_::V_M ) ],
-      APICAL_TD );
-    write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ),
       S_.y_[ S_.idx( APICAL_LAT, State_::V_M ) ],
       S_.y_[ S_.idx( SOMA, State_::V_M ) ],
       APICAL_LAT );
-    */
-
+    
     // set new input currents
     for ( size_t n = 0; n < NCOMP; ++n )
     {

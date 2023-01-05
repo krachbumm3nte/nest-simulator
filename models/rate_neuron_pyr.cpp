@@ -75,10 +75,10 @@ RecordablesMap< rate_neuron_pyr >::create()
 {
   insert_( Name( "V_m.s" ), &rate_neuron_pyr::get_y_elem_< rate_neuron_pyr::State_::V_M, rate_neuron_pyr::SOMA > );
   insert_( Name( "V_m.b" ), &rate_neuron_pyr::get_y_elem_< rate_neuron_pyr::State_::V_M, rate_neuron_pyr::BASAL > );
-  // insert_( Name( "V_m.a_td" ),
-  //   &rate_neuron_pyr::get_y_elem_< rate_neuron_pyr::State_::V_M, rate_neuron_pyr::APICAL_TD > );
   insert_(
     Name( "V_m.a_lat" ), &rate_neuron_pyr::get_y_elem_< rate_neuron_pyr::State_::V_M, rate_neuron_pyr::APICAL_LAT > );
+  // insert_( Name( "V_m.a_td" ),
+  //   &rate_neuron_pyr::get_y_elem_< rate_neuron_pyr::State_::V_M, rate_neuron_pyr::APICAL_TD > );
 }
 }
 
@@ -104,8 +104,7 @@ nest::rate_neuron_pyr_dynamics( double, const double y[], double f[], void* pnod
   const double V = y[ S::idx( N::SOMA, S::V_M ) ];
 
   // leak current of soma
-  // TODO: this still contains E_L but is only valid if set to zero
-  const double I_L = node.P_.pyr_params.g_L[ N::SOMA ] * ( V - node.P_.pyr_params.E_L[ N::SOMA ] );
+  const double I_L = node.P_.pyr_params.g_L[ N::SOMA ] * V;
 
   // coupling from dendrites to soma all summed up
   double I_conn_d_s = 0.0;
@@ -119,16 +118,23 @@ nest::rate_neuron_pyr_dynamics( double, const double y[], double f[], void* pnod
     const double V_dnd = y[ S::idx( n, S::V_M ) ];
 
     // coupling current from dendrite to soma
-    I_conn_d_s += node.P_.pyr_params.g_conn[ n ] * ( V_dnd - V );
+    I_conn_d_s += node.P_.pyr_params.g_conn[ n ] * V_dnd;
 
     // dendritic current due to input
     const double I_dend = y[ S::idx( n, S::I ) ];
 
+    const double I_L_dend = -node.P_.pyr_params.g_L[ n ] * V_dnd;
+
     // derivative membrane potential
-    f[ S::idx( n, S::V_M ) ] = -node.P_.pyr_params.g_L[ n ] * V_dnd + I_dend;
+    f[ S::idx( n, S::V_M ) ] = ( I_L_dend + I_dend * 0.1 );
 
     // derivative dendritic current
-    f[ S::idx( n, S::I ) ] = -I_dend / node.P_.pyr_params.tau_syn;
+    f[ S::idx( n, S::I ) ] = -I_dend / node.P_.pyr_params.tau_m;
+    if ( n == 1 )
+    {
+      std::cout << "foo: " << I_L_dend << ", " << I_conn_d_s << ", " << y[ S::idx( 1, S::V_M ) ] << ", "
+                << y[ S::idx( 0, S::V_M ) ] << std::endl;
+    }
   }
 
   // derivative membrane potential
@@ -136,7 +142,7 @@ nest::rate_neuron_pyr_dynamics( double, const double y[], double f[], void* pnod
   f[ S::idx( N::SOMA, S::V_M ) ] = -I_L + I_conn_d_s + node.B_.I_stim_[ N::SOMA ] + node.P_.I_e[ N::SOMA ];
 
   // excitatory conductance soma
-  f[ S::idx( N::SOMA, S::I ) ] = -y[ S::idx( N::SOMA, S::I ) ] / node.P_.pyr_params.tau_syn;
+  f[ S::idx( N::SOMA, S::I ) ] = -y[ S::idx( N::SOMA, S::I ) ] / node.P_.pyr_params.tau_m;
   // std::cout << "soma curr " << y[ S::idx( N::SOMA, S::I)] << "\n";
 
   return GSL_SUCCESS;
@@ -156,17 +162,18 @@ nest::rate_neuron_pyr::Parameters_::Parameters_()
   pyr_params.theta = 0;
 
   // conductances between compartments
-  pyr_params.tau_syn = 3.0;
+  pyr_params.tau_m = 1.0;
 
 
-  pyr_params.curr_target = 0.0;
+  pyr_params.curr_target = 0;
   pyr_params.lambda_curr = 0.0;
   pyr_params.C_m = 1.0; // pF
+  pyr_params.use_phi = true;
 
 
   // soma parameters
   pyr_params.g_conn[ SOMA ] = 0.0; // nS, soma-dendrite
-  pyr_params.g_L[ SOMA ] = 0.1;    // nS
+  pyr_params.g_L[ SOMA ] = 1;    // nS
   pyr_params.E_L[ SOMA ] = 0.0;    // mV
   I_e[ SOMA ] = 0.0;               // pA
 
@@ -176,17 +183,17 @@ nest::rate_neuron_pyr::Parameters_::Parameters_()
   pyr_params.E_L[ BASAL ] = 0.0; // mV
   I_e[ BASAL ] = 0.0;            // pA
 
-  // apical dendrite parameters
-  // pyr_params.g_conn[ APICAL_TD ] = 0.8;
-  // pyr_params.g_L[ APICAL_TD ] = 0.0;
-  // pyr_params.E_L[ APICAL_TD ] = 0.0; // mV
-  // I_e[ APICAL_TD ] = 0.0;            // pA
-
-  // apical dendrite parameters
+  // proximal apical dendrite parameters
   pyr_params.g_conn[ APICAL_LAT ] = 0.8;
   pyr_params.g_L[ APICAL_LAT ] = 0.0;
   pyr_params.E_L[ APICAL_LAT ] = 0.0; // mV
   I_e[ APICAL_LAT ] = 0.0;            // pA
+
+  // distal apical dendrite parameters
+  // pyr_params.g_conn[ APICAL_TD ] = 0.8;
+  // pyr_params.g_L[ APICAL_TD ] = 0.0;
+  // pyr_params.E_L[ APICAL_TD ] = 0.0; // mV
+  // I_e[ APICAL_TD ] = 0.0;            // pA
 }
 
 nest::rate_neuron_pyr::Parameters_::Parameters_( const Parameters_& p )
@@ -199,9 +206,9 @@ nest::rate_neuron_pyr::Parameters_::Parameters_( const Parameters_& p )
 
   pyr_params.curr_target = p.pyr_params.curr_target;
   pyr_params.lambda_curr = p.pyr_params.lambda_curr;
-  pyr_params.tau_syn = p.pyr_params.tau_syn;
+  pyr_params.tau_m = p.pyr_params.tau_m;
   pyr_params.C_m = p.pyr_params.C_m;
-
+  pyr_params.use_phi = p.pyr_params.use_phi;
 
   // copy C-arrays
 
@@ -224,11 +231,12 @@ nest::rate_neuron_pyr::Parameters_::operator=( const Parameters_& p )
   pyr_params.gamma = p.pyr_params.gamma;
   pyr_params.beta = p.pyr_params.beta;
   pyr_params.theta = p.pyr_params.theta;
-  pyr_params.tau_syn = p.pyr_params.tau_syn;
+  pyr_params.tau_m = p.pyr_params.tau_m;
 
   pyr_params.curr_target = p.pyr_params.curr_target;
   pyr_params.lambda_curr = p.pyr_params.lambda_curr;
   pyr_params.C_m = p.pyr_params.C_m;
+  pyr_params.use_phi = p.pyr_params.use_phi;
 
   for ( size_t n = 0; n < NCOMP; ++n )
   {
@@ -309,14 +317,13 @@ nest::rate_neuron_pyr::Parameters_::get( DictionaryDatum& d ) const
   def< double >( d, names::gamma, pyr_params.gamma );
   def< double >( d, names::beta, pyr_params.beta );
   def< double >( d, names::theta, pyr_params.theta );
-  def< double >( d, names::tau_syn, pyr_params.tau_syn );
+  def< double >( d, names::tau_m, pyr_params.tau_m );
 
 
   def< double >( d, names::g_som, pyr_params.g_conn[ SOMA ] );
   def< double >( d, names::g_b, pyr_params.g_conn[ BASAL ] );
-  // def< double >( d, names::g_a, pyr_params.g_conn[ APICAL_TD ] );
+  def< double >( d, names::g_a, pyr_params.g_conn[ APICAL_LAT ] );
 
-  // TODO: why does this need to be a double???
   def< double >( d, names::lambda, pyr_params.lambda_curr );
   def< double >( d, names::target, pyr_params.curr_target );
 
@@ -344,16 +351,17 @@ nest::rate_neuron_pyr::Parameters_::set( const DictionaryDatum& d )
   updateValue< double >( d, names::gamma, pyr_params.gamma );
   updateValue< double >( d, names::beta, pyr_params.beta );
   updateValue< double >( d, names::theta, pyr_params.theta );
-  updateValue< double >( d, names::tau_syn, pyr_params.tau_syn );
+  updateValue< double >( d, names::tau_m, pyr_params.tau_m );
   updateValue< double >( d, names::C_m, pyr_params.C_m );
 
 
   updateValue< double >( d, Name( names::g_som ), pyr_params.g_conn[ SOMA ] );
   updateValue< double >( d, Name( names::g_b ), pyr_params.g_conn[ BASAL ] );
-  // updateValue< double >( d, Name( names::g_a ), pyr_params.g_conn[ APICAL_TD ] );
+  updateValue< double >( d, Name( names::g_a ), pyr_params.g_conn[ APICAL_LAT ] );
 
   updateValue< double >( d, Name( names::target ), pyr_params.curr_target );
   updateValue< double >( d, Name( names::lambda ), pyr_params.lambda_curr );
+  updateValue< bool >( d, Name( names::use_phi ), pyr_params.use_phi );
 
 
   // extract from sub-dictionaries
@@ -389,9 +397,9 @@ nest::rate_neuron_pyr::Parameters_::set( const DictionaryDatum& d )
     throw BadProperty( "Capacitance must be strictly positive." );
   }
 
-  if ( pyr_params.tau_syn <= 0 )
+  if ( pyr_params.tau_m <= 0 )
   {
-    throw BadProperty( "Synaptic time constant must be strictly positive." );
+    throw BadProperty( "Membrane time constant must be strictly positive." );
   }
 }
 
@@ -429,7 +437,7 @@ nest::rate_neuron_pyr::State_::set( const DictionaryDatum& d, const Parameters_&
  * ---------------------------------------------------------------- */
 
 nest::rate_neuron_pyr::rate_neuron_pyr()
-  : ArchivingNode()
+  : PyrArchivingNode< rate_neuron_pyr_parameters >()
   , P_()
   , S_( P_ )
   , B_( *this )
@@ -440,16 +448,18 @@ nest::rate_neuron_pyr::rate_neuron_pyr()
   // comp_names_.resize(NCOMP); --- Fixed size, see comment on definition
   comp_names_[ SOMA ] = Name( "soma" );
   comp_names_[ BASAL ] = Name( "basal" );
-  // comp_names_[ APICAL_TD ] = Name( "apical_td" );
   comp_names_[ APICAL_LAT ] = Name( "apical_lat" );
+  // comp_names_[ APICAL_TD ] = Name( "apical_td" );
+  PyrArchivingNode< rate_neuron_pyr_parameters >::pyr_params = &P_.pyr_params;
 }
 
 nest::rate_neuron_pyr::rate_neuron_pyr( const rate_neuron_pyr& n )
-  : ArchivingNode( n )
+  : PyrArchivingNode< rate_neuron_pyr_parameters >( n )
   , P_( n.P_ )
   , S_( n.S_ )
   , B_( n.B_, *this )
 {
+  PyrArchivingNode< rate_neuron_pyr_parameters >::pyr_params = &P_.pyr_params;
 }
 
 nest::rate_neuron_pyr::~rate_neuron_pyr()
@@ -561,51 +571,74 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
   for ( long lag = from; lag < to; ++lag )
   {
 
-    double t = 0.0;
+    // membrane potential of soma
+    const double V = S_.y_[ State_::idx( P_.pyr_params.SOMA, State_::V_M ) ];
 
-    // numerical integration with adaptive step size control:
-    // ------------------------------------------------------
-    // gsl_odeiv_evolve_apply performs only a single numerical
-    // integration step, starting from t and bounded by step;
-    // the while-loop ensures integration over the whole simulation
-    // step (0, step] if more than one integration step is needed due
-    // to a small integration step size;
-    // note that (t+IntegrationStep > step) leads to integration over
-    // (t, step] and afterwards setting t to step, but it does not
-    // enforce setting IntegrationStep to step-t; this is of advantage
-    // for a consistent and efficient integration across subsequent
-    // simulation intervals
-    while ( t < B_.step_ )
+    // leak current of soma
+    // TODO: I am misappropriating g_som here, because I am too lazy to create another neuron parameter.
+    // The gist of it is, that all neuron types have effective leakage conductance of (g_l + g_D + g_A),
+    // yet in- and output neurons have an apical conductance of zero. Thus we need to store this sum separately.
+    // as it serves no other purpose, the somatic conductance is used here (temporarily?)
+    const double I_L = P_.pyr_params.g_conn[ pyr_params->SOMA ] * V;
+
+    // coupling from dendrites to soma all summed up
+    double I_conn_d_s = 0.0;
+
+    // compute dynamics for each dendritic compartment
+    // computations written quite explicitly for clarity, assume compile
+    // will optimized most stuff away ...
+    for ( size_t n = 1; n < P_.pyr_params.NCOMP; ++n )
     {
-      const int status = gsl_odeiv_evolve_apply( B_.e_,
-        B_.c_,
-        B_.s_,
-        &B_.sys_,             // system of ODE
-        &t,                   // from t
-        B_.step_,             // to t <= step
-        &B_.IntegrationStep_, // integration step size
-        S_.y_ );              // neuronal state
-      if ( status != GSL_SUCCESS )
-      {
-        throw GSLSolverFailure( get_name(), status );
-      }
-      std::cout << "neuron state: " << S_.y_[ State_::idx( 1, State_::V_M ) ] << ", " << S_.y_[ State_::idx( 0, State_::V_M ) ] << "\n";
+      // membrane potential of dendrite
+      const double V_dnd = S_.y_[ State_::idx( n, State_::V_M ) ];
+
+      // coupling current from dendrite to soma
+      I_conn_d_s += P_.pyr_params.g_conn[ n ] * V_dnd;
+
+      // dendritic current due to input
+      const double I_dend = S_.y_[ State_::idx( n, State_::I ) ];
+
+      const double I_L_dend = P_.pyr_params.g_L[ n ] * V_dnd;
+
+      // derivative membrane potential
+      S_.y_[ State_::idx( n, State_::V_M ) ] = V_dnd + ( -I_L_dend + I_dend );
+
+      // derivative dendritic current
+      S_.y_[ State_::idx( n, State_::I ) ] = I_dend - I_dend / P_.pyr_params.tau_m;
+      // if ( n == 10 )
+      //{
+      //   std::cout << I_L_dend << ", " << I_conn_d_s << ", " << S_.y_[ State_::idx( 1, State_::V_M ) ] << ", "
+      //             << S_.y_[ State_::idx( 0, State_::V_M ) ] << std::endl;
+      // }
     }
 
+    // derivative membrane potential
+    // soma
+    S_.y_[ State_::idx( P_.pyr_params.SOMA, State_::V_M ) ] =
+      V + 0.1 * ( -I_L + I_conn_d_s + B_.I_stim_[ P_.pyr_params.SOMA ] + P_.I_e[ P_.pyr_params.SOMA ] );
 
-    // add incoming spikes to soma
-    S_.y_[ State_::I ] += B_.spikes_[ SOMA ].get_value( lag );
+    // excitatory conductance soma
+    S_.y_[ State_::idx( P_.pyr_params.SOMA, State_::I ) ] =
+      0; //-S_.y_[ State_::idx( P_.pyr_params.SOMA, State_::I ) ] / P_.pyr_params.tau_m;
+         // std::cout << "soma curr " << y[ S::idx( N::SOMA, S::I)] << "\n";
 
-    // add incoming spikes to dendrites
-    for ( size_t n = 1; n < NCOMP; ++n )
+
+    // add incoming spikes to all compartmens
+    for ( size_t n = 0; n < NCOMP; ++n )
     {
       S_.y_[ State_::idx( n, State_::I ) ] += B_.spikes_[ n ].get_value( lag );
     }
 
-    SpikeEvent ce;
-    // TODO: Why the hell do I need to multiply by g_L? it gets me the right results, but it doesnt make sense...
-    ce.set_weight( P_.pyr_params.phi( S_.y_[ S_.idx( SOMA, State_::V_M ) ] ) );
-    kernel().event_delivery_manager.send( *this, ce, lag );
+
+    SpikeEvent se;
+    se.set_sender( *this );
+    kernel().event_delivery_manager.send( *this, se, lag );
+
+
+    for ( size_t n = 0; n < NCOMP; ++n )
+    {
+      B_.I_stim_[ n ] = 0.0;
+    }
 
     // set new input currents
     for ( size_t n = 0; n < NCOMP; ++n )
@@ -622,15 +655,12 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
     if ( P_.pyr_params.curr_target != 0 )
     {
       CurrentEvent ce;
-      // TODO: Why the hell do I need to multiply by g_L? it gets me the right results, but it doesnt make sense...
-      ce.set_current( S_.y_[ S_.idx( SOMA, State_::V_M ) ] * P_.pyr_params.g_L[ SOMA ] );
-      // cast target id to int because parameters need to be floats for some reason?
-      Node* n = kernel().node_manager.get_node_or_proxy( ( int ) P_.pyr_params.curr_target );
+      ce.set_current( S_.y_[ S_.idx( SOMA, State_::V_M ) ] );
+      Node* n = kernel().node_manager.get_node_or_proxy( P_.pyr_params.curr_target );
       ce.set_receiver( *n );
       ce.set_sender_node_id( this->get_node_id() );
       ce.set_rport( 0 ); // TODO: make this flexible to target not only the soma!
       ce.set_sender( *this );
-      // ce.set_delay_steps(0);
       ce.set_stamp( Time::step( origin.get_steps() + lag + 1 ) );
       ce.set_weight( P_.pyr_params.lambda_curr );
       ce();
@@ -644,9 +674,19 @@ nest::rate_neuron_pyr::handle( SpikeEvent& e )
   assert( e.get_delay_steps() > 0 );
   assert( 0 <= e.get_rport() and e.get_rport() < 2 * NCOMP );
 
+  // double spike_val = e.get_weight() * e.get_multiplicity();
+  //  We multiply with the sender activity here because it allows us to track weights with a weight_recorder.
+
+  Node* sender = kernel().node_manager.get_node_or_proxy( e.retrieve_sender_node_id_from_source_table() );
+  nest::rate_neuron_pyr* sender_pyr = static_cast< nest::rate_neuron_pyr* >( sender );
+
+  double spike_val = e.get_weight() * sender_pyr->pyr_params->phi( sender_pyr->get_V_m( 0 ) );
+
+
   B_.spikes_[ e.get_rport() ].add_value(
-    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), e.get_weight() * e.get_multiplicity() );
+    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), spike_val );
 }
+
 
 void
 nest::rate_neuron_pyr::handle( CurrentEvent& e )
