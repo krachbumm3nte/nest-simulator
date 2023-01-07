@@ -769,17 +769,8 @@ nest::pp_cond_exp_mc_pyr::handle( SpikeEvent& e )
   assert( e.get_delay_steps() > 0 );
   assert( 0 <= e.get_rport() and e.get_rport() < 2 * NCOMP );
 
-  // double spike_val = e.get_weight() * e.get_multiplicity();
-  //  We multiply with the sender activity here because it allows us to track weights with a weight_recorder.
-
-  Node* sender = kernel().node_manager.get_node_or_proxy( e.retrieve_sender_node_id_from_source_table() );
-  nest::pp_cond_exp_mc_pyr* sender_pyr = static_cast< nest::pp_cond_exp_mc_pyr* >( sender );
-
-  double spike_val = e.get_weight() * sender_pyr->pyr_params->phi( sender_pyr->get_V_m( 0 ) );
-
-
   B_.spikes_[ e.get_rport() ].add_value(
-    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), spike_val );
+    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), e.get_weight() );
 }
 
 
