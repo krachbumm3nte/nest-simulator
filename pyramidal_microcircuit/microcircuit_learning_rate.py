@@ -1,31 +1,32 @@
 import nest
 import matplotlib.pyplot as plt
 import numpy as np
-from params.params_rate import *
+from params import *
 from scipy.ndimage import uniform_filter1d as rolling_avg
 import pandas as pd
-from networks.network_rate import Network
+from networks.network_nest import Network
 from sklearn.metrics import mean_squared_error as mse
 from time import time
 import utils as utils
+import os
 
 
 imgdir, datadir = utils.setup_simulation()
-utils.setup_nest(delta_t, threads, record_interval, datadir)
+utils.setup_nest(delta_t, sim_params["threads"], sim_params["record_interval"], datadir)
+setup_models(False, False)
 
 dims = [30, 20, 10]
 
 cmap_1 = plt.cm.get_cmap('hsv', dims[1]+1)
 cmap_2 = plt.cm.get_cmap('hsv', dims[2]+1)
 
-plot_interval = 1000
+plot_interval = 100
 
 T = []
 w_pi_errors = []
 w_ip_errors = []
 
-
-net = Network(dims)
+net = Network(sim_params, neuron_params, syn_params)
 
 in_ = net.pyr_pops[0]
 in_id = in_.get("global_id")
@@ -40,13 +41,13 @@ interneurons = net.intn_pops[0]
 intn_id = interneurons.get("global_id")
 print("setup complete, running simulations...")
 
-for run in range(n_runs + 1):
+for run in range(sim_params["n_runs"] + 1):
     inputs = 2 * np.random.rand(dims[0]) - 1
     # input_index = 0
     net.set_input(inputs)
 
     start = time()
-    net.simulate(SIM_TIME)
+    net.simulate(sim_params["SIM_TIME"])
     t = time() - start
     T.append(t)
 
@@ -54,7 +55,7 @@ for run in range(n_runs + 1):
         print(f"plotting run {run}")
         start = time()
 
-        time_progressed = run * SIM_TIME
+        time_progressed = run * sim_params["SIM_TIME"]
 
         fig, axes = plt.subplots(3, 2, constrained_layout=True)
 
@@ -121,7 +122,7 @@ for run in range(n_runs + 1):
         b = WHI.sort_values(["target", "source"])
         w_ip_error = mse(a["weight"], -b["weight"])
         w_ip_errors.append(w_ip_error)
-        error_scale = np.arange(0, (run+1), plot_interval) * SIM_TIME/record_interval
+        error_scale = np.arange(0, (run+1), plot_interval) * sim_params["SIM_TIME"]/sim_params["record_interval"]
         ax3.plot(error_scale, w_ip_errors, label=f"FB error: {w_ip_error:.2f}")
 
         a = WYH.sort_values(["source", "target"])

@@ -38,7 +38,6 @@ def matrix_from_wr(data, conn):
 
 
 def setup_simulation():
-    # environment parameters
     root = f"/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/runs/{datetime.now().strftime('%Y_%m_%d-%H_%M_%S')}"
 
     imgdir = os.path.join(root, "plots")

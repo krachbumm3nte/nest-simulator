@@ -13,6 +13,7 @@ import utils as utils
 imgdir, datadir = utils.setup_simulation()
 utils.setup_nest(delta_t, threads, record_interval, datadir)
 
+dims = [2, 2, 2]
 dims = [30, 20, 10]
 
 cmap_1 = plt.cm.get_cmap('hsv', dims[1]+1)
@@ -39,6 +40,9 @@ out_id = out.get("global_id")
 interneurons = net.intn_pops[0]
 intn_id = interneurons.get("global_id")
 print("setup complete, running simulations...")
+
+
+print(f" in: {in_id}, hidden: {hidden_id}, intn: {intn_id}, out: {out_id}.")
 
 for run in range(n_runs + 1):
     inputs = 2 * np.random.rand(dims[0]) - 1
@@ -122,13 +126,13 @@ for run in range(n_runs + 1):
         w_ip_error = mse(a["weight"], -b["weight"])
         w_ip_errors.append(w_ip_error)
         error_scale = np.arange(0, (run+1), plot_interval) * SIM_TIME/record_interval
-        ax3.plot(error_scale, w_ip_errors, label=f"FB error: {w_ip_error:.2f}")
+        ax3.plot(error_scale, w_ip_errors, label=f"FB error: {w_ip_error:.3f}")
 
         a = WYH.sort_values(["source", "target"])
         b = WIH.sort_values(["source", "target"])
         w_pi_error = mse(a["weight"], b["weight"])
         w_pi_errors.append(w_pi_error)
-        ax3.plot(error_scale, w_pi_errors, label=f"FF error: {w_pi_error:.2f}")
+        ax3.plot(error_scale, w_pi_errors, label=f"FF error: {w_pi_error:.3f}")
 
         # plot weights
         for idx, row in WHY.iterrows():
@@ -157,8 +161,8 @@ for run in range(n_runs + 1):
 
         ax1.set_ylim(bottom=0)
         ax3.set_ylim(bottom=0)
-        # ax4.set_ylim(-1, 1)
-        # ax5.set_ylim(-1, 1)
+        ax4.set_ylim(wmin, wmax)
+        ax5.set_ylim(wmin, wmax)
 
         ax3.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15),
                    ncol=3, prop={'size': 5})
@@ -170,6 +174,6 @@ for run in range(n_runs + 1):
         plot_duration = time() - start
         print(f"mean simulation time: {np.mean(T[-50:]):.2f}s. plot time:{plot_duration:.2f}s. \
 apical error: {apical_err_now:.2f}.")
-        print(f"ff error: {w_pi_error:.2f}, fb error: {w_ip_error:.2f}, interneuron error: {intn_error_now:.2f}\n")
+        print(f"ff error: {w_pi_error:.3f}, fb error: {w_ip_error:.3f}, interneuron error: {intn_error_now:.2f}\n")
     elif run % 50 == 0:
         print(f"run {run} completed.")

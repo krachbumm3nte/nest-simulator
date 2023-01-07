@@ -1,64 +1,85 @@
 import numpy as np
 from sklearn.metrics import mean_squared_error as mse
 from time import time
-from params_rate import *
+
+# These values reappear over and over again in the computation. Writing self.value 5 times per line bloats
+# the simulate() function to horrific degrees. Since these values do not change at simulation time, They are being
+# set as global variables once in the constructor to be called from within the class. This solution is pretty cursed,
+# but the oop solution sadly makes the code completely unreadable.
+g_a, g_d, g_l, g_s, g_si, tau_x, tau_delta, noise_factor, delta_t = [0 for i in range(9)]
+phi, phi_inverse = None, None
 
 
-class MathematicaNetwork:
+class NumpyNetwork:
 
-    def __init__(self, dims) -> None:
-        self.dims = dims
-        self.noise = noise
-        self.noise_std = sigma
-        self.stim_amp = stim_amp
-        self.target_amp = target_amp
-        self.L = len(dims)
+    def __init__(self, sim, nrn, syns) -> None:
+        self.sim = sim  # simulation parameters
+        self.nrn = nrn  # neuron parameters
+        self.syns = syns  # synapse parameters
+
+        self.dims = sim["dims"]
+        self.conns = {}
+        self.phi = nrn["phi"]
+        self.phi_inverse = nrn["phi_inverse"]
         self.record_voltages = True
+
+        # Oh lord forgive me
+        global g_a, g_d, g_l, g_s, g_si, noise_factor, delta_t, tau_x, tau_delta, phi, phi_inverse
+        g_a = nrn["g_a"]
+        g_d = nrn["g_d"]
+        g_l = nrn["g_l"]
+        g_s = nrn["g_s"]
+        g_si = nrn["g_si"]
+        tau_x = nrn["tau_x"]
+        noise_factor = sim["noise_factor"]
+        tau_delta = syns["tau_Delta"]
+        delta_t = sim["delta_t"]
+        phi = nrn["phi"]
+        phi_inverse = nrn["phi_inverse"]
+
+        self.U_x_record = np.asmatrix(np.zeros((0, self.dims[0])))
+        self.U_h_record = np.asmatrix(np.zeros((0, self.dims[1])))
+        self.V_ah_record = np.asmatrix(np.zeros((0, self.dims[1])))
+        self.V_bh_record = np.asmatrix(np.zeros((0, self.dims[1])))
+        self.U_i_record = np.asmatrix(np.zeros((0, self.dims[2])))
+        self.V_bi_record = np.asmatrix(np.zeros((0, self.dims[2])))
+        self.U_y_record = np.asmatrix(np.zeros((0, self.dims[2])))
+        self.V_by_record = np.asmatrix(np.zeros((0, self.dims[2])))
         self.output_loss = []
-        self.train_epoch = 0
 
-        self.U_x_record = np.asmatrix(np.zeros((0, dims[0])))
-        self.U_h_record = np.asmatrix(np.zeros((0, dims[1])))
-        self.V_ah_record = np.asmatrix(np.zeros((0, dims[1])))
-        self.V_bh_record = np.asmatrix(np.zeros((0, dims[1])))
-        self.U_i_record = np.asmatrix(np.zeros((0, dims[2])))
-        self.V_bi_record = np.asmatrix(np.zeros((0, dims[2])))
-        self.U_y_record = np.asmatrix(np.zeros((0, dims[2])))
-        self.V_by_record = np.asmatrix(np.zeros((0, dims[2])))
+        self.setup_populations(syns, nrn)
 
-        self.setup_populations(init_self_pred)
+        self.iteration = 0
 
-    def gen_weights(self, lr, next_lr, w_min=wmin_init, w_max=wmax_init):
-        return np.random.uniform(w_min, w_max, (next_lr, lr))
+    def gen_weights(self, lr, next_lr):
+        return np.random.uniform(self.nrn["wmin_init"], self.nrn["wmax_init"], (next_lr, lr))
 
-    def setup_populations(self, self_predicting):
+    def setup_populations(self, syns, nrn):
         self.U_x = np.asmatrix(np.zeros(self.dims[0]))
 
         self.U_h = np.asmatrix(np.zeros(self.dims[1]))
         self.V_bh = np.asmatrix(np.zeros(self.dims[1]))
         self.V_ah = np.asmatrix(np.zeros(self.dims[1]))
-        self.r_h = phi(self.U_h)
+        self.r_h = self.phi(self.U_h)
 
         self.U_i = np.asmatrix(np.zeros(self.dims[2]))
         self.V_bi = np.asmatrix(np.zeros(self.dims[2]))
-        self.r_i = phi(self.U_i)
+        self.r_i = self.phi(self.U_i)
 
         self.U_y = np.asmatrix(np.zeros(self.dims[2]))
         self.V_by = np.asmatrix(np.zeros(self.dims[2]))
-        self.r_y = phi(self.U_y)
+        self.r_y = self.phi(self.U_y)
         self.y = np.asmatrix(np.random.random(self.dims[2]))
 
         self.conn_names = ["hx", "yh", "ih", "hi", "hy"]
 
         conn_setup = {
-            "hx": {"eta": eta_hx, "in": self.dims[0], "out": self.dims[1], "init_scale": 1},  # 0.1},
-            "yh": {"eta": eta_yh, "in": self.dims[1], "out": self.dims[2], "init_scale": 1},  # 0.1},
-            "ih": {"eta": eta_ih, "in": self.dims[1], "out": self.dims[2], "init_scale": 1},  # 0.1},
-            "hi": {"eta": eta_hi, "in": self.dims[2], "out": self.dims[1], "init_scale": 1},  # 0.1},
-            "hy": {"eta": eta_hy, "in": self.dims[2], "out": self.dims[1], "init_scale": 1},  # 1/gamma}
+            "hx": {"eta": syns["hx"]["eta"], "in": self.dims[0], "out": self.dims[1], "init_scale": 1},  # 0.1},
+            "yh": {"eta": syns["yh"]["eta"], "in": self.dims[1], "out": self.dims[2], "init_scale": 1},  # 0.1},
+            "ih": {"eta": syns["ih"]["eta"], "in": self.dims[1], "out": self.dims[2], "init_scale": 1},  # 0.1},
+            "hi": {"eta": syns["hi"]["eta"], "in": self.dims[2], "out": self.dims[1], "init_scale": 1},  # 0.1},
+            "hy": {"eta": syns["hy"]["eta"], "in": self.dims[2], "out": self.dims[1], "init_scale": 1},  # 1/gamma}
         }
-        self.conns = {n: {"t_w": 0, "dt_w": 0, "record": [], "eta": 0, "w": 1}
-                      for n in self.conn_names}  # TODO: delete this line?
 
         for name, p in conn_setup.items():
             self.conns[name] = {
@@ -70,7 +91,7 @@ class MathematicaNetwork:
             }
 
         self.hx_teacher = np.asmatrix(np.random.random((self.dims[1], self.dims[0])) * 2 - 1)
-        self.yh_teacher = np.asmatrix(np.random.random((self.dims[2], self.dims[1])) * 2 - 1) / gamma
+        self.yh_teacher = np.asmatrix(np.random.random((self.dims[2], self.dims[1])) * 2 - 1) / nrn["gamma"]
 
     def train(self, T):
 
@@ -80,8 +101,8 @@ class MathematicaNetwork:
     def test(self, T):
         for i in range(int(T/delta_t)):
             self.simulate(self.train_nothing)  # do not inject output layer current during testing
-            self.output_pred = phi((g_d / (g_d + g_l)) + self.conns["yh"]
-                                   ["w"] * phi((g_d / (g_d + g_l + g_a)) * self.V_bh).T).T
+            self.output_pred = phi((g_d / (g_d + g_l)) +
+                                   self.conns["yh"]["w"] * phi((g_d / (g_d + g_l + g_a)) * self.V_bh).T).T
 
             self.output_loss.append(mse(np.asarray(self.output_pred), np.asarray(self.y)))
 
@@ -119,6 +140,7 @@ class MathematicaNetwork:
         self.conns["yh"]["dt_w"] = -self.conns["yh"]["t_w"] + \
             np.outer(self.r_y - phi((g_d * self.V_by)/(g_l + g_d)), self.r_h)
 
+        # output to hidden synapses learn this way, but eta is almost always zero, so this saves some compute time
         # self.conns["hy"]["dt_w"] = -self.conns["hy"]["t_w"] + \
         #     np.outer(self.r_h - phi(self.conns["hy"]["w"] * self.r_y.T).T, self.r_y)
 
@@ -152,7 +174,7 @@ class MathematicaNetwork:
         # print(stop - start)
         # start = time()
 
-        store_state = self.record_voltages and self.train_epoch % (record_interval//delta_t) == 0
+        store_state = self.record_voltages and self.iteration % (self.sim["record_interval"]//delta_t) == 0
 
         for name, d in self.conns.items():
             d["t_w"] = d["t_w"] + (delta_t/tau_delta) * d["dt_w"]
@@ -175,11 +197,11 @@ class MathematicaNetwork:
             self.U_y_record = np.append(self.U_y_record, self.U_y, axis=0)
             self.V_by_record = np.append(self.V_by_record, self.V_by, axis=0)
 
-            self.output_pred = phi((g_d / (g_d + g_l)) + self.conns["yh"]
-                                   ["w"] * phi((g_d / (g_d + g_l + g_a)) * self.V_bh).T).T
+            self.output_pred = self.phi((g_d / (g_d + g_l)) + self.conns["yh"]
+                                        ["w"] * self.phi((g_d / (g_d + g_l + g_a)) * self.V_bh).T).T
             self.output_loss.append(mse(np.asarray(self.output_pred), np.asarray(self.y)))
 
-        self.train_epoch += 1
+        self.iteration += 1
 
         # stop = time()
         # print(stop - start)
@@ -187,11 +209,10 @@ class MathematicaNetwork:
         # print("done")
 
     def set_input(self, input_currents):
+        """Inject a constant current into all neurons in the input layer.
+
+        Arguments:
+            input_currents -- Iterable of length equal to the input dimension.
+        """
         self.I_x = input_currents
 
-    def set_target(self, indices):
-        for i in range(self.dims[-1]):
-            if i in indices:
-                self.pyr_pops[-1][i].set({"soma": {"I_e": self.stim_amp}})
-            else:
-                self.pyr_pops[-1][i].set({"soma": {"I_e": 0}})

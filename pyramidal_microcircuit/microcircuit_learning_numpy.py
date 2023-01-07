@@ -1,12 +1,18 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from params.params_rate import *
+from params import *
 from scipy.ndimage import uniform_filter1d as rolling_avg
 import pandas as pd
-from networks.network_mathematica import MathematicaNetwork
+from networks.network_numpy import NumpyNetwork
 from sklearn.metrics import mean_squared_error as mse
 from time import time
+import utils as utils
+import os
 
+
+imgdir, datadir = utils.setup_simulation()
+utils.setup_nest(delta_t, sim_params["threads"], sim_params["record_interval"], datadir)
+setup_models(False, False)
 
 dims = [30, 20, 10]
 
@@ -20,18 +26,18 @@ w_pi_errors = []
 w_ip_errors = []
 
 
-net = MathematicaNetwork(dims)
+net = NumpyNetwork(sim_params, neuron_params, syn_params)
 
 
 print("setup complete, running simulations...")
 
-for run in range(n_runs + 1):
+for run in range(sim_params["n_runs"] + 1):
     inputs = 2 * np.random.rand(dims[0]) - 1
     # input_index = 0
     net.set_input(inputs)
 
     start = time()
-    net.train(SIM_TIME)
+    net.train(sim_params["SIM_TIME"])
     t = time() - start
     T.append(t)
 
@@ -39,7 +45,7 @@ for run in range(n_runs + 1):
         print(f"plotting run {run}")
         start = time()
 
-        time_progressed = run * SIM_TIME
+        time_progressed = run * sim_params["SIM_TIME"]
 
         fig, axes = plt.subplots(3, 2, constrained_layout=True)
 
@@ -82,15 +88,15 @@ for run in range(n_runs + 1):
         why = net.conns["hy"]["record"]
         whi = net.conns["hi"]["record"]
 
-        w_ip_error = np.mean(np.square(whi + why), axis=(1, 2))
-        print(f"int_pyr error: {w_ip_error[-1]}")
-        ax3.plot(w_ip_error, label=f"FB error: {w_ip_error[-1]:.2f}")
+        fb_error = np.mean(np.square(whi + why), axis=(1, 2))
+        print(f"int_pyr error: {fb_error[-1]}")
+        ax3.plot(fb_error, label=f"FB error: {fb_error[-1]:.3f}")
 
         wyh = net.conns["yh"]["record"]
         wih = net.conns["ih"]["record"]
-        w_pi_error = np.mean(np.square(wih - wyh), axis=(1, 2))
-        print(f"pyr_int error: {w_pi_error[-1]}")
-        ax3.plot(w_pi_error, label=f"FF error: {w_pi_error[-1]:.2f}")
+        ff_error = np.mean(np.square(wih - wyh), axis=(1, 2))
+        print(f"pyr_int error: {ff_error[-1]}")
+        ax3.plot(ff_error, label=f"FF error: {ff_error[-1]:.3f}")
 
         # plot weights
         for i in range(dims[2]):
@@ -127,6 +133,7 @@ for run in range(n_runs + 1):
         plot_duration = time() - start
         print(f"mean simulation time: {np.mean(T[-50:]):.2f}s. plot time:{plot_duration:.2f}s. \
 apical error: {apical_err_now:.2f}.")
-        print(f"ff error: {w_pi_error[-1]:.2f}, fb error: {w_ip_error[-1]:.2f}, interneuron error: {intn_error_now:.2f}\n")
+        print(
+            f"ff error: {ff_error[-1]:.3f}, fb error: {fb_error[-1]:.3f}, interneuron error: {intn_error_now:.2f}\n")
     elif run % 50 == 0:
         print(f"run {run} completed.")
