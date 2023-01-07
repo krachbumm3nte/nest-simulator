@@ -6,11 +6,7 @@ import numpy as np
 delta_t = 0.1
 sqrt_dt = np.sqrt(delta_t)
 threads = 6
-
-nest.set_verbosity("M_ERROR")
-nest.resolution = delta_t
-nest.SetKernelStatus({"local_num_threads": threads, "use_wfr": False})
-nest.rng_seed = 15
+record_interval = 75
 
 init_self_pred = False
 self_predicting_fb = False
@@ -31,9 +27,12 @@ stim_amp = 1
 nudging = True
 
 # transfer function parameters
-gamma = 0.1
+gamma = 1
 beta = 1
-theta = 3
+theta = 0
+# gamma = 0.1
+# beta = 1
+# theta = 3
 
 
 # Neuron parameters
@@ -138,10 +137,10 @@ syn_params = {
 }
 
 # neuron parameters
-pyr_model = 'pp_cond_exp_mc_pyr'
+pyr_model = 'rate_neuron_pyr'
 pyr_comps = nest.GetDefaults(pyr_model)["receptor_types"]
 
-intn_model = 'pp_cond_exp_mc_pyr'
+intn_model = 'rate_neuron_pyr'
 intn_comps = nest.GetDefaults(intn_model)["receptor_types"]
 
 basal_dendrite = pyr_comps['basal']

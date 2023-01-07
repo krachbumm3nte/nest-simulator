@@ -2,7 +2,6 @@ import nest
 import matplotlib.pyplot as plt
 from params_rate_test import *
 import pandas as pd
-from utils import *
 
 """
 This script shows that the neuron model handles membrane voltage updates exactly as described in the analytical case.

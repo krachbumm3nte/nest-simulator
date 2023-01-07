@@ -1,15 +1,26 @@
 import nest
 import matplotlib.pyplot as plt
 import pandas as pd
-import sys
 import numpy as np
 from sklearn.metrics import mean_squared_error as mse
-sys.path.append("..")
-# sys.path.append("/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit")
-from pyramidal_microcircuit.params.params_rate import *  # nopep8
-from pyramidal_microcircuit.utils import *  # nopep8
-from pyramidal_microcircuit.networks.network_rate import Network  # nopep8
-from pyramidal_microcircuit.networks.network_mathematica import MathematicaNetwork  # nopep8
+import sys
+sys.path.append("/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit")
+
+from params import *  # nopep8
+from utils import *  # nopep8
+from networks.network_nest import Network  # nopep8
+from networks.network_numpy import NumpyNetwork  # nopep8
+
+
+dims = [4, 3, 2]
+imgdir, datadir = setup_simulation()
+sim_params["record_interval"] = 0.1
+sim_params["noise"] = False
+sim_params["sigma"] = 0
+sim_params["noise_factor"] = 0
+sim_params["dims"] = dims
+setup_nest(delta_t, sim_params["threads"], sim_params["record_interval"], datadir)
+wr = setup_models(False, True)
 
 cmap = plt.cm.get_cmap('hsv', 7)
 styles = ["solid", "dotted", "dashdot", "dashed"]
@@ -17,10 +28,8 @@ styles = ["solid", "dotted", "dashdot", "dashed"]
 n_runs = 50
 SIM_TIME = 100
 
-dims = [4, 3, 2]
-
-nest_net = Network(dims)
-math_net = MathematicaNetwork(dims)
+nest_net = Network(sim_params, neuron_params, syn_params)
+math_net = NumpyNetwork(sim_params, neuron_params, syn_params)
 
 c_hx = nest.GetConnections(nest_net.pyr_pops[0], nest_net.pyr_pops[1])
 c_yh = nest.GetConnections(nest_net.pyr_pops[1], nest_net.pyr_pops[2])
@@ -37,13 +46,23 @@ math_net.conns["hi"]["w"] = matrix_from_connection(c_hi)
 math_net.conns["hy"]["w"] = matrix_from_connection(c_hy)
 
 
+nest_net.mm_x = nest.Create('multimeter', 1, {'record_to': 'memory', 'record_from': ["V_m.s"]})
+nest.Connect(nest_net.mm_x, nest_net.pyr_pops[0])
+nest_net.mm_h = nest.Create('multimeter', 1, {'record_to': 'memory', 'record_from': ["V_m.s", "V_m.b", "V_m.a_lat"]})
+nest.Connect(nest_net.mm_h, nest_net.pyr_pops[1])
+nest_net.mm_i = nest.Create('multimeter', 1, {'record_to': 'memory', 'record_from': ["V_m.s", "V_m.b"]})
+nest.Connect(nest_net.mm_i, nest_net.intn_pops[0])
+nest_net.mm_y = nest.Create('multimeter', 1, {'record_to': 'memory', 'record_from': ["V_m.s", "V_m.b"]})
+nest.Connect(nest_net.mm_y, nest_net.pyr_pops[-1])
+wr.record_to = 'memory'
+
 for i in range(n_runs):
     if i % 5 == 0:
         print(f"simulating run: {i}")
     amp = np.random.random(dims[0]) * 2 - 1
 
     nest_net.set_input(amp)
-    nest.Simulate(SIM_TIME)
+    nest_net.simulate(SIM_TIME)
 
     math_net.set_input(amp)
     math_net.train(SIM_TIME)
