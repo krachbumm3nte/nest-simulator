@@ -12,7 +12,7 @@ sim_params = {
     "record_interval": 75,  # interval for storing membrane potentials
     "self_predicting_fb": False,  # self-predicting initialization of feedback weights
     "self_predicting_ff": False,  # self-predicting initialization of feedforward weights
-    "plasticity": False,  # enable synaptic plasticity
+    "plasticity": True,  # enable synaptic plasticity
     "bogo_plasticity": True,  # increase learning rates to absurd amounts
     "SIM_TIME": 100,  # simulation time per input pattern in ms
     "n_runs": 10000,  # number of training iterations
@@ -20,6 +20,7 @@ sim_params = {
     "sigma": sigma,
     "noise_factor": np.sqrt(delta_t) * sigma,  # constant noise factor for numpy simulations
     "dims": [30, 20, 10],  # network dimensions, i.e. neurons per layer
+    "recording_backend": "ascii"
 }
 
 
@@ -48,8 +49,6 @@ neuron_params = {
     "g_si": 0.8,  # interneuron nudging conductance
     "g_s": 0.8,  # output neuron nudging conductance
     "lambda_ah": lambda_ah,
-    'wmin_init': -1,  # synaptic weight initialization min
-    'wmax_init': 1,  # synaptic weight initialization max
     'gamma': gamma,
     'beta': beta,
     'theta': theta,
@@ -86,7 +85,7 @@ pyr_params['soma']['g'] = g_l + g_d + neuron_params["g_si"]
 
 # Interneurons are effectively pyramidal neurons with a silenced apical compartment.
 intn_params = deepcopy(pyr_params)
-intn_params['apical_lat']['g'] = 0.0
+intn_params['apical_lat']['g'] = 0
 
 
 # to replace the low pass filtering of the input, input neurons have both
@@ -95,16 +94,27 @@ intn_params['apical_lat']['g'] = 0.0
 # transmitted to the hidden layer without the nonlinearity phi.
 input_params = deepcopy(pyr_params)
 input_params["soma"]["g"] = 1/neuron_params["tau_x"]
+input_params["basal"]["g"] = 0
+input_params["apical_lat"]["g"] = 0
 input_params["use_phi"] = False
 input_params['tau_m'] = 1/neuron_params["tau_x"]
+
+
+neuron_params["pyr"] = pyr_params
+neuron_params["input"] = input_params
+neuron_params["intn"] = intn_params
 
 # connection specific learning rates
 # TODO: clean this up!
 if sim_params["plasticity"]:
-    eta_yh = 0.01
-    eta_hx = eta_yh / lambda_ah
-    eta_ih = 0.01 / lambda_ah
-    eta_hi = 5 * eta_ih
+    # eta_yh = 0.01
+    # eta_hx = eta_yh / lambda_ah
+    # eta_ih = 0.01 / lambda_ah
+    # eta_hi = 5 * eta_ih
+    eta_yh = 0
+    eta_ih = 0.0002
+    eta_hi = 0.0005
+    eta_hx = 0
 else:
     eta_yh = 0
     eta_hx = 0
@@ -117,10 +127,8 @@ if sim_params["bogo_plasticity"]:
     eta_hi *= 100
     eta_ih *= 100
 
-eta_ih = 0.0002
-eta_hi = 0.0005
 
-
+# Dicts derived from this can be passed directly to nest.Connect() as synapse parameters
 syn_defaults = {
     'synapse_model': None,  # Synapse model (for NEST simulations only)
     'tau_Delta': 30,  # Synaptic time constant
@@ -131,6 +139,11 @@ syn_defaults = {
 }
 
 syn_params = deepcopy(syn_defaults)
+syn_params.update({
+    'wmin_init': -1,  # synaptic weight initialization min
+    'wmax_init': 1,  # synaptic weight initialization max
+})
+
 
 def setup_models(spiking, record_weights=False):
 
@@ -186,6 +199,3 @@ def phi_inverse(x):
 
 neuron_params["phi"] = phi
 neuron_params["phi_inverse"] = phi_inverse
-neuron_params["pyr"] = pyr_params
-neuron_params["input"] = input_params
-neuron_params["intn"] = intn_params

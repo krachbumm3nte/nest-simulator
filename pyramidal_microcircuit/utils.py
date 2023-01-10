@@ -5,6 +5,8 @@ from datetime import datetime
 import os
 import glob
 import re
+from scipy.ndimage import uniform_filter1d
+import itertools
 
 
 def regroup_records(records, group_key):
@@ -37,6 +39,30 @@ def matrix_from_wr(data, conn):
     return np.reshape(sorted_data, (-1, len(s), len(t)), "F")
 
 
+def matrix_from_spikes(data, conn, t_max, delta_t):
+    syns = pd.DataFrame.from_dict(conn.get())
+    t = conn.get("target")
+    s = conn.get("source")
+    t = {t} if type(t) == int else sorted(set(t))
+    s = {1} if type(s) == int else sorted(set(s))
+
+    filtered_data = data[(data.targets.isin(t) & data.senders.isin(s))]
+    filtered_data = filtered_data.groupby(["senders", "targets"])
+
+    temp = pd.DataFrame(np.nan, index=np.arange(int(t_max/delta_t)),
+                        columns=[f"{x}{y}" for x, y in itertools.product(s, t)])
+
+    for i in sorted(s):
+        for o in sorted(t):
+            grp = filtered_data.get_group((i, o))
+            temp.loc[grp.times, f"{i}{o}"] = grp.weights
+            temp.loc[-1, f"{i}{o}"] = syns[(syns.source == i) & (syns.target == o)].weight.iloc[0]
+
+    temp = temp.fillna(method="bfill")
+
+    return temp.values
+
+
 def setup_simulation():
     root = f"/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/runs/{datetime.now().strftime('%Y_%m_%d-%H_%M_%S')}"
 
@@ -48,7 +74,7 @@ def setup_simulation():
     return imgdir, datadir
 
 
-def setup_nest(delta_t, threads, record_interval, datadir):
+def setup_nest(delta_t, threads, record_interval, datadir=os.getcwd()):
     nest.set_verbosity("M_ERROR")
     nest.resolution = delta_t
     nest.SetKernelStatus({"local_num_threads": threads, "use_wfr": False})
@@ -67,3 +93,7 @@ def read_data(device_id, path):
             frames.append(pd.read_csv(f, sep="\s+", comment='#'))
 
     return pd.concat(frames)
+
+
+def rolling_avg(input, size):
+    return uniform_filter1d(input, size, mode="nearest")

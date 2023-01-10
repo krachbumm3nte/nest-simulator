@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from params import *
-from scipy.ndimage import uniform_filter1d as rolling_avg
 import pandas as pd
 from networks.network_numpy import NumpyNetwork
 from sklearn.metrics import mean_squared_error as mse
@@ -60,13 +59,13 @@ for run in range(sim_params["n_runs"] + 1):
 
         for i in range(dims[2]):
             col = cmap_2(i)
-            ax0.plot(rolling_avg(net.U_h_record[:, i], size=250), "--", color=col, alpha=0.5)
+            ax0.plot(utils.rolling_avg(net.U_h_record[:, i], size=250), "--", color=col, alpha=0.5)
 
-            ax0.plot(rolling_avg(net.U_y_record[:, i], size=250), color=col)
+            ax0.plot(utils.rolling_avg(net.U_y_record[:, i], size=250), color=col)
 
             # plot interneuron error
-            ax1.plot(rolling_avg(intn_error[:, i], size=150), color=col, alpha=0.35, linewidth=0.7)
-        mean_error = rolling_avg(np.sum(intn_error, axis=1), size=250)
+            ax1.plot(utils.rolling_avg(intn_error[:, i], size=150), color=col, alpha=0.35, linewidth=0.7)
+        mean_error = utils.rolling_avg(np.sum(intn_error, axis=1), size=250)
         ax1.plot(mean_error, color="black")
 
         intn_error_now = np.mean(mean_error[-20:])
@@ -75,10 +74,10 @@ for run in range(sim_params["n_runs"] + 1):
 
         # plot apical voltage
         for i in range(dims[1]):
-            ax2.plot(rolling_avg(net.V_ah_record[:, i], size=150), label=id)
+            ax2.plot(utils.rolling_avg(net.V_ah_record[:, i], size=150), label=id)
 
         # plot apical error
-        apical_err = rolling_avg(np.mean(net.V_ah_record, axis=1), size=150)
+        apical_err = utils.rolling_avg(np.mean(net.V_ah_record, axis=1), size=150)
         ax3.plot(apical_err, label="apical error")
         ax3_2 = ax3.secondary_yaxis("right")
         apical_err_now = np.mean(apical_err[-20:])

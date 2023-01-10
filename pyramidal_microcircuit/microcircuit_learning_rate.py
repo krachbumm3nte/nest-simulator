@@ -2,7 +2,6 @@ import nest
 import matplotlib.pyplot as plt
 import numpy as np
 from params import *
-from scipy.ndimage import uniform_filter1d as rolling_avg
 import pandas as pd
 from networks.network_nest import Network
 from sklearn.metrics import mean_squared_error as mse
@@ -76,11 +75,11 @@ for run in range(sim_params["n_runs"] + 1):
         for intn, pyr in zip(intn_id, out_id):
             data_intn = U_I.get_group(intn)
             col = cmap_2(intn % dims[2])
-            ax0.plot(data_intn['time_ms'].array, rolling_avg(
+            ax0.plot(data_intn['time_ms'].array, utils.rolling_avg(
                 data_intn["V_m.s"].array, size=250), "--", color=col, alpha=0.5)
 
             data_pyr = U_Y.get_group(pyr)
-            ax0.plot(data_pyr['time_ms'].array, rolling_avg(data_pyr['V_m.s'].array, size=250), color=col)
+            ax0.plot(data_pyr['time_ms'].array, utils.rolling_avg(data_pyr['V_m.s'].array, size=250), color=col)
 
             int_v = U_I.get_group(intn)["V_m.s"].array
             pyr_v = U_Y.get_group(pyr)["V_m.s"].array
@@ -88,9 +87,9 @@ for run in range(sim_params["n_runs"] + 1):
             error = np.square(int_v-pyr_v)
             intn_errors.append(error)
             # plot interneuron error
-            ax1.plot(rolling_avg(error, size=150), color=col, alpha=0.35, linewidth=0.7)
+            ax1.plot(utils.rolling_avg(error, size=150), color=col, alpha=0.35, linewidth=0.7)
 
-        mean_error = rolling_avg(np.mean(intn_errors, axis=0), size=250)
+        mean_error = utils.rolling_avg(np.mean(intn_errors, axis=0), size=250)
         ax1.plot(mean_error, color="black")
 
         intn_error_now = np.mean(mean_error[-20:])
@@ -103,10 +102,10 @@ for run in range(sim_params["n_runs"] + 1):
 
         for id in hidden_id:
             v = apical_voltage.get_group(id)
-            ax2.plot(v['time_ms'], rolling_avg(v["V_m.a_lat"], size=150), label=id)
+            ax2.plot(v['time_ms'], utils.rolling_avg(v["V_m.a_lat"], size=150), label=id)
 
         # plot apical error
-        apical_err = rolling_avg(U_H.abs().groupby("time_ms")["V_m.a_lat"].mean(), size=150)
+        apical_err = utils.rolling_avg(U_H.abs().groupby("time_ms")["V_m.a_lat"].mean(), size=150)
         ax3.plot(apical_err, label="apical error")
         ax3_2 = ax3.secondary_yaxis("right")
         apical_err_now = np.mean(apical_err[-20:])
@@ -123,13 +122,13 @@ for run in range(sim_params["n_runs"] + 1):
         w_ip_error = mse(a["weight"], -b["weight"])
         w_ip_errors.append(w_ip_error)
         error_scale = np.arange(0, (run+1), plot_interval) * sim_params["SIM_TIME"]/sim_params["record_interval"]
-        ax3.plot(error_scale, w_ip_errors, label=f"FB error: {w_ip_error:.2f}")
+        ax3.plot(error_scale, w_ip_errors, label=f"FB error: {w_ip_error:.3f}")
 
         a = WYH.sort_values(["source", "target"])
         b = WIH.sort_values(["source", "target"])
         w_pi_error = mse(a["weight"], b["weight"])
         w_pi_errors.append(w_pi_error)
-        ax3.plot(error_scale, w_pi_errors, label=f"FF error: {w_pi_error:.2f}")
+        ax3.plot(error_scale, w_pi_errors, label=f"FF error: {w_pi_error:.3f}")
 
         # plot weights
         for idx, row in WHY.iterrows():
@@ -171,6 +170,6 @@ for run in range(sim_params["n_runs"] + 1):
         plot_duration = time() - start
         print(f"mean simulation time: {np.mean(T[-50:]):.2f}s. plot time:{plot_duration:.2f}s. \
 apical error: {apical_err_now:.2f}.")
-        print(f"ff error: {w_pi_error:.2f}, fb error: {w_ip_error:.2f}, interneuron error: {intn_error_now:.2f}\n")
+        print(f"ff error: {w_pi_error:.3f}, fb error: {w_ip_error:.3f}, interneuron error: {intn_error_now:.2f}\n")
     elif run % 50 == 0:
         print(f"run {run} completed.")

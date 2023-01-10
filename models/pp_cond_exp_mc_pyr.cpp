@@ -155,7 +155,7 @@ nest::pp_cond_exp_mc_pyr_dynamics( double, const double y[], double f[], void* p
  * ---------------------------------------------------------------- */
 
 nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_()
-  : t_ref( 3.0 ) // ms
+  : t_ref( 0.0 ) // ms
 {
   // parameters for the transfer function
   pyr_params.phi_max = 1;
@@ -638,10 +638,10 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       const double I_L_dend = P_.pyr_params.g_L[ n ] * V_dnd;
 
       // derivative membrane potential
-      S_.y_[ State_::idx( n, State_::V_M ) ] = V_dnd + ( -I_L_dend + I_dend );
+      S_.y_[ State_::idx( n, State_::V_M ) ] = V_dnd - I_L_dend + I_dend ;
 
       // derivative dendritic current
-      S_.y_[ State_::idx( n, State_::I ) ] = I_dend - I_dend / P_.pyr_params.tau_m;
+      S_.y_[ State_::idx( n, State_::I ) ] = 0; // I_dend - I_dend / P_.pyr_params.tau_m;
       // if ( n == 10 )
       //{
       //   std::cout << I_L_dend << ", " << I_conn_d_s << ", " << S_.y_[ State_::idx( 1, State_::V_M ) ] << ", "

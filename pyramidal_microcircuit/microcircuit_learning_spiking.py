@@ -1,21 +1,39 @@
 import nest
 import matplotlib.pyplot as plt
 import numpy as np
-from params.params_spiking import *
-from scipy.ndimage import uniform_filter1d as rolling_avg
+from params import *
 import pandas as pd
-from networks.network_spiking import Network
+from networks.network_nest import Network
 from sklearn.metrics import mean_squared_error as mse
 from time import time
 import utils as utils
+import os
 
 
 imgdir, datadir = utils.setup_simulation()
-utils.setup_nest(delta_t, threads, record_interval, datadir)
+utils.setup_nest(delta_t, sim_params["threads"], sim_params["record_interval"], datadir)
+setup_models(True, False)
 
-dims = [2, 2, 2]
-dims = [30, 20, 10]
 
+sim_params["SIM_TIME"] = 150
+
+syn_params["hi"]["eta"] *= 0.001
+syn_params["ih"]["eta"] *= 0.003
+
+weight_scale = 45
+weight_scale = 1
+syn_params["wmin_init"] = -1/weight_scale
+syn_params["wmax_init"] = 1/weight_scale
+
+g_lk_dnd = 0.0023
+g_lk_dnd = 0.095
+neuron_params["pyr"]["basal"]["g_L"] = g_lk_dnd
+neuron_params["pyr"]["apical_lat"]["g_L"] = g_lk_dnd
+neuron_params["intn"]["basal"]["g_L"] = g_lk_dnd
+
+net = Network(sim_params, neuron_params, syn_params)
+
+dims = sim_params["dims"]
 cmap_1 = plt.cm.get_cmap('hsv', dims[1]+1)
 cmap_2 = plt.cm.get_cmap('hsv', dims[2]+1)
 
@@ -25,8 +43,6 @@ T = []
 w_pi_errors = []
 w_ip_errors = []
 
-
-net = Network(dims)
 
 in_ = net.pyr_pops[0]
 in_id = in_.get("global_id")
@@ -41,16 +57,13 @@ interneurons = net.intn_pops[0]
 intn_id = interneurons.get("global_id")
 print("setup complete, running simulations...")
 
-
-print(f" in: {in_id}, hidden: {hidden_id}, intn: {intn_id}, out: {out_id}.")
-
-for run in range(n_runs + 1):
+for run in range(sim_params["n_runs"] + 1):
     inputs = 2 * np.random.rand(dims[0]) - 1
     # input_index = 0
     net.set_input(inputs)
 
     start = time()
-    net.simulate(SIM_TIME)
+    net.simulate(sim_params["SIM_TIME"])
     t = time() - start
     T.append(t)
 
@@ -58,7 +71,7 @@ for run in range(n_runs + 1):
         print(f"plotting run {run}")
         start = time()
 
-        time_progressed = run * SIM_TIME
+        time_progressed = run * sim_params["SIM_TIME"]
 
         fig, axes = plt.subplots(3, 2, constrained_layout=True)
 
@@ -79,11 +92,11 @@ for run in range(n_runs + 1):
         for intn, pyr in zip(intn_id, out_id):
             data_intn = U_I.get_group(intn)
             col = cmap_2(intn % dims[2])
-            ax0.plot(data_intn['time_ms'].array, rolling_avg(
+            ax0.plot(data_intn['time_ms'].array, utils.rolling_avg(
                 data_intn["V_m.s"].array, size=250), "--", color=col, alpha=0.5)
 
             data_pyr = U_Y.get_group(pyr)
-            ax0.plot(data_pyr['time_ms'].array, rolling_avg(data_pyr['V_m.s'].array, size=250), color=col)
+            ax0.plot(data_pyr['time_ms'].array, utils.rolling_avg(data_pyr['V_m.s'].array, size=250), color=col)
 
             int_v = U_I.get_group(intn)["V_m.s"].array
             pyr_v = U_Y.get_group(pyr)["V_m.s"].array
@@ -91,9 +104,9 @@ for run in range(n_runs + 1):
             error = np.square(int_v-pyr_v)
             intn_errors.append(error)
             # plot interneuron error
-            ax1.plot(rolling_avg(error, size=150), color=col, alpha=0.35, linewidth=0.7)
+            ax1.plot(utils.rolling_avg(error, size=150), color=col, alpha=0.35, linewidth=0.7)
 
-        mean_error = rolling_avg(np.mean(intn_errors, axis=0), size=250)
+        mean_error = utils.rolling_avg(np.mean(intn_errors, axis=0), size=250)
         ax1.plot(mean_error, color="black")
 
         intn_error_now = np.mean(mean_error[-20:])
@@ -106,10 +119,10 @@ for run in range(n_runs + 1):
 
         for id in hidden_id:
             v = apical_voltage.get_group(id)
-            ax2.plot(v['time_ms'], rolling_avg(v["V_m.a_lat"], size=150), label=id)
+            ax2.plot(v['time_ms'], utils.rolling_avg(v["V_m.a_lat"], size=150), label=id)
 
         # plot apical error
-        apical_err = rolling_avg(U_H.abs().groupby("time_ms")["V_m.a_lat"].mean(), size=150)
+        apical_err = utils.rolling_avg(U_H.abs().groupby("time_ms")["V_m.a_lat"].mean(), size=150)
         ax3.plot(apical_err, label="apical error")
         ax3_2 = ax3.secondary_yaxis("right")
         apical_err_now = np.mean(apical_err[-20:])
@@ -123,14 +136,14 @@ for run in range(n_runs + 1):
 
         a = WHY.sort_values(["target", "source"])
         b = WHI.sort_values(["target", "source"])
-        w_ip_error = mse(a["weight"], -b["weight"])
+        w_ip_error = mse(a["weight"], -b["weight"]) * 100
         w_ip_errors.append(w_ip_error)
-        error_scale = np.arange(0, (run+1), plot_interval) * SIM_TIME/record_interval
+        error_scale = np.arange(0, (run+1), plot_interval) * sim_params["SIM_TIME"]/sim_params["record_interval"]
         ax3.plot(error_scale, w_ip_errors, label=f"FB error: {w_ip_error:.3f}")
 
         a = WYH.sort_values(["source", "target"])
         b = WIH.sort_values(["source", "target"])
-        w_pi_error = mse(a["weight"], b["weight"])
+        w_pi_error = mse(a["weight"], b["weight"]) * 100
         w_pi_errors.append(w_pi_error)
         ax3.plot(error_scale, w_pi_errors, label=f"FF error: {w_pi_error:.3f}")
 
@@ -161,8 +174,8 @@ for run in range(n_runs + 1):
 
         ax1.set_ylim(bottom=0)
         ax3.set_ylim(bottom=0)
-        ax4.set_ylim(wmin, wmax)
-        ax5.set_ylim(wmin, wmax)
+        # ax4.set_ylim(-1, 1)
+        # ax5.set_ylim(-1, 1)
 
         ax3.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15),
                    ncol=3, prop={'size': 5})
