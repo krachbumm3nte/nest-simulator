@@ -561,7 +561,7 @@ pp_cond_exp_mc_pyr_parameters::phi( double u )
   }
   else
   {
-    return u;
+    return gamma * u; 
   }
   // return log( 1 + exp( u ) );
   //  TODO: which is the correct activation function for this?

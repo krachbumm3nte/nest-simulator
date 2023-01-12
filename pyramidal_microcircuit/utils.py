@@ -1,3 +1,4 @@
+# %%
 import nest
 import pandas as pd
 import numpy as np
@@ -7,6 +8,7 @@ import glob
 import re
 from scipy.ndimage import uniform_filter1d
 import itertools
+import matplotlib.pyplot as plt
 
 
 def regroup_records(records, group_key):
@@ -40,27 +42,23 @@ def matrix_from_wr(data, conn):
 
 
 def matrix_from_spikes(data, conn, t_max, delta_t):
+    t_max = round(t_max/delta_t)
     syns = pd.DataFrame.from_dict(conn.get())
     t = conn.get("target")
     s = conn.get("source")
-    t = {t} if type(t) == int else sorted(set(t))
-    s = {1} if type(s) == int else sorted(set(s))
+    t = [t] if type(t) == int else sorted(set(t))
+    s = [s] if type(s) == int else sorted(set(s))
 
-    filtered_data = data[(data.targets.isin(t) & data.senders.isin(s))]
-    filtered_data = filtered_data.groupby(["senders", "targets"])
-
-    temp = pd.DataFrame(np.nan, index=np.arange(int(t_max/delta_t)),
-                        columns=[f"{x}{y}" for x, y in itertools.product(s, t)])
+    m_idx = pd.MultiIndex.from_product([s, t])
+    weight_df = pd.DataFrame(np.full((t_max+1, len(m_idx)), np.nan), index=np.arange(t_max+1), columns=m_idx)
 
     for i in sorted(s):
         for o in sorted(t):
-            grp = filtered_data.get_group((i, o))
-            temp.loc[grp.times, f"{i}{o}"] = grp.weights
-            temp.loc[-1, f"{i}{o}"] = syns[(syns.source == i) & (syns.target == o)].weight.iloc[0]
-
-    temp = temp.fillna(method="bfill")
-
-    return temp.values
+            grp = data[(data.senders == i) & (data.targets == o)]
+            weight_df.loc[grp.times.values, (i, o)] = grp.weights.values
+            weight_df.loc[t_max, (i, o)] = syns[(syns.source == i) & (syns.target == o)].weight.iloc[0]
+    weight_df = weight_df.fillna(method="bfill")
+    return weight_df.values
 
 
 def setup_simulation():
@@ -97,3 +95,5 @@ def read_data(device_id, path):
 
 def rolling_avg(input, size):
     return uniform_filter1d(input, size, mode="nearest")
+
+# %%

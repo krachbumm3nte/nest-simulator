@@ -1,13 +1,14 @@
 import nest
 import numpy as np
+from copy import deepcopy
 
 
 class Network:
 
     def __init__(self, sim, nrn, syns) -> None:
-        self.sim = sim  # simulation parameters
-        self.nrn = nrn  # neuron parameters
-        self.syns = syns  # synapse parameters
+        self.sim = deepcopy(sim)  # simulation parameters
+        self.nrn = deepcopy(nrn)  # neuron parameters
+        self.syns = deepcopy(syns)  # synapse parameters
 
         self.dims = sim["dims"]
         self.pyr_pops = []
@@ -16,12 +17,12 @@ class Network:
         self.sigma_noise = sim["sigma"]
         self.phi = nrn["phi"]
         self.phi_inverse = nrn["phi_inverse"]
-        self.setup_populations(syns, nrn)
+        self.setup_populations(self.syns, self.nrn)
 
         self.iteration = 0
 
     def gen_weights(self, lr, next_lr):
-        return np.random.uniform(self.nrn["wmin_init"], self.nrn["wmax_init"], (next_lr, lr))
+        return np.random.uniform(self.syns["wmin_init"], self.syns["wmax_init"], (next_lr, lr))
 
     def setup_populations(self, syns, nrn):
 

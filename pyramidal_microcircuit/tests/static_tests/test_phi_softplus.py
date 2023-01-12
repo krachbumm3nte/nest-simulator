@@ -3,20 +3,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.misc import derivative
 
-gamma = 0.1
-beta = 1
-theta = 3
-
 timestep = 0.1
+
+gamma = 1.5
+beta = 1
+theta = 0
 
 
 def phi(x):
     return gamma * np.log(1 + np.exp(beta * (x - theta)))
 
 
-gamma_2 = 0.4
-beta_2 = 2
-theta_2 = 3
+gamma_2 = 1
+beta_2 = 1
+theta_2 = 0
 
 
 def phi_new(x):
@@ -27,7 +27,7 @@ def rate(x):
     return 1 - np.exp(-x * timestep)
 
 
-x = np.linspace(-2, 50, 500)
+x = np.linspace(-1, 10, 500)
 
 fig, ax = plt.subplots(1, 2)
 

@@ -12,10 +12,9 @@ from networks.network_nest import Network  # nopep8
 from networks.network_numpy import NumpyNetwork  # nopep8
 
 
-dims = [4, 3, 2]
+dims = [30, 20, 10]
 imgdir, datadir = setup_simulation()
-sim_params["record_interval"] = 0.1
-sim_params["noise"] = False
+sim_params["record_interval"] = 1
 sim_params["dims"] = dims
 setup_nest(delta_t, sim_params["threads"], sim_params["record_interval"], datadir)
 wr = setup_models(True, True)
@@ -23,28 +22,32 @@ wr = setup_models(True, True)
 cmap = plt.cm.get_cmap('hsv', 7)
 styles = ["solid", "dotted", "dashdot", "dashed"]
 
-n_runs = 25
-SIM_TIME = 250
+amps = [0.5, 1, 0]
+n_runs = len(amps)
+SIM_TIME = 10
 SIM_TIME_TOTAL = n_runs * SIM_TIME
-
 
 math_net = NumpyNetwork(sim_params, neuron_params, syn_params)
 
-syn_params["hi"]["eta"] *= 0.001
-syn_params["ih"]["eta"] *= 0.003
+weight_scale = 250
 
-weight_scale = 45
-weight_scale = 1
+neuron_params["gamma"] = weight_scale
+neuron_params["pyr"]["gamma"] = weight_scale
+neuron_params["intn"]["gamma"] = weight_scale
+neuron_params["input"]["gamma"] = weight_scale
 syn_params["wmin_init"] = -1/weight_scale
 syn_params["wmax_init"] = 1/weight_scale
 
-g_lk_dnd = 0.0023
-g_lk_dnd = 0.095
+g_lk_dnd = delta_t  # TODO: this is neat, but why is it correct?
 neuron_params["pyr"]["basal"]["g_L"] = g_lk_dnd
 neuron_params["pyr"]["apical_lat"]["g_L"] = g_lk_dnd
 neuron_params["intn"]["basal"]["g_L"] = g_lk_dnd
 
 
+# syn_params["hi"]["eta"] /= weight_scale**2 * weight_scale * 0.075
+# syn_params["ih"]["eta"] /= weight_scale**2 * weight_scale * 400
+syn_params["hi"]["eta"] /= weight_scale**2 * weight_scale * 0.5
+syn_params["ih"]["eta"] /= weight_scale**2 * weight_scale * 200
 nest_net = Network(sim_params, neuron_params, syn_params)
 
 c_hx = nest.GetConnections(nest_net.pyr_pops[0], nest_net.pyr_pops[1])
@@ -53,7 +56,6 @@ c_ih = nest.GetConnections(nest_net.pyr_pops[1], nest_net.intn_pops[0])
 c_hi = nest.GetConnections(nest_net.intn_pops[0], nest_net.pyr_pops[1])
 c_hy = nest.GetConnections(nest_net.pyr_pops[2], nest_net.pyr_pops[1])
 nest_conns = [c_hx, c_yh, c_ih, c_hi, c_hy, ]
-
 
 math_net.conns["hx"]["w"] = matrix_from_connection(c_hx) * weight_scale
 math_net.conns["yh"]["w"] = matrix_from_connection(c_yh) * weight_scale
@@ -76,15 +78,17 @@ print("Setup complete.")
 # if i % 5 == 0:
 # print(f"simulating run: {i}")
 # amp = np.random.random(sim_params["dims"][0])
-for i in range(n_runs):
-    amp = np.random.random(size=dims[0])
+for amp in amps:
+    amp = [amp for i in range(dims[0])]
     nest_net.set_input(amp)
     nest_net.simulate(SIM_TIME)
 
     math_net.set_input(amp)
     math_net.train(SIM_TIME)
 
-fig, axes = plt.subplots(2, 6, sharey="col")
+    print(f"done simulating input {amp}")
+
+fig, axes = plt.subplots(2, 6, sharey="col", sharex="col")
 
 
 WIH = np.array(math_net.conns["ih"]["record"])
@@ -97,24 +101,25 @@ fb_weight_error = np.square(WHI + WHY).mean(axis=(1, 2))
 
 
 nest_weights = pd.DataFrame.from_dict(wr.get("events"))
-nest_weights.times = (nest_weights.times // delta_t).astype(int)
+nest_weights.times = (nest_weights.times / delta_t).astype(int)
+nest_weights = nest_weights.drop_duplicates(subset=["senders", "targets", "times"])
 
-WIH_nest = matrix_from_spikes(nest_weights, c_ih, SIM_TIME_TOTAL, delta_t)
-WYH_nest = matrix_from_spikes(nest_weights, c_yh, SIM_TIME_TOTAL, delta_t)
-WHI_nest = matrix_from_spikes(nest_weights, c_hi, SIM_TIME_TOTAL, delta_t)
-WHY_nest = matrix_from_spikes(nest_weights, c_hy, SIM_TIME_TOTAL, delta_t)
+WIH_nest = matrix_from_spikes(nest_weights, c_ih, SIM_TIME_TOTAL, delta_t) * weight_scale
+WYH_nest = matrix_from_spikes(nest_weights, c_yh, SIM_TIME_TOTAL, delta_t) * weight_scale
+WHI_nest = matrix_from_spikes(nest_weights, c_hi, SIM_TIME_TOTAL, delta_t) * weight_scale
+WHY_nest = matrix_from_spikes(nest_weights, c_hy, SIM_TIME_TOTAL, delta_t) * weight_scale
+
 
 ff_weight_error_nest = np.square(WYH_nest - WIH_nest).mean(axis=1)
 fb_weight_error_nest = np.square(WHI_nest + WHY_nest).mean(axis=1)
 
 axes[0][0].set_title("WYH - WIH (ff) error")
-axes[0][0].set_ylim(0,)
-axes[0][0].plot(ff_weight_error)
+record_times = np.arange(0, SIM_TIME_TOTAL, sim_params["record_interval"])/delta_t
+axes[0][0].plot(record_times, ff_weight_error)
 axes[1][0].plot(ff_weight_error_nest)
 
 axes[0][1].set_title("WHI + WHY (fb) error")
-axes[0][1].set_ylim(0,)
-axes[0][1].plot(fb_weight_error)
+axes[0][1].plot(record_times, fb_weight_error)
 axes[1][1].plot(fb_weight_error_nest)
 
 for c, (name, conn) in enumerate(math_net.conns.items()):
@@ -131,14 +136,14 @@ for c, (name, conn) in enumerate(math_net.conns.items()):
     for i in range(n_in):
         for j in range(n_out):
             col = cmap(i)
-            axes[0][c].plot(record[:, j, i], color=col, linestyle=styles[j % 4], label=f"{i} to {j}")
+            axes[0][c].plot(record_times, record[:, j, i], color=col, linestyle=styles[j % 4], label=f"{i} to {j}")
             # axes[0][c].legend()
 
             s = nest_senders[i]
             t = nest_targets[j]
             df_weight = nest_weights[(nest_weights.senders == s) & (
                 nest_weights.targets == t)].sort_values(by=['times'])
-            axes[1][c].plot(df_weight['times'].array/delta_t, df_weight['weights'],
+            axes[1][c].plot(df_weight['times'].array, df_weight['weights'] * weight_scale,
                             color=col, linestyle=styles[j % 4], label=f"{s} to {t}")
             # axes[1][c].legend()
 
@@ -147,8 +152,9 @@ axes[0][4].plot(np.linalg.norm(math_net.V_ah_record, axis=1))
 axes[0][4].set_title("apical voltage")
 
 events = pd.DataFrame.from_dict(nest_net.mm_h.events).sort_values("times")
-apical_err = events["V_m.a_lat"].values.reshape(-1, dims[1])
-axes[1][4].plot(np.linalg.norm(apical_err, axis=1), label="apical error")
+apical_err = np.linalg.norm(events["V_m.a_lat"].values.reshape(-1, dims[1]), axis=1)
+axes[1][4].plot(apical_err, label="apical error")
+axes[1][4].plot(rolling_avg(apical_err, 500), label="apical error")
 
 
 # plot interneuron error
@@ -168,7 +174,9 @@ U_intn = np.reshape(U_intn["V_m.s"].values, (-1, dims[2])).swapaxes(0, 1)
 U_out = pd.DataFrame.from_dict(nest_net.mm_y.events).sort_values(["times", "senders"])
 U_out = np.reshape(U_out["V_m.s"].values, (-1, dims[2])).swapaxes(0, 1)
 
-axes[1][5].plot(mse(U_out, U_intn, multioutput="raw_values"))
+intn_error_nest = mse(U_out, U_intn, multioutput="raw_values")
+axes[1][5].plot(intn_error_nest)
+axes[1][5].plot(rolling_avg(intn_error_nest, 500))
 
 
 plt.show()

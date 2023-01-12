@@ -711,11 +711,12 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
           se.set_multiplicity( n_spikes );
           kernel().event_delivery_manager.send( *this, se, lag );
 
+          // TODO: dafuq?
           // Set spike time in order to make plasticity rules work
-          for ( unsigned int i = 0; i < n_spikes; i++ )
-          {
-            set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
-          }
+          // for ( unsigned int i = 0; i < n_spikes; i++ )
+          // {
+          //   set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
+          // }
         }
       } // if (rate > 0.0)
     }
@@ -770,7 +771,7 @@ nest::pp_cond_exp_mc_pyr::handle( SpikeEvent& e )
   assert( 0 <= e.get_rport() and e.get_rport() < 2 * NCOMP );
 
   B_.spikes_[ e.get_rport() ].add_value(
-    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), e.get_weight() );
+    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), e.get_weight() * e.get_multiplicity() );
 }
 
 

@@ -601,9 +601,10 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
       const double I_L_dend = P_.pyr_params.g_L[ n ] * V_dnd;
 
       // derivative membrane potential
-      S_.y_[ State_::idx( n, State_::V_M ) ] = V_dnd + ( -I_L_dend + I_dend );
+      S_.y_[ State_::idx( n, State_::V_M ) ] = V_dnd - I_L_dend + I_dend ;
 
       // derivative dendritic current
+      //TODO: what do we do with this?
       S_.y_[ State_::idx( n, State_::I ) ] = I_dend - I_dend / P_.pyr_params.tau_m;
       // if ( n == 10 )
       //{

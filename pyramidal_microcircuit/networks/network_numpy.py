@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.metrics import mean_squared_error as mse
 from time import time
+from copy import deepcopy
 
 # These values reappear over and over again in the computation. Writing self.value 5 times per line bloats
 # the simulate() function to horrific degrees. Since these values do not change at simulation time, They are being
@@ -13,9 +14,9 @@ phi, phi_inverse = None, None
 class NumpyNetwork:
 
     def __init__(self, sim, nrn, syns) -> None:
-        self.sim = sim  # simulation parameters
-        self.nrn = nrn  # neuron parameters
-        self.syns = syns  # synapse parameters
+        self.sim = deepcopy(sim)  # simulation parameters
+        self.nrn = deepcopy(nrn)  # neuron parameters
+        self.syns = deepcopy(syns)  # synapse parameters
 
         self.dims = sim["dims"]
         self.conns = {}
@@ -31,7 +32,7 @@ class NumpyNetwork:
         g_s = nrn["g_s"]
         g_si = nrn["g_si"]
         tau_x = nrn["tau_x"]
-        noise_factor = sim["noise_factor"]
+        noise_factor = sim["noise_factor"] if sim["noise"] else 0
         tau_delta = syns["tau_Delta"]
         delta_t = sim["delta_t"]
         phi = nrn["phi"]
@@ -47,12 +48,12 @@ class NumpyNetwork:
         self.V_by_record = np.asmatrix(np.zeros((0, self.dims[2])))
         self.output_loss = []
 
-        self.setup_populations(syns, nrn)
+        self.setup_populations(self.syns, self.nrn)
 
         self.iteration = 0
 
     def gen_weights(self, lr, next_lr):
-        return np.random.uniform(self.nrn["wmin_init"], self.nrn["wmax_init"], (next_lr, lr))
+        return np.random.uniform(self.syns["wmin_init"], self.syns["wmax_init"], (next_lr, lr))
 
     def setup_populations(self, syns, nrn):
         self.U_x = np.asmatrix(np.zeros(self.dims[0]))
@@ -174,7 +175,7 @@ class NumpyNetwork:
         # print(stop - start)
         # start = time()
 
-        store_state = self.record_voltages and self.iteration % (self.sim["record_interval"]//delta_t) == 0
+        store_state = self.record_voltages and self.iteration % int(self.sim["record_interval"]/delta_t) == 0
 
         for name, d in self.conns.items():
             d["t_w"] = d["t_w"] + (delta_t/tau_delta) * d["dt_w"]
@@ -215,4 +216,3 @@ class NumpyNetwork:
             input_currents -- Iterable of length equal to the input dimension.
         """
         self.I_x = input_currents
-

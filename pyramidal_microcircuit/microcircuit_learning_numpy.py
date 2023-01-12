@@ -18,7 +18,7 @@ dims = [30, 20, 10]
 cmap_1 = plt.cm.get_cmap('hsv', dims[1]+1)
 cmap_2 = plt.cm.get_cmap('hsv', dims[2]+1)
 
-plot_interval = 200
+plot_interval = 25
 
 T = []
 w_pi_errors = []

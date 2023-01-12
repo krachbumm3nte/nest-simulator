@@ -13,19 +13,19 @@ import os
 imgdir, datadir = utils.setup_simulation()
 utils.setup_nest(delta_t, sim_params["threads"], sim_params["record_interval"], datadir)
 setup_models(False, False)
+net = Network(sim_params, neuron_params, syn_params)
 
-dims = [30, 20, 10]
+dims = sim_params["dims"]
 
 cmap_1 = plt.cm.get_cmap('hsv', dims[1]+1)
 cmap_2 = plt.cm.get_cmap('hsv', dims[2]+1)
 
-plot_interval = 100
+plot_interval = 150
 
 T = []
 w_pi_errors = []
 w_ip_errors = []
 
-net = Network(sim_params, neuron_params, syn_params)
 
 in_ = net.pyr_pops[0]
 in_id = in_.get("global_id")

@@ -226,8 +226,6 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
     // throw IllegalConnection("Urbanczik synapse can only connect to dendrites!");
   }
 
-
-  // const int comp = rport - 1; // compartment number linearly relates to receptor port
   target->get_urbanczik_history( t_lastspike_ - dendritic_delay, t_spike - dendritic_delay, &start, &finish, rport );
   // double const g_L = target->get_g_L( comp );
   // double const tau_L = target->get_tau_L( 0 );

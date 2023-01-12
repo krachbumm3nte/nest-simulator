@@ -9,24 +9,23 @@ from time import time
 import utils as utils
 import os
 
-
 imgdir, datadir = utils.setup_simulation()
 utils.setup_nest(delta_t, sim_params["threads"], sim_params["record_interval"], datadir)
-setup_models(True, False)
+setup_models(True)
 
 
-sim_params["SIM_TIME"] = 150
+weight_scale = 250
+syn_params["hi"]["eta"] /= weight_scale**2 * weight_scale * 0.5
+syn_params["ih"]["eta"] /= weight_scale**2 * weight_scale * 200
 
-syn_params["hi"]["eta"] *= 0.001
-syn_params["ih"]["eta"] *= 0.003
-
-weight_scale = 45
-weight_scale = 1
+neuron_params["gamma"] = weight_scale
+neuron_params["pyr"]["gamma"] = weight_scale
+neuron_params["intn"]["gamma"] = weight_scale
+neuron_params["input"]["gamma"] = weight_scale
 syn_params["wmin_init"] = -1/weight_scale
 syn_params["wmax_init"] = 1/weight_scale
 
-g_lk_dnd = 0.0023
-g_lk_dnd = 0.095
+g_lk_dnd = delta_t  # TODO: this is neat, but why is it correct?
 neuron_params["pyr"]["basal"]["g_L"] = g_lk_dnd
 neuron_params["pyr"]["apical_lat"]["g_L"] = g_lk_dnd
 neuron_params["intn"]["basal"]["g_L"] = g_lk_dnd
@@ -34,10 +33,11 @@ neuron_params["intn"]["basal"]["g_L"] = g_lk_dnd
 net = Network(sim_params, neuron_params, syn_params)
 
 dims = sim_params["dims"]
+
 cmap_1 = plt.cm.get_cmap('hsv', dims[1]+1)
 cmap_2 = plt.cm.get_cmap('hsv', dims[2]+1)
 
-plot_interval = 50
+plot_interval = 250
 
 T = []
 w_pi_errors = []
@@ -57,8 +57,10 @@ interneurons = net.intn_pops[0]
 intn_id = interneurons.get("global_id")
 print("setup complete, running simulations...")
 
+nest.PrintNodes()
+
 for run in range(sim_params["n_runs"] + 1):
-    inputs = 2 * np.random.rand(dims[0]) - 1
+    inputs = np.random.rand(dims[0])
     # input_index = 0
     net.set_input(inputs)
 
@@ -134,16 +136,19 @@ for run in range(sim_params["n_runs"] + 1):
         WYH = pd.DataFrame.from_dict(nest.GetConnections(source=hidden, target=out).get())
         WIH = pd.DataFrame.from_dict(nest.GetConnections(source=hidden, target=interneurons).get())
 
+        for w_df in [WHY, WHI, WIH, WYH]:
+            w_df.weight *= weight_scale
+
         a = WHY.sort_values(["target", "source"])
         b = WHI.sort_values(["target", "source"])
-        w_ip_error = mse(a["weight"], -b["weight"]) * 100
+        w_ip_error = mse(a["weight"], -b["weight"])
         w_ip_errors.append(w_ip_error)
         error_scale = np.arange(0, (run+1), plot_interval) * sim_params["SIM_TIME"]/sim_params["record_interval"]
         ax3.plot(error_scale, w_ip_errors, label=f"FB error: {w_ip_error:.3f}")
 
         a = WYH.sort_values(["source", "target"])
         b = WIH.sort_values(["source", "target"])
-        w_pi_error = mse(a["weight"], b["weight"]) * 100
+        w_pi_error = mse(a["weight"], b["weight"])
         w_pi_errors.append(w_pi_error)
         ax3.plot(error_scale, w_pi_errors, label=f"FF error: {w_pi_error:.3f}")
 
@@ -188,5 +193,6 @@ for run in range(sim_params["n_runs"] + 1):
         print(f"mean simulation time: {np.mean(T[-50:]):.2f}s. plot time:{plot_duration:.2f}s. \
 apical error: {apical_err_now:.2f}.")
         print(f"ff error: {w_pi_error:.3f}, fb error: {w_ip_error:.3f}, interneuron error: {intn_error_now:.2f}\n")
+
     elif run % 50 == 0:
         print(f"run {run} completed.")

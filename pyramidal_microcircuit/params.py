@@ -13,7 +13,6 @@ sim_params = {
     "self_predicting_fb": False,  # self-predicting initialization of feedback weights
     "self_predicting_ff": False,  # self-predicting initialization of feedforward weights
     "plasticity": True,  # enable synaptic plasticity
-    "bogo_plasticity": True,  # increase learning rates to absurd amounts
     "SIM_TIME": 100,  # simulation time per input pattern in ms
     "n_runs": 10000,  # number of training iterations
     "noise": True,  # apply noise to membrane potentials
@@ -72,7 +71,8 @@ pyr_params = {
     'gamma': gamma,
     'beta': beta,
     'theta': theta,
-    'use_phi': True  # If False, rate neuron membrane potentials are transmitted without use of the activation function
+    'use_phi': True,  # If False, rate neuron membrane potentials are transmitted without use of the activation function
+    't_ref': 0.
 }
 # change compartment specific paramters
 pyr_params['basal']['g'] = g_d
@@ -112,7 +112,7 @@ if sim_params["plasticity"]:
     # eta_ih = 0.01 / lambda_ah
     # eta_hi = 5 * eta_ih
     eta_yh = 0
-    eta_ih = 0.0002
+    eta_ih = 0.0002375  # from Sacramento, Fig S1
     eta_hi = 0.0005
     eta_hx = 0
 else:
@@ -121,11 +121,6 @@ else:
     eta_hi = 0
     eta_ih = 0
 eta_hy = 0
-if sim_params["bogo_plasticity"]:
-    eta_yh *= 100
-    eta_hx *= 100
-    eta_hi *= 100
-    eta_ih *= 100
 
 
 # Dicts derived from this can be passed directly to nest.Connect() as synapse parameters
@@ -190,7 +185,10 @@ def setup_models(spiking, record_weights=False):
 
 def phi(x):
     return gamma * np.log(1 + np.exp(beta * (x - theta)))
-    return 1 / (1.0 + np.exp(-x))
+
+
+def phi_constant(x):
+    return np.log(1.0 + np.exp(x))
 
 
 def phi_inverse(x):

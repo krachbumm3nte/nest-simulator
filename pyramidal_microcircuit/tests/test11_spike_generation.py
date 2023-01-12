@@ -1,32 +1,19 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.misc import derivative
-import nest
 import sys
 sys.path.append("/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit")
 
 from params import *  # nopep8
 from utils import *  # nopep8
 
-
-imgdir, datadir = setup_simulation()
-sim_params["record_interval"] = 0.1
-sim_params["noise"] = False
-sim_params["sigma"] = 0
-sim_params["noise_factor"] = 0
-sim_params["dims"] = [1, 1, 1]
-setup_nest(delta_t, sim_params["threads"], sim_params["record_interval"])
-wr = setup_models(True, True)
-
-
-def p_spike(x):
-    return -1 * (np.exp(-phi(x) * 0.1) - 1)
-
+"""
+This script explores different combinations of scaling down synaptic weights and dendritic leakage
+condcutance, that enable a spiking neuron to mirror the behaviour of rate neurons as exactly as possible.
+"""
 
 amp = 0.5
-weight = .03
+weight = np.random.random() * 2 - 1  # just to show that it really is indpendent from the weight
 
-delta_t = sim_params["delta_t"]
 tau_x = neuron_params["tau_x"]
 
 
@@ -42,12 +29,14 @@ g_lk_dnd = 0.095
 U_x = 0
 delta_u_x = 0
 V_bh = 0
-V_bh_nest = 0
+V_bh_spiking = 0
 
 U_x_record = []
 
 V_bh_record = []
-V_bh_record_nest = []
+V_bh_record_spiking = []
+
+n_spikes_total = 0
 
 for amp in [0.5, 1, 0]:
     for i in range(20000):
@@ -60,20 +49,21 @@ for amp in [0.5, 1, 0]:
 
         # spiking solution
         n_spikes = np.random.poisson(delta_t * U_x)
-        V_bh_nest += n_spikes * weight / weight_scale - (g_lk_dnd * V_bh_nest)
+        V_bh_spiking += n_spikes * weight / weight_scale - (g_lk_dnd * V_bh_spiking)
 
         U_x_record.append(U_x)
         V_bh_record.append(V_bh)
-        V_bh_record_nest.append(V_bh_nest)
+        V_bh_record_spiking.append(V_bh_spiking)
+        n_spikes_total += n_spikes
 
-
+print(f"transmitted {n_spikes_total} spikes.")
 fig, axes = plt.subplots(ncols=2)
 
 axes[0].plot(U_x_record)
 
 axes[1].plot(V_bh_record)
-axes[1].plot(V_bh_record_nest, alpha=0.2)
-axes[1].plot(rolling_avg(V_bh_record_nest, size=2500))
+axes[1].plot(V_bh_record_spiking, alpha=0.2)
+axes[1].plot(rolling_avg(V_bh_record_spiking, size=2500))
 
 plt.legend()
 plt.show()
