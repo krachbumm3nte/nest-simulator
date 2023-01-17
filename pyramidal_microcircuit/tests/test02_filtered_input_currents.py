@@ -10,7 +10,7 @@ import numpy as np
 pyr_in = nest.Create(pyr_model, 1, pyr_params)
 mm_in = nest.Create("multimeter", 1, {'record_from': ["V_m.b", "V_m.s", "V_m.a_lat"]})
 nest.Connect(mm_in, pyr_in)
-pyr_in.set({"soma": {"g": tau_input}, "basal": {"g": 0}, "apical_lat": {"g": 0}, "tau_m": tau_input})
+pyr_in.set({"soma": {"g": tau_input}, "basal": {"g": 0}, "apical_lat": {"g": 0}})
 
 delta_u = 0
 ux = 0

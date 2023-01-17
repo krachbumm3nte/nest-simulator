@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from params import *
 import pandas as pd
-from networks.network_nest import Network
+from networks.network_nest import NestNetwork
 from sklearn.metrics import mean_squared_error as mse
 from time import time
 import utils as utils
@@ -13,7 +13,7 @@ import os
 imgdir, datadir = utils.setup_simulation()
 utils.setup_nest(delta_t, sim_params["threads"], sim_params["record_interval"], datadir)
 setup_models(False, False)
-net = Network(sim_params, neuron_params, syn_params)
+net = NestNetwork(sim_params, neuron_params, syn_params)
 
 dims = sim_params["dims"]
 

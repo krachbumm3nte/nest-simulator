@@ -8,7 +8,7 @@ sys.path.append("/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit")
 
 from params import *  # nopep8
 from utils import *  # nopep8
-from networks.network_nest import Network  # nopep8
+from networks.network_nest import NestNetwork  # nopep8
 from networks.network_numpy import NumpyNetwork  # nopep8
 
 
@@ -28,7 +28,7 @@ SIM_TIME = 100
 SIM_TIME_TOTAL = n_runs * SIM_TIME
 
 
-nest_net = Network(sim_params, neuron_params, syn_params)
+nest_net = NestNetwork(sim_params, neuron_params, syn_params)
 math_net = NumpyNetwork(sim_params, neuron_params, syn_params)
 
 c_hx = nest.GetConnections(nest_net.pyr_pops[0], nest_net.pyr_pops[1])

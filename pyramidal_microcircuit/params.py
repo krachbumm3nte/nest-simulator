@@ -8,7 +8,7 @@ sigma = 0.1  # standard deviation for membrane noise
 
 sim_params = {
     "delta_t": delta_t,
-    "threads": 6,
+    "threads": 8,
     "record_interval": 75,  # interval for storing membrane potentials
     "self_predicting_fb": False,  # self-predicting initialization of feedback weights
     "self_predicting_ff": False,  # self-predicting initialization of feedforward weights
@@ -18,8 +18,9 @@ sim_params = {
     "noise": True,  # apply noise to membrane potentials
     "sigma": sigma,
     "noise_factor": np.sqrt(delta_t) * sigma,  # constant noise factor for numpy simulations
-    "dims": [30, 20, 10],  # network dimensions, i.e. neurons per layer
-    "recording_backend": "ascii"
+    "dims": [10, 8, 6],  # network dimensions, i.e. neurons per layer
+    "recording_backend": "ascii", # Backend for NEST multimeter recordings
+    "teacher": True, # If True, teaching current is injected into output layer 
 }
 
 
@@ -107,14 +108,14 @@ neuron_params["intn"] = intn_params
 # connection specific learning rates
 # TODO: clean this up!
 if sim_params["plasticity"]:
-    # eta_yh = 0.01
-    # eta_hx = eta_yh / lambda_ah
-    # eta_ih = 0.01 / lambda_ah
-    # eta_hi = 5 * eta_ih
-    eta_yh = 0
-    eta_ih = 0.0002375  # from Sacramento, Fig S1
-    eta_hi = 0.0005
-    eta_hx = 0
+    eta_yh = 0.01
+    eta_hx = eta_yh / lambda_ah
+    eta_ih = 0.01 / lambda_ah
+    eta_hi = 5 * eta_ih
+    # eta_yh = 0
+    # eta_ih = 0.0002375  # from Sacramento, Fig S1
+    # eta_hi = 0.0005
+    # eta_hx = 0
 else:
     eta_yh = 0
     eta_hx = 0

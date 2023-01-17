@@ -8,24 +8,33 @@ sys.path.append("/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit")
 
 from params import *  # nopep8
 from utils import *  # nopep8
-from networks.network_nest import Network  # nopep8
+from networks.network_nest import NestNetwork  # nopep8
 from networks.network_numpy import NumpyNetwork  # nopep8
 
 
 dims = [30, 20, 10]
 imgdir, datadir = setup_simulation()
-sim_params["record_interval"] = 1
+sim_params["record_interval"] = 1.5
+sim_params["noise"] = False
 sim_params["dims"] = dims
+sim_params["delta_t"] = delta_t
+sim_params["teacher"] = False
+
 setup_nest(delta_t, sim_params["threads"], sim_params["record_interval"], datadir)
 wr = setup_models(True, True)
 
 cmap = plt.cm.get_cmap('hsv', 7)
 styles = ["solid", "dotted", "dashdot", "dashed"]
 
-amps = [0.5, 1, 0]
-n_runs = len(amps)
-SIM_TIME = 10
+n_runs = 2
+SIM_TIME = 100
 SIM_TIME_TOTAL = n_runs * SIM_TIME
+
+
+# syn_params["hi"]["eta"] *= 0
+syn_params["ih"]["eta"] *= 0
+syn_params["yh"]["eta"] *= 0
+syn_params["hx"]["eta"] *= 0
 
 math_net = NumpyNetwork(sim_params, neuron_params, syn_params)
 
@@ -44,11 +53,11 @@ neuron_params["pyr"]["apical_lat"]["g_L"] = g_lk_dnd
 neuron_params["intn"]["basal"]["g_L"] = g_lk_dnd
 
 
-# syn_params["hi"]["eta"] /= weight_scale**2 * weight_scale * 0.075
-# syn_params["ih"]["eta"] /= weight_scale**2 * weight_scale * 400
-syn_params["hi"]["eta"] /= weight_scale**2 * weight_scale * 0.5
-syn_params["ih"]["eta"] /= weight_scale**2 * weight_scale * 200
-nest_net = Network(sim_params, neuron_params, syn_params)
+syn_params["hi"]["eta"] /= weight_scale**3 * 4
+syn_params["ih"]["eta"] /= weight_scale**3 * 330
+syn_params["hx"]["eta"] /= weight_scale**3 * 330
+syn_params["yh"]["eta"] /= weight_scale**3 * 330
+nest_net = NestNetwork(sim_params, neuron_params, syn_params)
 
 c_hx = nest.GetConnections(nest_net.pyr_pops[0], nest_net.pyr_pops[1])
 c_yh = nest.GetConnections(nest_net.pyr_pops[1], nest_net.pyr_pops[2])
@@ -78,8 +87,8 @@ print("Setup complete.")
 # if i % 5 == 0:
 # print(f"simulating run: {i}")
 # amp = np.random.random(sim_params["dims"][0])
-for amp in amps:
-    amp = [amp for i in range(dims[0])]
+for i in range(n_runs):
+    amp = np.random.random(dims[0])
     nest_net.set_input(amp)
     nest_net.simulate(SIM_TIME)
 

@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.metrics import mean_squared_error as mse
 from time import time
-from copy import deepcopy
+from .network import Network
 
 # These values reappear over and over again in the computation. Writing self.value 5 times per line bloats
 # the simulate() function to horrific degrees. Since these values do not change at simulation time, They are being
@@ -11,17 +11,12 @@ g_a, g_d, g_l, g_s, g_si, tau_x, tau_delta, noise_factor, delta_t = [0 for i in 
 phi, phi_inverse = None, None
 
 
-class NumpyNetwork:
+class NumpyNetwork(Network):
 
     def __init__(self, sim, nrn, syns) -> None:
-        self.sim = deepcopy(sim)  # simulation parameters
-        self.nrn = deepcopy(nrn)  # neuron parameters
-        self.syns = deepcopy(syns)  # synapse parameters
+        super().__init__(sim, nrn, syns)
 
-        self.dims = sim["dims"]
         self.conns = {}
-        self.phi = nrn["phi"]
-        self.phi_inverse = nrn["phi_inverse"]
         self.record_voltages = True
 
         # Oh lord forgive me
@@ -52,9 +47,6 @@ class NumpyNetwork:
 
         self.iteration = 0
 
-    def gen_weights(self, lr, next_lr):
-        return np.random.uniform(self.syns["wmin_init"], self.syns["wmax_init"], (next_lr, lr))
-
     def setup_populations(self, syns, nrn):
         self.U_x = np.asmatrix(np.zeros(self.dims[0]))
 
@@ -75,24 +67,21 @@ class NumpyNetwork:
         self.conn_names = ["hx", "yh", "ih", "hi", "hy"]
 
         conn_setup = {
-            "hx": {"eta": syns["hx"]["eta"], "in": self.dims[0], "out": self.dims[1], "init_scale": 1},  # 0.1},
-            "yh": {"eta": syns["yh"]["eta"], "in": self.dims[1], "out": self.dims[2], "init_scale": 1},  # 0.1},
-            "ih": {"eta": syns["ih"]["eta"], "in": self.dims[1], "out": self.dims[2], "init_scale": 1},  # 0.1},
-            "hi": {"eta": syns["hi"]["eta"], "in": self.dims[2], "out": self.dims[1], "init_scale": 1},  # 0.1},
-            "hy": {"eta": syns["hy"]["eta"], "in": self.dims[2], "out": self.dims[1], "init_scale": 1},  # 1/gamma}
+            "hx": {"in": self.dims[0], "out": self.dims[1], "init_scale": 1},  # 0.1},
+            "yh": {"in": self.dims[1], "out": self.dims[2], "init_scale": 1},  # 0.1},
+            "ih": {"in": self.dims[1], "out": self.dims[2], "init_scale": 1},  # 0.1},
+            "hi": {"in": self.dims[2], "out": self.dims[1], "init_scale": 1},  # 0.1},
+            "hy": {"in": self.dims[2], "out": self.dims[1], "init_scale": 1},  # 1/gamma}
         }
 
         for name, p in conn_setup.items():
             self.conns[name] = {
-                "eta": p["eta"],
-                "w": np.asmatrix(np.random.random((p["out"], p["in"])) * 2 - 1) * p["init_scale"],
+                "eta": syns[name]["eta"],
+                "w": self.gen_weights(p["in"], p["out"], True) * p["init_scale"],
                 "dt_w": np.asmatrix(np.zeros((p["out"], p["in"]))),
                 "t_w": np.asmatrix(np.zeros((p["out"], p["in"]))),
                 "record": np.zeros((0, p["out"], p["in"]))
             }
-
-        self.hx_teacher = np.asmatrix(np.random.random((self.dims[1], self.dims[0])) * 2 - 1)
-        self.yh_teacher = np.asmatrix(np.random.random((self.dims[2], self.dims[1])) * 2 - 1) / nrn["gamma"]
 
     def train(self, T):
 
@@ -182,8 +171,6 @@ class NumpyNetwork:
             d["w"] = d["w"] + d["eta"] * delta_t * d["t_w"]
             if store_state:
                 d["record"] = np.append(d["record"], np.expand_dims(d["w"], axis=0), axis=0)
-            # if name == "ih":
-            #     print(f"syn2: {d['w'][0,0]:.5f}, {d['t_w'][0,0]:.5f}, {d['dt_w'][0,0]:.5f}")
 
         # stop = time()
         # print(f"{stop - start}")

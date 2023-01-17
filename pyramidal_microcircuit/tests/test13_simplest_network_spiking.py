@@ -8,7 +8,7 @@ sys.path.append("/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit")
 
 from params import *  # nopep8
 from utils import *  # nopep8
-from networks.network_nest import Network  # nopep8
+from networks.network_nest import NestNetwork  # nopep8
 from networks.network_numpy import NumpyNetwork  # nopep8
 
 
@@ -17,6 +17,7 @@ sim_params["record_interval"] = 0.1
 sim_params["noise"] = False
 sim_params["dims"] = [1, 1, 1]
 sim_params["delta_t"] = delta_t
+sim_params["teacher"] = False
 
 setup_nest(delta_t, sim_params["threads"], sim_params["record_interval"], datadir)
 wr = setup_models(True, True)
@@ -25,16 +26,20 @@ cmap = plt.cm.get_cmap('hsv', 7)
 styles = ["solid", "dotted", "dashdot", "dashed"]
 
 amps = [0.5, 1, 0]
-n_runs = 3
+n_runs = 6
 SIM_TIME = 150
 SIM_TIME_TOTAL = n_runs * SIM_TIME
 
-syn_params["hi"]["eta"] *= 25
-syn_params["ih"]["eta"] *= 25
+# syn_params["hi"]["eta"] *= 0
+# syn_params["ih"]["eta"] *= 0
+# syn_params["yh"]["eta"] *= 0
+# syn_params["hx"]["eta"] *= 0
+
+
 
 math_net = NumpyNetwork(sim_params, neuron_params, syn_params)
 
-weight_scale = 2500
+weight_scale = 250
 
 neuron_params["gamma"] = weight_scale
 neuron_params["pyr"]["gamma"] = weight_scale
@@ -52,13 +57,15 @@ neuron_params["intn"]["basal"]["g_L"] = g_lk_dnd
 #syn_params["hi"]["eta"] /= weight_scale * 6 * 1e5
 # syn_params["ih"]["eta"] /= weight_scale * 8 * 1e8
 
-syn_params["hi"]["eta"] /= weight_scale**2 * weight_scale * 0.075
-syn_params["ih"]["eta"] /= weight_scale**2 * weight_scale * 400
+syn_params["hi"]["eta"] /= weight_scale**3 * 0.8
+syn_params["ih"]["eta"] /= weight_scale**3 * 330
+syn_params["hx"]["eta"] /= weight_scale**3 * 330
+syn_params["yh"]["eta"] /= weight_scale**3 * 330
 
 
 
 
-nest_net = Network(sim_params, neuron_params, syn_params)
+nest_net = NestNetwork(sim_params, neuron_params, syn_params)
 
 c_hx = nest.GetConnections(nest_net.pyr_pops[0], nest_net.pyr_pops[1])
 c_yh = nest.GetConnections(nest_net.pyr_pops[1], nest_net.pyr_pops[2])

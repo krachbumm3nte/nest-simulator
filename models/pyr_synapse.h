@@ -211,6 +211,8 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
   double t_spike = e.get_stamp().get_ms();
   // use accessor functions (inherited from Connection< >) to obtain delay and target
   Node* target = get_target( t );
+  nest::pp_cond_exp_mc_pyr* target_pyr = static_cast<nest::pp_cond_exp_mc_pyr*>(target);
+
   double dendritic_delay = get_delay();
 
   // get spike history in relevant range (t1, t2] from postsynaptic neuron
@@ -227,18 +229,23 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
   }
 
   target->get_urbanczik_history( t_lastspike_ - dendritic_delay, t_spike - dendritic_delay, &start, &finish, rport );
-  // double const g_L = target->get_g_L( comp );
-  // double const tau_L = target->get_tau_L( 0 );
-  // double const C_m = target->get_C_m( comp );
-  // double const tau_s = target->get_tau_s( 0 );
   double dPI_exp_integral = 0.0;
-
+  double PI;
   while ( start != finish )
   {
     double const t_up = start->t_ + dendritic_delay;     // from t_lastspike to t_spike
     double const minus_delta_t_up = t_lastspike_ - t_up; // from 0 to -delta t
     double const minus_t_down = t_up - t_spike;          // from -t_spike to 0
-    double const PI = tau_s_trace_ * exp( minus_delta_t_up / tau_Delta_ ) * start->dw_;
+    double const tau_s_now = tau_s_trace_ * exp( minus_delta_t_up / tau_Delta_ );
+    if ( rport == 3 )
+    {
+      std::cout << e.retrieve_sender_node_id_from_source_table() << std::endl;
+      PI = (start->dw_ - target_pyr->P_.pyr_params.phi(weight_ * tau_s_now)) * tau_s_now;
+    }
+    else
+    {
+      PI = tau_s_now * start->dw_;
+    }
     PI_integral_ += PI;
     dPI_exp_integral += exp( minus_t_down / tau_Delta_ ) * PI;
     ++start;

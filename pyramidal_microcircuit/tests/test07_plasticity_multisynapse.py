@@ -68,7 +68,7 @@ for T, stim, target in zip(sim_times, stim_amps, target_amps):
 
     for i in range(int(T/delta_t)):
 
-        delta_u_i = -U_x + stim
+        delta_u_x = -U_x + stim
         delta_u_h = -(g_l + g_d + g_a) * U_h + V_bh * g_d + V_ah * g_a
         delta_u_y = -(g_l + g_d + g_a) * U_y + g_s * phi_inverse(target)
 
@@ -83,7 +83,7 @@ for T, stim, target in zip(sim_times, stim_amps, target_amps):
         tilde_w_1 = tilde_w_1 + (delta_t * delta_tilde_w) / tau_delta
         w1 = w1 + eta * delta_t * tilde_w_1
 
-        U_x = U_x + (delta_t/tau_x) * delta_u_i
+        U_x = U_x + (delta_t/tau_x) * delta_u_x
         r_x = phi(U_x)
 
         V_bh = r_x * w0
