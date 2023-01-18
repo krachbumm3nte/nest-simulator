@@ -28,7 +28,7 @@ U_x_record = []
 V_bh_record = []
 
 sim_time = 500
-amps = [2, 4, 0]
+amps = np.random.random(5) * 2 - 1
 start, stop, N = 0, 10, 11
 spike_multipliers = np.logspace(start, stop, N)
 exponents = np.linspace(start, stop, N)
@@ -64,7 +64,7 @@ for i in range(5):
     mult = i * 2
     axes[i+1].plot(V_dend[:, mult])
     axes[i+1].plot(V_bh_record)
-    axes[i+1].set_title(f"factor: 10^{exponents[mult]:.1f}\n n_spikes: {total_spikes[mult]}")
+    axes[i+1].set_title(f"factor: 10^{exponents[mult]:.1f}\n spikes: {total_spikes[mult]} ({total_spikes[mult]/(sim_time * len(amps)/1000)}Hz)")
 # axes[1].plot(rolling_avg(V_bh_record_spiking, size=2500))
 
 axes[6].plot(spike_multipliers, total_spikes)

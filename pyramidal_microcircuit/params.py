@@ -18,7 +18,7 @@ sim_params = {
     "noise": True,  # apply noise to membrane potentials
     "sigma": sigma,
     "noise_factor": np.sqrt(delta_t) * sigma,  # constant noise factor for numpy simulations
-    "dims": [10, 8, 6],  # network dimensions, i.e. neurons per layer
+    "dims": [6, 4, 3],  # network dimensions, i.e. neurons per layer
     "recording_backend": "ascii", # Backend for NEST multimeter recordings
     "teacher": True, # If True, teaching current is injected into output layer 
 }

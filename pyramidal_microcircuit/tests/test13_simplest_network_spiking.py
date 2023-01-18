@@ -16,7 +16,6 @@ imgdir, datadir = setup_simulation()
 sim_params["record_interval"] = 0.1
 sim_params["noise"] = False
 sim_params["dims"] = [1, 1, 1]
-sim_params["delta_t"] = delta_t
 sim_params["teacher"] = False
 
 setup_nest(delta_t, sim_params["threads"], sim_params["record_interval"], datadir)
@@ -26,7 +25,7 @@ cmap = plt.cm.get_cmap('hsv', 7)
 styles = ["solid", "dotted", "dashdot", "dashed"]
 
 amps = [0.5, 1, 0]
-n_runs = 6
+n_runs = 50
 SIM_TIME = 150
 SIM_TIME_TOTAL = n_runs * SIM_TIME
 
@@ -34,7 +33,6 @@ SIM_TIME_TOTAL = n_runs * SIM_TIME
 # syn_params["ih"]["eta"] *= 0
 # syn_params["yh"]["eta"] *= 0
 # syn_params["hx"]["eta"] *= 0
-
 
 
 math_net = NumpyNetwork(sim_params, neuron_params, syn_params)
@@ -63,7 +61,12 @@ syn_params["hx"]["eta"] /= weight_scale**3 * 330
 syn_params["yh"]["eta"] /= weight_scale**3 * 330
 
 
+print({"hi": syn_params["hi"]["eta"],
+       "ih": syn_params["ih"]["eta"],
+       "hx": syn_params["hx"]["eta"],
+       "yh": syn_params["yh"]["eta"], })
 
+sys.exit()
 
 nest_net = NestNetwork(sim_params, neuron_params, syn_params)
 
@@ -99,7 +102,7 @@ for i in range(n_runs):
     # print(f"simulating run: {i}")
     # amp = np.random.random(sim_params["dims"][0])
     # for amp in amps:
-    amp = [amps[i % 3]]
+    amp = [np.random.random()]
     nest_net.set_input(amp)
     nest_net.simulate(SIM_TIME)
 
