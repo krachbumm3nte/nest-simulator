@@ -15,8 +15,10 @@ setup_models(True)
 
 
 weight_scale = 250
-syn_params["hi"]["eta"] /= weight_scale**2 * weight_scale * 0.5
-syn_params["ih"]["eta"] /= weight_scale**2 * weight_scale * 200
+syn_params["hi"]["eta"] /= weight_scale**3 * 4
+syn_params["ih"]["eta"] /= weight_scale**3 * 330
+syn_params["hx"]["eta"] /= weight_scale**3 * 330
+syn_params["yh"]["eta"] /= weight_scale**3 * 330
 
 neuron_params["gamma"] = weight_scale
 neuron_params["pyr"]["gamma"] = weight_scale
@@ -37,7 +39,7 @@ dims = sim_params["dims"]
 cmap_1 = plt.cm.get_cmap('hsv', dims[1]+1)
 cmap_2 = plt.cm.get_cmap('hsv', dims[2]+1)
 
-plot_interval = 250
+plot_interval = 500
 
 T = []
 w_pi_errors = []

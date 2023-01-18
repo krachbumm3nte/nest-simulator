@@ -13,9 +13,10 @@ from networks.network_numpy import NumpyNetwork  # nopep8
 
 
 dims = [30, 20, 10]
+dims = [10, 8, 6]
 imgdir, datadir = setup_simulation()
 sim_params["record_interval"] = 1.5
-sim_params["noise"] = False
+sim_params["noise"] = True
 sim_params["dims"] = dims
 sim_params["delta_t"] = delta_t
 sim_params["teacher"] = False
@@ -32,7 +33,7 @@ SIM_TIME_TOTAL = n_runs * SIM_TIME
 
 
 # syn_params["hi"]["eta"] *= 0
-syn_params["ih"]["eta"] *= 0
+# syn_params["ih"]["eta"] *= 0
 syn_params["yh"]["eta"] *= 0
 syn_params["hx"]["eta"] *= 0
 
@@ -88,7 +89,7 @@ print("Setup complete.")
 # print(f"simulating run: {i}")
 # amp = np.random.random(sim_params["dims"][0])
 for i in range(n_runs):
-    amp = np.random.random(dims[0])
+    amp = np.random.random(dims[0]) * 2 - 1
     nest_net.set_input(amp)
     nest_net.simulate(SIM_TIME)
 

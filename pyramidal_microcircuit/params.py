@@ -111,7 +111,11 @@ if sim_params["plasticity"]:
     eta_yh = 0.01
     eta_hx = eta_yh / lambda_ah
     eta_ih = 0.01 / lambda_ah
-    eta_hi = 5 * eta_ih
+    eta_hi = 5 * eta_ih    
+    eta_yh = 0.01 * 0.5
+    eta_hx = eta_yh / lambda_ah * 0.5
+    eta_ih = 0.01 / lambda_ah * 0.5
+    eta_hi = 5 * eta_ih * 0.5
     # eta_yh = 0
     # eta_ih = 0.0002375  # from Sacramento, Fig S1
     # eta_hi = 0.0005
