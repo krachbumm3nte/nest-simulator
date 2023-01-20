@@ -13,13 +13,13 @@ from networks.network_numpy import NumpyNetwork  # nopep8
 
 
 dims = [30, 20, 10]
-dims = [10, 8, 6]
+dims = [4, 3, 2]
 imgdir, datadir = setup_simulation()
-sim_params["record_interval"] = 1.5
+sim_params["record_interval"] = 50
 sim_params["noise"] = True
 sim_params["dims"] = dims
 sim_params["delta_t"] = delta_t
-sim_params["teacher"] = False
+sim_params["teacher"] = True
 
 setup_nest(delta_t, sim_params["threads"], sim_params["record_interval"], datadir)
 wr = setup_models(True, True)
@@ -27,8 +27,8 @@ wr = setup_models(True, True)
 cmap = plt.cm.get_cmap('hsv', 7)
 styles = ["solid", "dotted", "dashdot", "dashed"]
 
-n_runs = 2
-SIM_TIME = 100
+n_runs = 25
+SIM_TIME = 150
 SIM_TIME_TOTAL = n_runs * SIM_TIME
 
 
@@ -47,12 +47,6 @@ neuron_params["intn"]["gamma"] = weight_scale
 neuron_params["input"]["gamma"] = weight_scale
 syn_params["wmin_init"] = -1/weight_scale
 syn_params["wmax_init"] = 1/weight_scale
-
-g_lk_dnd = delta_t  # TODO: this is neat, but why is it correct?
-neuron_params["pyr"]["basal"]["g_L"] = g_lk_dnd
-neuron_params["pyr"]["apical_lat"]["g_L"] = g_lk_dnd
-neuron_params["intn"]["basal"]["g_L"] = g_lk_dnd
-
 
 syn_params["hi"]["eta"] /= weight_scale**3 * 4
 syn_params["ih"]["eta"] /= weight_scale**3 * 330
@@ -84,17 +78,10 @@ nest_net.mm_y = nest.Create('multimeter', 1, {'record_to': 'memory', 'record_fro
 nest.Connect(nest_net.mm_y, nest_net.pyr_pops[-1])
 
 print("Setup complete.")
-# for i in range(n_runs):
-# if i % 5 == 0:
-# print(f"simulating run: {i}")
-# amp = np.random.random(sim_params["dims"][0])
 for i in range(n_runs):
-    amp = np.random.random(dims[0]) * 2 - 1
-    nest_net.set_input(amp)
-    nest_net.simulate(SIM_TIME)
-
-    math_net.set_input(amp)
-    math_net.train(SIM_TIME)
+    amp = np.random.random(dims[0])
+    nest_net.train(amp, SIM_TIME)
+    math_net.train(amp, SIM_TIME)
 
     print(f"done simulating input {amp}")
 

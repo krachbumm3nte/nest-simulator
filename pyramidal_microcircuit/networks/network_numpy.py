@@ -7,8 +7,10 @@ from .network import Network
 # the simulate() function to horrific degrees. Since these values do not change at simulation time, They are being
 # set as global variables once in the constructor to be called from within the class. This solution is pretty cursed,
 # but the oop solution sadly makes the code completely unreadable.
-g_a, g_d, g_l, g_s, g_si, tau_x, tau_delta, noise_factor, delta_t = [0 for i in range(9)]
+g_a, g_d, g_l, g_s, g_si, tau_x, tau_delta, noise_factor, delta_t, leakage, f_1, f_2 = [0 for i in range(12)]
 phi, phi_inverse = None, None
+
+
 
 
 class NumpyNetwork(Network):
@@ -20,7 +22,7 @@ class NumpyNetwork(Network):
         self.record_voltages = True
 
         # Oh lord forgive me
-        global g_a, g_d, g_l, g_s, g_si, noise_factor, delta_t, tau_x, tau_delta, phi, phi_inverse
+        global g_a, g_d, g_l, g_s, g_si, noise_factor, delta_t, tau_x, tau_delta, phi, phi_inverse, leakage, f_1, f_2
         g_a = nrn["g_a"]
         g_d = nrn["g_d"]
         g_l = nrn["g_l"]
@@ -32,6 +34,10 @@ class NumpyNetwork(Network):
         delta_t = sim["delta_t"]
         phi = nrn["phi"]
         phi_inverse = nrn["phi_inverse"]
+
+        leakage = g_l + g_a + g_d
+        f_1 = g_d / (g_l + g_d)
+        f_2 = g_d / (g_l + g_a + g_d)
 
         self.U_x_record = np.asmatrix(np.zeros((0, self.dims[0])))
         self.U_h_record = np.asmatrix(np.zeros((0, self.dims[1])))
@@ -67,11 +73,11 @@ class NumpyNetwork(Network):
         self.conn_names = ["hx", "yh", "ih", "hi", "hy"]
 
         conn_setup = {
-            "hx": {"in": self.dims[0], "out": self.dims[1], "init_scale": 1},  # 0.1},
-            "yh": {"in": self.dims[1], "out": self.dims[2], "init_scale": 1},  # 0.1},
-            "ih": {"in": self.dims[1], "out": self.dims[2], "init_scale": 1},  # 0.1},
-            "hi": {"in": self.dims[2], "out": self.dims[1], "init_scale": 1},  # 0.1},
-            "hy": {"in": self.dims[2], "out": self.dims[1], "init_scale": 1},  # 1/gamma}
+            "hx": {"in": self.dims[0], "out": self.dims[1], "init_scale": 0.1},
+            "yh": {"in": self.dims[1], "out": self.dims[2], "init_scale": 0.1},
+            "ih": {"in": self.dims[1], "out": self.dims[2], "init_scale": 0.1},
+            "hi": {"in": self.dims[2], "out": self.dims[1], "init_scale": 0.1},
+            "hy": {"in": self.dims[2], "out": self.dims[1], "init_scale": 1/nrn["gamma"]}
         }
 
         for name, p in conn_setup.items():
@@ -83,16 +89,18 @@ class NumpyNetwork(Network):
                 "record": np.zeros((0, p["out"], p["in"]))
             }
 
-    def train(self, T):
+    def train(self, input_currents, T):
+        
+        self.set_input(input_currents)
 
         for i in range(int(T/delta_t)):
             self.simulate(self.train_nothing)
 
     def test(self, T):
         for i in range(int(T/delta_t)):
-            self.simulate(self.train_nothing)  # do not inject output layer current during testing
+            self.simulate(self.train_match_teacher if self.teacher else self.train_nothing)  # do not inject output layer current during testing
             self.output_pred = phi((g_d / (g_d + g_l)) +
-                                   self.conns["yh"]["w"] * phi((g_d / (g_d + g_l + g_a)) * self.V_bh).T).T
+                                   self.conns["yh"]["w"] * phi(f_2 * self.V_bh).T).T
 
             self.output_loss.append(mse(np.asarray(self.output_pred), np.asarray(self.y)))
 
@@ -112,36 +120,36 @@ class NumpyNetwork(Network):
 
     def simulate(self, train_function):
 
-        # start = time()
-        # print("timing...")
+        start = time()
+        print("timing...")
 
         delta_u_x = -self.U_x + self.I_x
-        delta_u_h = -(g_l + g_d + g_a) * self.U_h + g_d * self.V_bh + g_a * self.V_ah
-        delta_u_y = -(g_l + g_d + g_a) * self.U_y + g_d * self.V_by + g_s * self.y
-        delta_u_i = -(g_l + g_d + g_a) * self.U_i + g_d * self.V_bi + g_si * self.U_y
+        delta_u_h = -leakage * self.U_h + g_d * self.V_bh + g_a * self.V_ah
+        delta_u_y = -leakage * self.U_y + g_d * self.V_by + g_s * self.y
+        delta_u_i = -leakage * self.U_i + g_d * self.V_bi + g_si * self.U_y
 
-        # stop = time()
-        # print(stop - start)
-        # start = time()
+        stop = time()
+        print(stop - start)
+        start = time()
 
         self.conns["hx"]["dt_w"] = -self.conns["hx"]["t_w"] + \
-            np.outer(self.r_h - phi((g_d * self.V_bh)/(g_l + g_d + g_a)), self.U_x)
+            np.outer(self.r_h - phi(self.V_bh * f_2), self.U_x)
 
         self.conns["yh"]["dt_w"] = -self.conns["yh"]["t_w"] + \
-            np.outer(self.r_y - phi((g_d * self.V_by)/(g_l + g_d)), self.r_h)
+            np.outer(self.r_y - phi(self.V_by * f_1), self.r_h)
 
         # output to hidden synapses learn this way, but eta is almost always zero, so this saves some compute time
         # self.conns["hy"]["dt_w"] = -self.conns["hy"]["t_w"] + \
         #     np.outer(self.r_h - phi(self.conns["hy"]["w"] * self.r_y.T).T, self.r_y)
 
         self.conns["ih"]["dt_w"] = -self.conns["ih"]["t_w"] + \
-            np.outer(self.r_i - phi((g_d * self.V_bi)/(g_l + g_d)), self.r_h)
+            np.outer(self.r_i - phi(self.V_bi * f_1), self.r_h)
 
         self.conns["hi"]["dt_w"] = np.subtract(np.outer(-self.V_ah, self.r_i), self.conns["hi"]["t_w"])
 
-        # stop = time()
-        # print(stop - start)
-        # start = time()
+        stop = time()
+        print(stop - start)
+        start = time()
 
         self.U_x = self.U_x + (delta_t/tau_x) * delta_u_x
 
@@ -160,9 +168,9 @@ class NumpyNetwork(Network):
         self.U_i = self.U_i + delta_t * delta_u_i + noise_factor * np.random.standard_normal(self.dims[2])
         self.r_i = phi(self.U_i)
 
-        # stop = time()
-        # print(stop - start)
-        # start = time()
+        stop = time()
+        print(stop - start)
+        start = time()
 
         store_state = self.record_voltages and self.iteration % int(self.sim["record_interval"]/delta_t) == 0
 
@@ -172,9 +180,9 @@ class NumpyNetwork(Network):
             if store_state:
                 d["record"] = np.append(d["record"], np.expand_dims(d["w"], axis=0), axis=0)
 
-        # stop = time()
-        # print(f"{stop - start}")
-        # start = time()
+        stop = time()
+        print(f"{stop - start}")
+        start = time()
         if store_state:
             self.U_x_record = np.append(self.U_x_record, self.U_x, axis=0)
             self.U_h_record = np.append(self.U_h_record, self.U_h, axis=0)
@@ -185,16 +193,15 @@ class NumpyNetwork(Network):
             self.U_y_record = np.append(self.U_y_record, self.U_y, axis=0)
             self.V_by_record = np.append(self.V_by_record, self.V_by, axis=0)
 
-            self.output_pred = self.phi((g_d / (g_d + g_l)) + self.conns["yh"]
-                                        ["w"] * self.phi((g_d / (g_d + g_l + g_a)) * self.V_bh).T).T
+            self.output_pred = self.phi(f_1 * self.conns["yh"]["w"] * self.phi(f_2 * self.V_bh).T).T
             self.output_loss.append(mse(np.asarray(self.output_pred), np.asarray(self.y)))
 
         self.iteration += 1
 
-        # stop = time()
-        # print(stop - start)
-        # start = time()
-        # print("done")
+        stop = time()
+        print(stop - start)
+        start = time()
+        print("done")
 
     def set_input(self, input_currents):
         """Inject a constant current into all neurons in the input layer.

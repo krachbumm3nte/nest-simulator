@@ -4,14 +4,14 @@ import numpy as np
 
 # Simulation parameters
 delta_t = 0.1  # euler integration step in ms
-sigma = 0.1  # standard deviation for membrane noise
+sigma = 0.3  # standard deviation for membrane potential noise
 
 sim_params = {
     "delta_t": delta_t,
     "threads": 8,
     "record_interval": 75,  # interval for storing membrane potentials
-    "self_predicting_fb": False,  # self-predicting initialization of feedback weights
-    "self_predicting_ff": False,  # self-predicting initialization of feedforward weights
+    "self_predicting_ff": False,  # initialize feedforward weights to self-predicting state
+    "self_predicting_fb": False,  # initialize feedback weights to self-predicting state
     "plasticity": True,  # enable synaptic plasticity
     "SIM_TIME": 100,  # simulation time per input pattern in ms
     "n_runs": 10000,  # number of training iterations
@@ -32,17 +32,17 @@ g_d = 1  # basal compartment coupling conductance
 lambda_ah = g_a / (g_d + g_a + g_l)  # Useful constant for scaling learning rates
 
 # parameters of the activation function phi()
-gamma = 1
-beta = 1
-theta = 0
-# gamma = 0.1
+# gamma = 1
 # beta = 1
-# theta = 3
+# theta = 0
+gamma = 0.1
+beta = 1
+theta = 3
 
 neuron_params = {
     "tau_x": 3,  # input filtering time constant
     "g_l": g_l,
-    "g_lk_dnd": 1,  # dendritic leakage conductance
+    "g_lk_dnd": delta_t,  # dendritic leakage conductance
     "g_a": g_a,
     "g_d": g_d,
     "g_som": 0.8,  # somatic conductance TODO:
@@ -112,10 +112,10 @@ if sim_params["plasticity"]:
     eta_hx = eta_yh / lambda_ah
     eta_ih = 0.01 / lambda_ah
     eta_hi = 5 * eta_ih    
-    eta_yh = 0.01 * 0.5
-    eta_hx = eta_yh / lambda_ah * 0.5
-    eta_ih = 0.01 / lambda_ah * 0.5
-    eta_hi = 5 * eta_ih * 0.5
+    # eta_yh = 0.01 * 0.5
+    # eta_hx = eta_yh / lambda_ah * 0.5
+    # eta_ih = 0.01 / lambda_ah * 0.5
+    # eta_hi = 5 * eta_ih * 0.5
     # eta_yh = 0
     # eta_ih = 0.0002375  # from Sacramento, Fig S1
     # eta_hi = 0.0005
@@ -132,8 +132,8 @@ eta_hy = 0
 syn_defaults = {
     'synapse_model': None,  # Synapse model (for NEST simulations only)
     'tau_Delta': 30,  # Synaptic time constant
-    'Wmin': -2,  # minimum weight
-    'Wmax': 2,  # maximum weight
+    'Wmin': -10,  # minimum weight
+    'Wmax': 10,  # maximum weight
     'eta': 0.0,  # learning rate
     'delay': sim_params['delta_t'],  # synaptic delay
 }
@@ -157,6 +157,15 @@ def setup_models(spiking, record_weights=False):
     apical_dendrite = pyr_comps['apical_lat']
 
     syn_model = 'pyr_synapse' if spiking else 'pyr_synapse_rate'
+
+    if not spiking:
+        neuron_params["pyr"]["basal"]["g_L"] = 1
+        neuron_params["pyr"]["apical_lat"]["g_L"] = 1
+        neuron_params["intn"]["basal"]["g_L"] = 1
+        neuron_params["intn"]["apical_lat"]["g_L"] = 1
+        neuron_params["input"]["basal"]["g_L"] = 1
+        neuron_params["input"]["apical_lat"]["g_L"] = 1
+        
 
     if record_weights:
         wr = nest.Create("weight_recorder")

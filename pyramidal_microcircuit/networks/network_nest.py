@@ -35,7 +35,7 @@ class NestNetwork(Network):
             if layer > 1:
                 # Connect current to previous layer pyramidal populations
                 synapse_hy = syns["hy"]
-                synapse_hy['weight'] = self.gen_weights(self.dims[layer], self.dims[layer-1])
+                synapse_hy['weight'] = self.gen_weights(self.dims[layer], self.dims[layer-1]) / (syns["wmax_init"] * nrn["gamma"])
                 # TODO: perhaps we can get away with setting weights within the dict directly instead of creating variables here?
                 nest.Connect(pyr_pop, pyr_pop_prev, syn_spec=synapse_hy)
 
@@ -51,7 +51,7 @@ class NestNetwork(Network):
                                             else self.gen_weights(self.dims[layer-1], self.dims[layer]))
                 nest.Connect(pyr_pop_prev, intn_pop, syn_spec=synapse_ih)
 
-                # Connect previous layer pyramidal to current layer interneuron populations 
+                # Connect current layer interneuron to previous layer pyramidal populations 
                 synapse_hi = syns['hi']
                 synapse_hi['weight'] = (-1 * synapse_hy['weight'] if self.sim["self_predicting_fb"]
                                             else self.gen_weights(self.dims[layer], self.dims[layer-1]))
@@ -95,12 +95,29 @@ class NestNetwork(Network):
         """
         for i in range(self.dims[0]):
             self.pyr_pops[0][i].set({"soma": {"I_e": input_currents[i] / self.nrn["tau_x"]}})
+
+
+    def train(self, input_currents, T):
+        assert self.teacher
+
+        self.set_input(input_currents)
+
+        self.y = self.phi(self.yh_teacher * self.phi(self.hx_teacher * np.reshape(input_currents, (-1, 1))))
+        self.y = self.phi_inverse(np.squeeze(np.asarray(self.y)))
+        for i in range(self.dims[-1]):
+            self.pyr_pops[-1].set({"soma": {"I_e": self.nrn["g_s"] * self.y[i]}})
         
-        if self.teacher:
-            self.y = self.phi(self.yh_teacher * self.phi(self.hx_teacher * np.reshape(input_currents, (-1, 1))))
-            self.y = self.phi_inverse(np.squeeze(np.asarray(self.y)))
-            for i in range(self.dims[-1]):
-                self.pyr_pops[-1].set({"soma": {"I_e": self.nrn["g_s"] * self.y[i]}})
+        self.simulate(T)
+
+        y_pred = self.phi(self.yh_teacher * self.phi(self.hx_teacher * np.reshape(input_currents, (-1, 1))))
+
+
+    
+
+
+        
+        
+
 
     def set_target(self, target_currents):
         """Inject a constant current into all neurons in the output layer.

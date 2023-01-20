@@ -16,18 +16,10 @@ imgdir, datadir = setup_simulation()
 sim_params["record_interval"] = 0.1
 sim_params["noise"] = False
 sim_params["dims"] = [1, 1, 1]
-sim_params["teacher"] = False
+sim_params["teacher"] = True
 
 setup_nest(delta_t, sim_params["threads"], sim_params["record_interval"], datadir)
 wr = setup_models(True, True)
-
-cmap = plt.cm.get_cmap('hsv', 7)
-styles = ["solid", "dotted", "dashdot", "dashed"]
-
-amps = [0.5, 1, 0]
-n_runs = 50
-SIM_TIME = 150
-SIM_TIME_TOTAL = n_runs * SIM_TIME
 
 # syn_params["hi"]["eta"] *= 0
 # syn_params["ih"]["eta"] *= 0
@@ -46,14 +38,6 @@ neuron_params["input"]["gamma"] = weight_scale
 syn_params["wmin_init"] = -1/weight_scale
 syn_params["wmax_init"] = 1/weight_scale
 
-g_lk_dnd = delta_t  # TODO: this is neat, but why is it correct?
-neuron_params["pyr"]["basal"]["g_L"] = g_lk_dnd
-neuron_params["pyr"]["apical_lat"]["g_L"] = g_lk_dnd
-neuron_params["intn"]["basal"]["g_L"] = g_lk_dnd
-
-
-#syn_params["hi"]["eta"] /= weight_scale * 6 * 1e5
-# syn_params["ih"]["eta"] /= weight_scale * 8 * 1e8
 
 syn_params["hi"]["eta"] /= weight_scale**3 * 0.8
 syn_params["ih"]["eta"] /= weight_scale**3 * 330
@@ -65,8 +49,6 @@ print({"hi": syn_params["hi"]["eta"],
        "ih": syn_params["ih"]["eta"],
        "hx": syn_params["hx"]["eta"],
        "yh": syn_params["yh"]["eta"], })
-
-sys.exit()
 
 nest_net = NestNetwork(sim_params, neuron_params, syn_params)
 
@@ -93,8 +75,13 @@ nest.Connect(nest_net.mm_i, nest_net.intn_pops[0])
 nest_net.mm_y = nest.Create('multimeter', 1, {'record_to': 'memory', 'record_from': ["V_m.s", "V_m.b"]})
 nest.Connect(nest_net.mm_y, nest_net.pyr_pops[-1])
 
-print(math_net.conns["ih"]["eta"], c_ih.eta)
-print(math_net.conns["hi"]["eta"], c_hi.eta)
+cmap = plt.cm.get_cmap('hsv', 7)
+styles = ["solid", "dotted", "dashdot", "dashed"]
+
+amps = [0.5, 1, 0]
+n_runs = 100
+SIM_TIME = 150
+SIM_TIME_TOTAL = n_runs * SIM_TIME
 
 print("Setup complete.")
 for i in range(n_runs):
@@ -103,11 +90,9 @@ for i in range(n_runs):
     # amp = np.random.random(sim_params["dims"][0])
     # for amp in amps:
     amp = [np.random.random()]
-    nest_net.set_input(amp)
-    nest_net.simulate(SIM_TIME)
+    nest_net.train(amp, SIM_TIME)
 
-    math_net.set_input(amp)
-    math_net.train(SIM_TIME)
+    math_net.train(amp, SIM_TIME)
 
 print("Simulation complete")
 

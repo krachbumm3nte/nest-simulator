@@ -9,6 +9,7 @@ import re
 from scipy.ndimage import uniform_filter1d
 import itertools
 import matplotlib.pyplot as plt
+from time import time
 
 
 def regroup_records(records, group_key):
@@ -75,20 +76,23 @@ def setup_simulation():
 def setup_nest(delta_t, threads, record_interval, datadir=os.getcwd()):
     nest.set_verbosity("M_ERROR")
     nest.resolution = delta_t
-    nest.SetKernelStatus({"local_num_threads": threads, "use_wfr": False})
-    nest.rng_seed = 15
-
+    nest.SetKernelStatus({"local_num_threads": threads})
     nest.SetDefaults("multimeter", {'interval': record_interval})
     nest.SetKernelStatus({"data_path": datadir})
 
 
-def read_data(device_id, path):
-    device_re = f"/it(.+)-{device_id}-(.+)dat"
+def read_data(device_id, path, it_min=None, it_max=None):
+    device_pattern = fr"/it(?P<iteration>\d+)_(.+)-{device_id}-(.+)dat"
+
     files = glob.glob(path + "/*")
+
     frames = []
-    for f in files:
-        if re.search(device_re, f):
-            frames.append(pd.read_csv(f, sep="\s+", comment='#'))
+    for file in files:
+        if result := re.search(device_pattern, file):
+            it = int(result.group('iteration'))
+            if (it_min and it < it_min) or (it_max and it >= it_max):
+                continue
+            frames.append(pd.read_csv(file, sep="\s+", comment='#'))
 
     return pd.concat(frames)
 

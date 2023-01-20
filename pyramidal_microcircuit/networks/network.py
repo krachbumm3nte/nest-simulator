@@ -1,5 +1,6 @@
 from copy import deepcopy
 import numpy as np
+from abc import abstractmethod
 
 class Network:
 
@@ -20,7 +21,16 @@ class Network:
             self.hx_teacher = self.gen_weights(self.dims[0], self.dims[1], True)
             self.yh_teacher = self.gen_weights(self.dims[1], self.dims[2], True) / self.nrn["gamma"]
             self.y = np.random.random(self.dims[2])
+            self.output_loss = []
 
     def gen_weights(self, lr, next_lr, matrix = False):
         weights = np.random.uniform(self.syns["wmin_init"], self.syns["wmax_init"], (next_lr, lr))
         return np.asmatrix(weights) if matrix else weights
+
+    @abstractmethod
+    def train(self, input_currents, T):
+        pass
+
+    @abstractmethod
+    def test(self, input_currents, T):
+        pass
