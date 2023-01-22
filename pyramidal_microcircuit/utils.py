@@ -7,9 +7,7 @@ import os
 import glob
 import re
 from scipy.ndimage import uniform_filter1d
-import itertools
-import matplotlib.pyplot as plt
-from time import time
+import torch
 
 
 def regroup_records(records, group_key):
@@ -81,6 +79,23 @@ def setup_nest(delta_t, threads, record_interval, datadir=os.getcwd()):
     nest.SetKernelStatus({"data_path": datadir})
 
 
+def setup_torch(use_cuda = True):
+
+    # We don't make use of gradients, so we can save some compute time here.    
+    torch.set_grad_enabled(False)
+
+    device_name = "cpu"
+    if use_cuda:
+        if not torch.cuda.is_available():
+            print("Cuda is not available on this system, computing on CPU")
+        else:
+            device_name = "cuda"
+            torch.set_default_tensor_type('torch.cuda.FloatTensor')
+    
+    device = torch.device(device_name)
+    return device
+            
+
 def read_data(device_id, path, it_min=None, it_max=None):
     device_pattern = fr"/it(?P<iteration>\d+)_(.+)-{device_id}-(.+)dat"
 
@@ -100,4 +115,7 @@ def read_data(device_id, path, it_min=None, it_max=None):
 def rolling_avg(input, size):
     return uniform_filter1d(input, size, mode="nearest")
 
-# %%
+
+def zeros(shape):
+    return np.zeros(shape, dtype=np.float32)
+

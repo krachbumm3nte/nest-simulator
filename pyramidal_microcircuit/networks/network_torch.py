@@ -2,6 +2,10 @@ import numpy as np
 from sklearn.metrics import mean_squared_error as mse
 from time import time
 from .network import Network
+import torch
+import torch.nn as nn
+import utils
+from copy import deepcopy
 
 # These values reappear over and over again in the computation. Writing self.value 5 times per line bloats
 # the simulate() function to horrific degrees. Since these values do not change at simulation time, They are being
@@ -10,7 +14,10 @@ from .network import Network
 g_a, g_d, g_l, g_s, g_si, tau_x, tau_delta, noise_factor, delta_t, leakage, f_1, f_2 = [0 for i in range(12)]
 
 
-class NumpyNetwork(Network):
+torch.autograd.profiler.profile(enabled=False)
+
+
+class TorchNetwork(Network):
 
     def __init__(self, sim, nrn, syns) -> None:
         super().__init__(sim, nrn, syns)
@@ -34,14 +41,14 @@ class NumpyNetwork(Network):
         f_1 = g_d / (g_l + g_d)
         f_2 = g_d / (g_l + g_a + g_d)
 
-        self.U_x_record = np.asmatrix(np.zeros((0, self.dims[0])))
-        self.U_h_record = np.asmatrix(np.zeros((0, self.dims[1])))
-        self.V_ah_record = np.asmatrix(np.zeros((0, self.dims[1])))
-        self.V_bh_record = np.asmatrix(np.zeros((0, self.dims[1])))
-        self.U_i_record = np.asmatrix(np.zeros((0, self.dims[2])))
-        self.V_bi_record = np.asmatrix(np.zeros((0, self.dims[2])))
-        self.U_y_record = np.asmatrix(np.zeros((0, self.dims[2])))
-        self.V_by_record = np.asmatrix(np.zeros((0, self.dims[2])))
+        self.U_x_record = torch.as_tensor(utils.zeros((0, self.dims[0])))
+        self.U_h_record = torch.as_tensor(utils.zeros((0, self.dims[1])))
+        self.V_ah_record = torch.as_tensor(utils.zeros((0, self.dims[1])))
+        self.V_bh_record = torch.as_tensor(utils.zeros((0, self.dims[1])))
+        self.U_i_record = torch.as_tensor(utils.zeros((0, self.dims[2])))
+        self.V_bi_record = torch.as_tensor(utils.zeros((0, self.dims[2])))
+        self.U_y_record = torch.as_tensor(utils.zeros((0, self.dims[2])))
+        self.V_by_record = torch.as_tensor(utils.zeros((0, self.dims[2])))
         self.output_loss = []
 
         self.setup_populations(self.syns, self.nrn)
@@ -49,15 +56,15 @@ class NumpyNetwork(Network):
         self.iteration = 0
 
     def setup_populations(self, syns, nrn):
-        self.U_x = np.asmatrix(np.zeros(self.dims[0]))
-        self.U_h = np.asmatrix(np.zeros(self.dims[1]))
-        self.V_bh = np.asmatrix(np.zeros(self.dims[1]))
-        self.V_ah = np.asmatrix(np.zeros(self.dims[1]))
-        self.U_i = np.asmatrix(np.zeros(self.dims[2]))
-        self.V_bi = np.asmatrix(np.zeros(self.dims[2]))
-        self.U_y = np.asmatrix(np.zeros(self.dims[2]))
-        self.V_by = np.asmatrix(np.zeros(self.dims[2]))
-        self.y = np.asmatrix(np.random.random(self.dims[2]))
+        self.U_x = torch.tensor(utils.zeros(self.dims[0]))
+        self.U_h = torch.tensor(utils.zeros(self.dims[1]))
+        self.V_bh = torch.tensor(utils.zeros(self.dims[1]))
+        self.V_ah = torch.tensor(utils.zeros(self.dims[1]))
+        self.U_i = torch.tensor(utils.zeros(self.dims[2]))
+        self.V_bi = torch.tensor(utils.zeros(self.dims[2]))
+        self.U_y = torch.tensor(utils.zeros(self.dims[2]))
+        self.V_by = torch.tensor(utils.zeros(self.dims[2]))
+        self.y = torch.rand(self.dims[2])
 
         self.r_h = self.phi(self.U_h)
         self.r_i = self.phi(self.U_i)
@@ -75,29 +82,42 @@ class NumpyNetwork(Network):
         for name, p in conn_setup.items():
             self.conns[name] = {
                 "eta": syns[name]["eta"],
-                "w": self.gen_weights(p["in"], p["out"], True) * p["init_scale"],
-                "dt_w": np.asmatrix(np.zeros((p["out"], p["in"]))),
-                "t_w": np.asmatrix(np.zeros((p["out"], p["in"]))),
-                "record": np.zeros((0, p["out"], p["in"]))
+                "w": nn.Linear(p["in"], p["out"], bias=False),
+                "dt_w": torch.tensor(utils.zeros((p["out"], p["in"]))),
+                "t_w": torch.tensor(utils.zeros((p["out"], p["in"]))),
+                "record": utils.zeros((0, p["out"], p["in"]))
             }
+            nn.init.uniform_(self.conns[name]["w"].weight, -p["init_scale"], p["init_scale"])
+
+        if self.teacher:
+            self.hx_teacher = nn.Linear(self.dims[0], self.dims[1], False)
+            self.yh_teacher = nn.Linear(self.dims[1], self.dims[2], False)
+            nn.init.uniform_(self.hx_teacher.weight, -1, 1)
+            nn.init.uniform_(self.yh_teacher.weight, -1/self.nrn["gamma"], 1/self.nrn["gamma"])
+
+    def phi(self, x):
+        return self.gamma * torch.log(1 + torch.exp(self.beta * (x - self.theta)))
+
+    def phi_inverse(self, x):
+        return (1 / self.beta) * (self.beta * self.theta + torch.log(torch.exp(x/self.gamma) - 1))
 
     def train(self, input_currents, T):
 
         self.set_input(input_currents)
 
         for i in range(int(T/delta_t)):
-            self.simulate(self.train_nothing)
+            self.simulate(self.train_match_teacher)
 
     def test(self, T):
         for i in range(int(T/delta_t)):
             # do not inject output layer current during testing
             self.simulate(self.train_match_teacher if self.teacher else self.train_nothing)
-            self.output_pred = self.phi((g_d / (g_d + g_l)) + self.conns["yh"]["w"] * self.phi(f_2 * self.V_bh).T).T
+            self.output_pred = self.phi(f_1 * self.conns["yh"]["w"](self.phi(f_2 * self.V_bh)))
 
             self.output_loss.append(mse(np.asarray(self.output_pred), np.asarray(self.y)))
 
     def train_match_teacher(self):
-        y_teacher = self.phi(self.yh_teacher * self.phi(self.hx_teacher * self.U_x.T)).T
+        y_teacher = self.phi(self.yh_teacher(self.phi(self.hx_teacher(self.U_x))))
         return self.phi_inverse(y_teacher)
 
     def train_inverse(self):
@@ -105,10 +125,10 @@ class NumpyNetwork(Network):
         return -self.U_x
 
     def train_nothing(self):
-        return np.asmatrix(np.zeros(self.dims[2]))
+        return torch.tensor(utils.zeros(self.dims[2]))
 
     def train_static(self):
-        return np.asmatrix(np.full(self.dims[2], self.target_amp))
+        return torch.tensor(np.full(self.dims[2], self.target_amp))
 
     def simulate(self, train_function):
 
@@ -125,19 +145,19 @@ class NumpyNetwork(Network):
         start = time()
 
         self.conns["hx"]["dt_w"] = -self.conns["hx"]["t_w"] + \
-            np.outer(self.r_h - self.phi(self.V_bh * f_2), self.U_x)
+            torch.outer(self.r_h - self.phi(self.V_bh * f_2), self.U_x)
 
         self.conns["yh"]["dt_w"] = -self.conns["yh"]["t_w"] + \
-            np.outer(self.r_y - self.phi(self.V_by * f_1), self.r_h)
+            torch.outer(self.r_y - self.phi(self.V_by * f_1), self.r_h)
 
         # output to hidden synapses learn this way, but eta is almost always zero, so this saves some compute time
         # self.conns["hy"]["dt_w"] = -self.conns["hy"]["t_w"] + \
         #     np.outer(self.r_h - self.phi(self.conns["hy"]["w"] * self.r_y.T).T, self.r_y)
 
         self.conns["ih"]["dt_w"] = -self.conns["ih"]["t_w"] + \
-            np.outer(self.r_i - self.phi(self.V_bi * f_1), self.r_h)
+            torch.outer(self.r_i - self.phi(self.V_bi * f_1), self.r_h)
 
-        self.conns["hi"]["dt_w"] = np.subtract(np.outer(-self.V_ah, self.r_i), self.conns["hi"]["t_w"])
+        self.conns["hi"]["dt_w"] = torch.subtract(torch.outer(-self.V_ah, self.r_i), self.conns["hi"]["t_w"])
 
         stop = time()
         print(stop - start)
@@ -147,17 +167,17 @@ class NumpyNetwork(Network):
 
         self.y = train_function()
 
-        self.V_bh = (self.conns["hx"]["w"] * self.U_x.T).T  # Note that input neurons do not use a transfer function
-        self.V_ah = (self.conns["hy"]["w"] * self.r_y.T + self.conns["hi"]["w"] * self.r_i.T).T
-        self.U_h = self.U_h + delta_t * delta_u_h + noise_factor * np.random.standard_normal(self.dims[1])
+        self.V_bh = self.conns["hx"]["w"](self.U_x)  # Note that input neurons do not use a transfer function
+        self.V_ah = self.conns["hy"]["w"](self.r_y) + self.conns["hi"]["w"](self.r_i)
+        self.U_h = self.U_h + delta_t * delta_u_h + noise_factor * torch.rand(self.dims[1]) * 2 - 1
         self.r_h = self.phi(self.U_h)
 
-        self.V_by = (self.conns["yh"]["w"] * self.r_h.T).T
-        self.U_y = self.U_y + delta_t * delta_u_y + noise_factor * np.random.standard_normal(self.dims[2])
+        self.V_by = self.conns["yh"]["w"](self.r_h)
+        self.U_y = self.U_y + delta_t * delta_u_y + noise_factor * torch.rand(self.dims[2]) * 2 - 1
         self.r_y = self.phi(self.U_y)
 
-        self.V_bi = (self.conns["ih"]["w"] * self.r_h.T).T
-        self.U_i = self.U_i + delta_t * delta_u_i + noise_factor * np.random.standard_normal(self.dims[2])
+        self.V_bi = self.conns["ih"]["w"](self.r_h)
+        self.U_i = self.U_i + delta_t * delta_u_i + noise_factor * torch.rand(self.dims[2]) * 2 - 1
         self.r_i = self.phi(self.U_i)
 
         stop = time()
@@ -167,26 +187,26 @@ class NumpyNetwork(Network):
         store_state = self.record_voltages and self.iteration % int(self.sim["record_interval"]/delta_t) == 0
 
         for name, d in self.conns.items():
-            d["t_w"] = d["t_w"] + (delta_t/tau_delta) * d["dt_w"]
-            d["w"] = d["w"] + d["eta"] * delta_t * d["t_w"]
+            d["t_w"] += (delta_t/tau_delta) * d["dt_w"]
+            d["w"].weight += d["eta"] * delta_t * d["t_w"]
             if store_state:
-                d["record"] = np.append(d["record"], np.expand_dims(d["w"], axis=0), axis=0)
+                d["record"] = np.append(d["record"], np.expand_dims(deepcopy(d["w"]).cpu().weight, axis=0), axis=0)
 
         stop = time()
         print(f"{stop - start}")
         start = time()
         if store_state:
-            self.U_x_record = np.append(self.U_x_record, self.U_x, axis=0)
-            self.U_h_record = np.append(self.U_h_record, self.U_h, axis=0)
-            self.V_ah_record = np.append(self.V_ah_record, self.V_ah, axis=0)
-            self.V_bh_record = np.append(self.V_bh_record, self.V_bh, axis=0)
-            self.U_i_record = np.append(self.U_i_record, self.U_i, axis=0)
-            self.V_bi_record = np.append(self.V_bi_record, self.V_bi, axis=0)
-            self.U_y_record = np.append(self.U_y_record, self.U_y, axis=0)
-            self.V_by_record = np.append(self.V_by_record, self.V_by, axis=0)
+            self.U_x_record = torch.cat((self.U_x_record, self.U_x.unsqueeze(dim=0)), axis=0)
+            self.U_h_record = torch.cat((self.U_h_record, self.U_h.unsqueeze(dim=0)), axis=0)
+            self.V_ah_record = torch.cat((self.V_ah_record, self.V_ah.unsqueeze(dim=0)), axis=0)
+            self.V_bh_record = torch.cat((self.V_bh_record, self.V_bh.unsqueeze(dim=0)), axis=0)
+            self.U_i_record = torch.cat((self.U_i_record, self.U_i.unsqueeze(dim=0)), axis=0)
+            self.V_bi_record = torch.cat((self.V_bi_record, self.V_bi.unsqueeze(dim=0)), axis=0)
+            self.U_y_record = torch.cat((self.U_y_record, self.U_y.unsqueeze(dim=0)), axis=0)
+            self.V_by_record = torch.cat((self.V_by_record, self.V_by.unsqueeze(dim=0)), axis=0)
 
-            self.output_pred = self.phi(f_1 * self.conns["yh"]["w"] * self.phi(f_2 * self.V_bh).T).T
-            self.output_loss.append(mse(np.asarray(self.output_pred), np.asarray(self.y)))
+            self.output_pred = self.phi(f_1 * self.conns["yh"]["w"](self.phi(f_2 * self.V_bh)))
+            self.output_loss.append(mse(self.output_pred.cpu(), self.y.cpu()))
 
         self.iteration += 1
 
@@ -201,4 +221,4 @@ class NumpyNetwork(Network):
         Arguments:
             input_currents -- Iterable of length equal to the input dimension.
         """
-        self.I_x = input_currents
+        self.I_x = torch.as_tensor(input_currents, dtype=torch.float32)

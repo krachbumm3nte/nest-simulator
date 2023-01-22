@@ -8,21 +8,20 @@ solution if parameters are set correctly.
 """
 nest.SetDefaults("multimeter", {'interval': 0.1})
 
-pyr_in = nest.Create(pyr_model, 1, pyr_params)
-mm_in = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
-nest.Connect(mm_in, pyr_in)
-# In the input neuron, tau_m needs to be increased to match the low-pass filtering of input changes.
-pyr_in.set({"soma": {"g": tau_input}, "basal": {"g": 0}, "apical_lat": {"g": 0}, "tau_m": tau_input})
+pyr_x = nest.Create(pyr_model, 1, input_params)
+mm_x = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
+pyr_x.use_phi = True
+nest.Connect(mm_x, pyr_x)
 
 pyr_h = nest.Create(pyr_model, 1, pyr_params)
 mm_h = nest.Create("multimeter", 1, {'record_from': ["V_m.s", "V_m.b", "V_m.a_lat"]})
 nest.Connect(mm_h, pyr_h)
-pyr_h.set({'soma': {'g_L': g_l}, 'apical_lat': {'g': g_a}, 'basal': {'g': g_d}})
+
 
 eta = 0.03
 w0 = 0.5
 syn_yh.update({"weight": w0, "eta": eta})
-nest.Connect(pyr_in, pyr_h, syn_spec=syn_yh)
+nest.Connect(pyr_x, pyr_h, syn_spec=syn_yh)
 
 
 U_i = 0
@@ -42,7 +41,7 @@ W0 = [w0]
 tilde_w = 0
 
 for T, amp in zip(sim_times, stim_amps):
-    pyr_in.set({"soma": {"I_e": amp*tau_input}})
+    pyr_x.set({"soma": {"I_e": amp*tau_input}})
     nest.Simulate(T)
 
     for i in range(int(T/delta_t)):
@@ -67,7 +66,7 @@ for T, amp in zip(sim_times, stim_amps):
 
 fig, (ax0, ax1, ax2, ax3) = plt.subplots(1, 4, sharey=False)
 
-ax0.plot(mm_in.get("events")["times"]/delta_t, mm_in.get("events")['V_m.s'], label="NEST computed")
+ax0.plot(mm_x.get("events")["times"]/delta_t, mm_x.get("events")['V_m.s'], label="NEST computed")
 ax0.plot(UI, label="analytical")
 
 ax1.plot(mm_h.get("events")["times"]/delta_t, mm_h.get("events")['V_m.s'], label="NEST computed")
@@ -82,6 +81,7 @@ ax3.plot(W0, label="analytical")
 ax0.set_title("input neuron voltage")
 ax1.set_title("output neuron somatic voltage")
 ax2.set_title("output neuron basal voltage")
+ax3.set_title("synaptic weight")
 
 ax0.legend()
 ax1.legend()

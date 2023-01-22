@@ -13,11 +13,13 @@ class Network:
         self.iteration = 0
         self.sigma_noise = sim["sigma"]
 
-        self.phi = nrn["phi"]
-        self.phi_inverse = nrn["phi_inverse"]
+        self.gamma = nrn["gamma"]
+        self.beta = nrn["beta"]
+        self.theta = nrn["theta"]
 
         self.teacher = sim["teacher"]
         if self.teacher:
+            # TODO: this is wrong!
             self.hx_teacher = self.gen_weights(self.dims[0], self.dims[1], True)
             self.yh_teacher = self.gen_weights(self.dims[1], self.dims[2], True) / self.nrn["gamma"]
             self.y = np.random.random(self.dims[2])
@@ -34,3 +36,13 @@ class Network:
     @abstractmethod
     def test(self, input_currents, T):
         pass
+
+    def phi(self, x):
+        return self.gamma * np.log(1 + np.exp(self.beta * (x - self.theta)))
+
+    def phi_constant(self, x):
+        return np.log(1.0 + np.exp(x))
+
+
+    def phi_inverse(self, x):
+        return (1 / self.beta) * (self.beta * self.theta + np.log(np.exp(x/self.gamma) - 1))

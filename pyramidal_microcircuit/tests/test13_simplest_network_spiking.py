@@ -14,7 +14,7 @@ from networks.network_numpy import NumpyNetwork  # nopep8
 
 imgdir, datadir = setup_simulation()
 sim_params["record_interval"] = 0.1
-sim_params["noise"] = False
+sim_params["noise"] = True
 sim_params["dims"] = [1, 1, 1]
 sim_params["teacher"] = True
 
@@ -75,12 +75,15 @@ nest.Connect(nest_net.mm_i, nest_net.intn_pops[0])
 nest_net.mm_y = nest.Create('multimeter', 1, {'record_to': 'memory', 'record_from': ["V_m.s", "V_m.b"]})
 nest.Connect(nest_net.mm_y, nest_net.pyr_pops[-1])
 
+math_net.yh_teacher = nest_net.yh_teacher
+math_net.hx_teacher = nest_net.hx_teacher
+
 cmap = plt.cm.get_cmap('hsv', 7)
 styles = ["solid", "dotted", "dashdot", "dashed"]
 
 amps = [0.5, 1, 0]
-n_runs = 100
-SIM_TIME = 150
+n_runs = 25
+SIM_TIME = 100
 SIM_TIME_TOTAL = n_runs * SIM_TIME
 
 print("Setup complete.")

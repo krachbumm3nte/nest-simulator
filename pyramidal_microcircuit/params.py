@@ -18,7 +18,7 @@ sim_params = {
     "noise": True,  # apply noise to membrane potentials
     "sigma": sigma,
     "noise_factor": np.sqrt(delta_t) * sigma,  # constant noise factor for numpy simulations
-    "dims": [6, 4, 3],  # network dimensions, i.e. neurons per layer
+    "dims": [30, 20, 10],  # network dimensions, i.e. neurons per layer
     "recording_backend": "ascii", # Backend for NEST multimeter recordings
     "teacher": True, # If True, teaching current is injected into output layer 
 }
@@ -195,19 +195,3 @@ def setup_models(spiking, record_weights=False):
     syn_params["hi"]['eta'] = eta_hi
 
     return wr
-
-
-def phi(x):
-    return gamma * np.log(1 + np.exp(beta * (x - theta)))
-
-
-def phi_constant(x):
-    return np.log(1.0 + np.exp(x))
-
-
-def phi_inverse(x):
-    return (1 / beta) * (beta * theta + np.log(np.exp(x/gamma) - 1))
-
-
-neuron_params["phi"] = phi
-neuron_params["phi_inverse"] = phi_inverse

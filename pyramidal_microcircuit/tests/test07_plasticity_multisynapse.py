@@ -10,10 +10,9 @@ somatic current connection from one of the input neurons.
 """
 nest.SetDefaults("multimeter", {'interval': 0.1})
 
-pyr_x = nest.Create(pyr_model, 1, pyr_params)
+pyr_x = nest.Create(pyr_model, 1, input_params)
 mm_x = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
 nest.Connect(mm_x, pyr_x)
-pyr_x.set({"soma": {"g": tau_input}, "tau_m": tau_input})
 
 pyr_h = nest.Create(pyr_model, 1, pyr_params)
 mm_h = nest.Create("multimeter", 1, {'record_from': ["V_m.s", "V_m.b", "V_m.a_lat"]})
@@ -84,7 +83,7 @@ for T, stim, target in zip(sim_times, stim_amps, target_amps):
         w1 = w1 + eta * delta_t * tilde_w_1
 
         U_x = U_x + (delta_t/tau_x) * delta_u_x
-        r_x = phi(U_x)
+        r_x = U_x
 
         V_bh = r_x * w0
         V_ah = r_y * w1
