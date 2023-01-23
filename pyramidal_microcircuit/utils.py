@@ -8,6 +8,7 @@ import glob
 import re
 from scipy.ndimage import uniform_filter1d
 import torch
+import nestio
 
 
 def regroup_records(records, group_key):
@@ -61,6 +62,7 @@ def matrix_from_spikes(data, conn, t_max, delta_t):
 
 
 def setup_simulation():
+    # TODO: remove personal path!
     root = f"/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/runs/{datetime.now().strftime('%Y_%m_%d-%H_%M_%S')}"
 
     imgdir = os.path.join(root, "plots")
@@ -71,17 +73,23 @@ def setup_simulation():
     return imgdir, datadir
 
 
-def setup_nest(delta_t, threads, record_interval, datadir=os.getcwd()):
+def setup_nest(sim_params, datadir=os.getcwd()):
     nest.set_verbosity("M_ERROR")
-    nest.resolution = delta_t
-    nest.SetKernelStatus({"local_num_threads": threads})
-    nest.SetDefaults("multimeter", {'interval': record_interval})
+    nest.resolution = sim_params["delta_t"]
+    nest.SetKernelStatus({"local_num_threads": sim_params["threads"]})
+    nest.SetDefaults("multimeter", {'interval': sim_params["record_interval"]})
     nest.SetKernelStatus({"data_path": datadir})
 
+    # if "sionlib" in nest.recording_backends:
+    #     print("sionlib was found and will be used for recording simulations!")
+    #     sim_params["recording_backend"] = "sionlib"
+    # else:
+    sim_params["recording_backend"] = "ascii"
 
-def setup_torch(use_cuda = True):
 
-    # We don't make use of gradients, so we can save some compute time here.    
+def setup_torch(use_cuda=True):
+
+    # We don't make use of gradients, so we can save some compute time here.
     torch.set_grad_enabled(False)
 
     device_name = "cpu"
@@ -91,10 +99,10 @@ def setup_torch(use_cuda = True):
         else:
             device_name = "cuda"
             torch.set_default_tensor_type('torch.cuda.FloatTensor')
-    
+
     device = torch.device(device_name)
     return device
-            
+
 
 def read_data(device_id, path, it_min=None, it_max=None):
     device_pattern = fr"/it(?P<iteration>\d+)_(.+)-{device_id}-(.+)dat"
@@ -102,6 +110,13 @@ def read_data(device_id, path, it_min=None, it_max=None):
     files = glob.glob(path + "/*")
 
     frames = []
+    # if "sionlib" in nest.recording_backends:
+    #     for file in files:
+    #         reader = nestio.NestReader(file)
+    #         for datapoint in reader:
+    #             if not datapoint.gid in frames:
+    #                 print("foo")
+    # else:
     for file in files:
         if result := re.search(device_pattern, file):
             it = int(result.group('iteration'))
@@ -118,4 +133,3 @@ def rolling_avg(input, size):
 
 def zeros(shape):
     return np.zeros(shape, dtype=np.float32)
-

@@ -21,7 +21,7 @@ sim_params["dims"] = dims
 sim_params["delta_t"] = delta_t
 sim_params["teacher"] = True
 
-setup_nest(delta_t, sim_params["threads"], sim_params["record_interval"], datadir)
+setup_nest(sim_params, datadir)
 wr = setup_models(True, True)
 
 cmap = plt.cm.get_cmap('hsv', 7)

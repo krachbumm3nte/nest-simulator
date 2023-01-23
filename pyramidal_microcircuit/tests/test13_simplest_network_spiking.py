@@ -18,7 +18,7 @@ sim_params["noise"] = True
 sim_params["dims"] = [1, 1, 1]
 sim_params["teacher"] = True
 
-setup_nest(delta_t, sim_params["threads"], sim_params["record_interval"], datadir)
+setup_nest(sim_params, datadir)
 wr = setup_models(True, True)
 
 # syn_params["hi"]["eta"] *= 0

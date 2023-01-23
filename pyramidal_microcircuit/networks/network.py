@@ -2,6 +2,7 @@ from copy import deepcopy
 import numpy as np
 from abc import abstractmethod
 
+
 class Network:
 
     def __init__(self, sim, nrn, syns) -> None:

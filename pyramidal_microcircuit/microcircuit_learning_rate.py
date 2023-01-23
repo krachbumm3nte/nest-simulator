@@ -11,7 +11,7 @@ import os
 
 
 imgdir, datadir = utils.setup_simulation()
-utils.setup_nest(delta_t, sim_params["threads"], sim_params["record_interval"], datadir)
+utils.setup_nest(sim_params, datadir)
 setup_models(False)
 
 
@@ -22,7 +22,7 @@ dims = sim_params["dims"]
 cmap_1 = plt.cm.get_cmap('hsv', dims[1]+1)
 cmap_2 = plt.cm.get_cmap('hsv', dims[2]+1)
 
-plot_interval = 500
+plot_interval = 5
 
 T = []
 ff_errors = []
@@ -43,20 +43,6 @@ interneurons = net.intn_pops[0]
 intn_id = sorted(interneurons.get("global_id"))
 print("setup complete, running simulations...")
 
-print("hx", syn_params["hx"]["eta"],
-      "yh", syn_params["yh"]["eta"],
-      "hi", syn_params["hi"]["eta"],
-      "ih", syn_params["ih"]["eta"])
-
-print("h", hidden_id, "out", out_id)
-
-with pd.option_context('display.max_rows', None,
-                       'display.max_columns', None,
-                       'display.precision', 3,
-                       ):
-    print(pd.DataFrame.from_dict(nest.GetConnections().get())[
-          ["source", "target", "eta"]].sort_values(["source", "target"]))
-
 for run in range(sim_params["n_runs"] + 1):
     inputs = np.random.rand(dims[0])
     # input_index = 0
@@ -67,11 +53,11 @@ for run in range(sim_params["n_runs"] + 1):
     t = time() - start
     T.append(t)
 
-    if run % plot_interval == 0:
+    if run % plot_interval == 0 and run > 0:
         print(f"plotting run {run}")
         start = time()
-        fig, axes = plt.subplots(3, 2, constrained_layout=True)
-        [[ax0, ax1], [ax2, ax3], [ax4, ax5]] = axes
+        fig, axes = plt.subplots(4, 2, constrained_layout=True)
+        [[ax0, ax1], [ax2, ax3], [ax4, ax5], [ax6, ax7]] = axes
         plt.rcParams['savefig.dpi'] = 300
 
         # plot somatic voltages of hidden interneurons and output pyramidal neurons
@@ -98,7 +84,7 @@ for run in range(sim_params["n_runs"] + 1):
         ax0.plot(mean_error, color="black")
 
         intn_error_now = np.mean(mean_error[-20:])
-        ax0_2 = ax1.secondary_yaxis("right")
+        ax0_2 = ax0.secondary_yaxis("right")
         ax0_2.set_yticks([intn_error_now])
 
         # plot apical error
@@ -150,12 +136,15 @@ for run in range(sim_params["n_runs"] + 1):
             t = row["target"]
             ax5.plot(row["source"], row["weight"], "x", color=cmap_2(row["target"] % dims[2]), label=f"from {t}")
 
+        ax6.plot(net.output_loss)
+
         ax0.set_title("interneuron - pyramidal error")
         ax1.set_title("apical error")
         ax2.set_title("Feedback error")
         ax3.set_title("Feedforward error")
         ax4.set_title("Feedback weights")
         ax5.set_title("Feedforward weights")
+        ax6.set_title("Output loss")
 
         ax0.set_ylim(bottom=0)
         ax1.set_ylim(bottom=0)

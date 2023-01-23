@@ -17,7 +17,7 @@ imgdir, datadir = setup_simulation()
 sim_params["record_interval"] = 0.1
 sim_params["noise"] = False
 sim_params["dims"] = dims
-setup_nest(delta_t, sim_params["threads"], sim_params["record_interval"], datadir)
+setup_nest(sim_params, datadir)
 wr = setup_models(False, True)
 
 cmap = plt.cm.get_cmap('hsv', 7)

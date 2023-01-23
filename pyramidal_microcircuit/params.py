@@ -14,13 +14,13 @@ sim_params = {
     "self_predicting_fb": False,  # initialize feedback weights to self-predicting state
     "plasticity": True,  # enable synaptic plasticity
     "SIM_TIME": 100,  # simulation time per input pattern in ms
-    "n_runs": 10000,  # number of training iterations
+    "n_runs": 100000,  # number of training iterations
     "noise": True,  # apply noise to membrane potentials
     "sigma": sigma,
     "noise_factor": np.sqrt(delta_t) * sigma,  # constant noise factor for numpy simulations
-    "dims": [30, 20, 10],  # network dimensions, i.e. neurons per layer
-    "recording_backend": "ascii", # Backend for NEST multimeter recordings
-    "teacher": True, # If True, teaching current is injected into output layer 
+    "dims": [8, 6, 4],  # network dimensions, i.e. neurons per layer
+    "recording_backend": "ascii",  # Backend for NEST multimeter recordings
+    "teacher": True,  # If True, teaching current is injected into output layer
 }
 
 
@@ -111,13 +111,9 @@ if sim_params["plasticity"]:
     eta_yh = 0.01
     eta_hx = eta_yh / lambda_ah
     eta_ih = 0.01 / lambda_ah
-    eta_hi = 5 * eta_ih    
-    # eta_yh = 0.01 * 0.5
-    # eta_hx = eta_yh / lambda_ah * 0.5
-    # eta_ih = 0.01 / lambda_ah * 0.5
-    # eta_hi = 5 * eta_ih * 0.5
+    eta_hi = 5 * eta_ih
     # eta_yh = 0
-    # eta_ih = 0.0002375  # from Sacramento, Fig S1
+    # eta_ih = 0.0002375  # from Sacramento 2018, Fig S1
     # eta_hi = 0.0005
     # eta_hx = 0
 else:
@@ -146,18 +142,6 @@ syn_params.update({
 
 
 def setup_models(spiking, record_weights=False):
-
-    wr = None
-
-    neuron_model = 'pp_cond_exp_mc_pyr' if spiking else 'rate_neuron_pyr'
-    pyr_comps = nest.GetDefaults(neuron_model)["receptor_types"]
-    neuron_params["model"] = neuron_model
-
-    basal_dendrite = pyr_comps['basal']
-    apical_dendrite = pyr_comps['apical_lat']
-
-    syn_model = 'pyr_synapse' if spiking else 'pyr_synapse_rate'
-
     if not spiking:
         neuron_params["pyr"]["basal"]["g_L"] = 1
         neuron_params["pyr"]["apical_lat"]["g_L"] = 1
@@ -165,8 +149,11 @@ def setup_models(spiking, record_weights=False):
         neuron_params["intn"]["apical_lat"]["g_L"] = 1
         neuron_params["input"]["basal"]["g_L"] = 1
         neuron_params["input"]["apical_lat"]["g_L"] = 1
-        
 
+    neuron_model = 'pp_cond_exp_mc_pyr' if spiking else 'rate_neuron_pyr'
+    neuron_params["model"] = neuron_model
+    syn_model = 'pyr_synapse' if spiking else 'pyr_synapse_rate'
+    wr = None
     if record_weights:
         wr = nest.Create("weight_recorder")
         nest.CopyModel(syn_model, 'record_syn', {"weight_recorder": wr})
@@ -174,24 +161,26 @@ def setup_models(spiking, record_weights=False):
 
     syn_defaults["synapse_model"] = syn_model
 
-    syn_params["hx"] = deepcopy(syn_defaults)
+    syn_static = {
+        "synapse_model": "static_synapse",
+        "delay": sim_params["delta_t"]
+    }
+
+
+    for syn_name, eta in zip(["hx", "yh", "hy", "ih", "hi"], [eta_hx, eta_yh, eta_hy, eta_ih, eta_hi]):
+        if eta > 0:
+            syn_params[syn_name] = deepcopy(syn_defaults)
+            syn_params[syn_name]["eta"] = eta
+        else:
+            syn_params[syn_name] = deepcopy(syn_static)
+
+    pyr_comps = nest.GetDefaults(neuron_model)["receptor_types"]
+    basal_dendrite = pyr_comps['basal']
+    apical_dendrite = pyr_comps['apical_lat']
     syn_params["hx"]['receptor_type'] = basal_dendrite
-    syn_params["hx"]['eta'] = eta_hx
-
-    syn_params["yh"] = deepcopy(syn_defaults)
     syn_params["yh"]['receptor_type'] = basal_dendrite
-    syn_params["yh"]['eta'] = eta_yh
-
-    syn_params["hy"] = deepcopy(syn_defaults)
-    syn_params["hy"]['receptor_type'] = apical_dendrite
-    syn_params["hy"]['eta'] = eta_hy
-
-    syn_params["ih"] = deepcopy(syn_defaults)
     syn_params["ih"]['receptor_type'] = basal_dendrite
-    syn_params["ih"]['eta'] = eta_ih
-
-    syn_params["hi"] = deepcopy(syn_defaults)
+    syn_params["hy"]['receptor_type'] = apical_dendrite
     syn_params["hi"]['receptor_type'] = apical_dendrite
-    syn_params["hi"]['eta'] = eta_hi
 
     return wr

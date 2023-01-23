@@ -2,6 +2,7 @@ import nest
 import numpy as np
 from copy import deepcopy
 from .network import Network
+from sklearn.metrics import mean_squared_error as mse
 
 
 class NestNetwork(Network):
@@ -68,17 +69,17 @@ class NestNetwork(Network):
             for pop in populations:
                 nest.Connect(self.noise, pop, syn_spec={"receptor_type": compartments["soma_curr"]})
 
-        # self.mm_x = nest.Create('multimeter', 1, {'record_to': 'ascii', 'record_from': ["V_m.s"]})
+        # self.mm_x = nest.Create('multimeter', 1, {'record_to': self.sim["recording_backend"], 'record_from': ["V_m.s"]})
         # nest.Connect(self.mm_x, self.pyr_pops[0])
-        self.mm_h = nest.Create('multimeter', 1, {'record_to': 'ascii', 'record_from': ["V_m.a_lat", "V_m.s"]})
+        self.mm_h = nest.Create('multimeter', 1, {'record_to': self.sim["recording_backend"], 'record_from': ["V_m.a_lat", "V_m.s"]})
         nest.Connect(self.mm_h, self.pyr_pops[1])
-        self.mm_i = nest.Create('multimeter', 1, {'record_to': 'ascii', 'record_from': ["V_m.s"]})
+        self.mm_i = nest.Create('multimeter', 1, {'record_to': self.sim["recording_backend"], 'record_from': ["V_m.s"]})
         nest.Connect(self.mm_i, self.intn_pops[0])
-        self.mm_y = nest.Create('multimeter', 1, {'record_to': 'ascii', 'record_from': ["V_m.s"]})
+        self.mm_y = nest.Create('multimeter', 1, {'record_to': self.sim["recording_backend"], 'record_from': ["V_m.s"]})
         nest.Connect(self.mm_y, self.pyr_pops[2])
 
     def simulate(self, T):
-
+        # if self.sim["recording_backend"] == "ascii":
         nest.SetKernelStatus({"data_prefix": f"it{self.iteration}_"})
         nest.Simulate(T)
 
@@ -103,12 +104,16 @@ class NestNetwork(Network):
 
         self.y = self.phi(self.yh_teacher * self.phi(self.hx_teacher * np.reshape(input_currents, (-1, 1))))
         self.y = self.phi_inverse(np.squeeze(np.asarray(self.y)))
-        if type(self.y) != np.array:
+        if not isinstance(self.y, np.ndarray):
             self.y = [self.y]
         for i in range(self.dims[-1]):
             self.pyr_pops[-1].set({"soma": {"I_e": self.nrn["g_s"] * self.y[i]}})
 
         self.simulate(T)
+
+        if self.teacher:
+            output_pred = [e["V_m"] for e in self.pyr_pops[-1].get("soma")]
+            self.output_loss.append(mse(self.y, output_pred))
 
     def set_target(self, target_currents):
         """Inject a constant current into all neurons in the output layer.

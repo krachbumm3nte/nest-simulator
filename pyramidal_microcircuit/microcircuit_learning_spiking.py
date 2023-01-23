@@ -11,7 +11,7 @@ import os
 
 
 imgdir, datadir = utils.setup_simulation()
-utils.setup_nest(delta_t, sim_params["threads"], sim_params["record_interval"], datadir)
+utils.setup_nest(sim_params, datadir)
 setup_models(True)
 
 weight_scale = 250
@@ -34,11 +34,11 @@ dims = sim_params["dims"]
 cmap_1 = plt.cm.get_cmap('hsv', dims[1]+1)
 cmap_2 = plt.cm.get_cmap('hsv', dims[2]+1)
 
-plot_interval = 500
+plot_interval = 100
 
 T = []
-w_pi_errors = []
-w_ip_errors = []
+ff_errors = []
+fb_errors = []
 apical_errors = []
 intn_errors = [[] for i in range(dims[-1])]
 
@@ -69,10 +69,9 @@ for run in range(sim_params["n_runs"] + 1):
     if run % plot_interval == 0:
         print(f"plotting run {run}")
         start = time()
-        fig, axes = plt.subplots(3, 2, constrained_layout=True)
-        [[ax0, ax1], [ax2, ax3], [ax4, ax5]] = axes
+        fig, axes = plt.subplots(4, 2, constrained_layout=True)
+        [[ax0, ax1], [ax2, ax3], [ax4, ax5], [ax6, ax7]] = axes
         plt.rcParams['savefig.dpi'] = 300
-
 
         # plot somatic voltages of hidden interneurons and output pyramidal neurons
         U_I = utils.read_data(net.mm_i.global_id, datadir, it_min=run-plot_interval+1).sort_values("time_ms")
@@ -81,11 +80,10 @@ for run in range(sim_params["n_runs"] + 1):
         U_Y = utils.read_data(net.mm_y.global_id, datadir, it_min=run-plot_interval+1).sort_values("time_ms")
         U_Y = U_Y.groupby("sender")
 
-
         abs_voltage = []
         for idx, (intn, pyr) in enumerate(zip(intn_id, out_id)):
             data_intn = U_I.get_group(intn)
-            data_pyr = U_Y.get_group(pyr)            
+            data_pyr = U_Y.get_group(pyr)
             int_v = data_intn["V_m.s"].array
             pyr_v = data_pyr["V_m.s"].array
 
@@ -93,14 +91,14 @@ for run in range(sim_params["n_runs"] + 1):
             abs_voltage.append(np.abs(pyr_v))
             error = np.square(int_v-pyr_v)
             intn_errors[idx].extend(error)
-        
+
         abs_voltage = np.mean(abs_voltage)
         mean_error = utils.rolling_avg(np.mean(intn_errors, axis=0), size=2)
         ax0.plot(mean_error, color="black")
 
         intn_error_now = np.mean(mean_error[-20:])
-        ax1_2 = ax1.secondary_yaxis("right")
-        ax1_2.set_yticks([intn_error_now])
+        ax0_2 = ax0.secondary_yaxis("right")
+        ax0_2.set_yticks([intn_error_now])
 
         # plot apical error
         U_H = utils.read_data(net.mm_h.global_id, datadir, it_min=run-plot_interval+1).sort_values("time_ms")
@@ -122,16 +120,16 @@ for run in range(sim_params["n_runs"] + 1):
         # plot weight error
         WHY = WHY.sort_values(["target", "source"])
         WHI = WHI.sort_values(["target", "source"])
-        w_ip_error = mse(WHY["weight"], -WHI["weight"])
-        w_ip_errors.append(w_ip_error)
+        fb_error = mse(WHY["weight"], -WHI["weight"])
+        fb_errors.append(fb_error)
         error_scale = np.arange(0, (run+1), plot_interval) * sim_params["SIM_TIME"]/sim_params["record_interval"]
-        ax2.plot(error_scale, w_ip_errors, label=f"FB error: {w_ip_error:.3f}")
+        ax2.plot(error_scale, fb_errors, label=f"FB error: {fb_error:.3f}")
 
         WYH = WYH.sort_values(["source", "target"])
         WIH = WIH.sort_values(["source", "target"])
-        w_pi_error = mse(WYH["weight"], WIH["weight"])
-        w_pi_errors.append(w_pi_error)
-        ax3.plot(error_scale, w_pi_errors, label=f"FF error: {w_pi_error:.3f}")
+        ff_error = mse(WYH["weight"], WIH["weight"])
+        ff_errors.append(ff_error)
+        ax3.plot(error_scale, ff_errors, label=f"FF error: {ff_error:.3f}")
 
         # plot weights
         for idx, row in WHY.iterrows():
@@ -151,6 +149,7 @@ for run in range(sim_params["n_runs"] + 1):
             t = row["target"]
             ax5.plot(row["source"], row["weight"], "x", color=cmap_2(row["target"] % dims[2]), label=f"from {t}")
 
+        ax6.plot(net.output_loss)
 
         ax0.set_title("interneuron - pyramidal error")
         ax1.set_title("apical error")
@@ -158,6 +157,7 @@ for run in range(sim_params["n_runs"] + 1):
         ax3.set_title("Feedforward error")
         ax4.set_title("Feedback weights")
         ax5.set_title("Feedforward weights")
+        ax6.set_title("Output loss")
 
         ax0.set_ylim(bottom=0)
         ax1.set_ylim(bottom=0)
@@ -170,7 +170,7 @@ for run in range(sim_params["n_runs"] + 1):
         plot_duration = time() - start
         print(f"mean simulation time: {np.mean(T[-50:]):.2f}s. plot time:{plot_duration:.2f}s. \
 apical error: {apical_error_now:.2f}.")
-        print(f"ff error: {w_pi_error:.3f}, fb error: {w_ip_error:.3f}, interneuron error: {intn_error_now:.2f}, absolute somatic voltage: {abs_voltage}\n")
+        print(f"ff error: {ff_error:.3f}, fb error: {fb_error:.3f}, interneuron error: {intn_error_now:.2f}, absolute somatic voltage: {abs_voltage}\n")
 
     elif run % 50 == 0:
         print(f"run {run} completed.")

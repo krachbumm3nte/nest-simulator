@@ -25,7 +25,7 @@ neuron_params["gamma"] = weight_scale
 neuron_params["pyr"]["gamma"] = weight_scale
 neuron_params["intn"]["gamma"] = weight_scale
 neuron_params["input"]["gamma"] = weight_scale
-setup_nest(delta_t, sim_params["threads"], sim_params["record_interval"], datadir)
+setup_nest(sim_params, datadir)
 wr = setup_models(True, True)
 
 pyr_x = nest.Create(neuron_params["model"], 1, input_params)

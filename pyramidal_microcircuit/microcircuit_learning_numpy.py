@@ -10,7 +10,7 @@ import os
 
 
 imgdir, datadir = utils.setup_simulation()
-utils.setup_nest(delta_t, sim_params["threads"], sim_params["record_interval"], datadir)
+utils.setup_nest(sim_params, datadir)
 setup_models(False, False)
 
 
