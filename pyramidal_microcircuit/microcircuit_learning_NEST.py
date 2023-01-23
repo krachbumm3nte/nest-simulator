@@ -12,8 +12,24 @@ import os
 
 imgdir, datadir = utils.setup_simulation()
 utils.setup_nest(sim_params, datadir)
-setup_models(False)
 
+spiking = False
+
+setup_models(spiking)
+
+if spiking:
+    weight_scale = 250
+    syn_params["hi"]["eta"] /= weight_scale**3 * 4
+    syn_params["ih"]["eta"] /= weight_scale**3 * 330
+    syn_params["hx"]["eta"] /= weight_scale**3 * 330
+    syn_params["yh"]["eta"] /= weight_scale**3 * 330
+
+    neuron_params["gamma"] = weight_scale
+    neuron_params["pyr"]["gamma"] = weight_scale
+    neuron_params["intn"]["gamma"] = weight_scale
+    neuron_params["input"]["gamma"] = weight_scale
+    syn_params["wmin_init"] = -1/weight_scale
+    syn_params["wmax_init"] = 1/weight_scale
 
 net = NestNetwork(sim_params, neuron_params, syn_params)
 
@@ -22,7 +38,7 @@ dims = sim_params["dims"]
 cmap_1 = plt.cm.get_cmap('hsv', dims[1]+1)
 cmap_2 = plt.cm.get_cmap('hsv', dims[2]+1)
 
-plot_interval = 5
+plot_interval = 1000
 
 T = []
 ff_errors = []
@@ -53,7 +69,7 @@ for run in range(sim_params["n_runs"] + 1):
     t = time() - start
     T.append(t)
 
-    if run % plot_interval == 0 and run > 0:
+    if run % plot_interval == 0:
         print(f"plotting run {run}")
         start = time()
         fig, axes = plt.subplots(4, 2, constrained_layout=True)
@@ -61,18 +77,18 @@ for run in range(sim_params["n_runs"] + 1):
         plt.rcParams['savefig.dpi'] = 300
 
         # plot somatic voltages of hidden interneurons and output pyramidal neurons
-        U_I = utils.read_data(net.mm_i.global_id, datadir, it_min=run-plot_interval+1).sort_values("time_ms")
-        U_I = U_I.groupby("sender")
+        neuron_data = utils.read_data(net.mm.global_id, datadir, it_min=run-plot_interval+1)
+        
+        U_I = neuron_data[neuron_data.sender.isin(intn_id)].groupby("sender")["V_m.s"]
 
-        U_Y = utils.read_data(net.mm_y.global_id, datadir, it_min=run-plot_interval+1).sort_values("time_ms")
-        U_Y = U_Y.groupby("sender")
+        U_Y = neuron_data[neuron_data.sender.isin(out_id)].groupby("sender")["V_m.s"]
 
         abs_voltage = []
         for idx, (intn, pyr) in enumerate(zip(intn_id, out_id)):
             data_intn = U_I.get_group(intn)
             data_pyr = U_Y.get_group(pyr)
-            int_v = data_intn["V_m.s"].array
-            pyr_v = data_pyr["V_m.s"].array
+            int_v = data_intn.array
+            pyr_v = data_pyr.array
 
             abs_voltage.append(np.abs(int_v))
             abs_voltage.append(np.abs(pyr_v))
@@ -88,7 +104,7 @@ for run in range(sim_params["n_runs"] + 1):
         ax0_2.set_yticks([intn_error_now])
 
         # plot apical error
-        U_H = utils.read_data(net.mm_h.global_id, datadir, it_min=run-plot_interval+1).sort_values("time_ms")
+        U_H = neuron_data[neuron_data.sender.isin(hidden_id)]
 
         apical_error = U_H.abs().groupby("time_ms")["V_m.a_lat"].mean()
         apical_errors.extend(apical_error.values)

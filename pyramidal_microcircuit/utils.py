@@ -105,8 +105,8 @@ def setup_torch(use_cuda=True):
 
 
 def read_data(device_id, path, it_min=None, it_max=None):
-    device_pattern = fr"/it(?P<iteration>\d+)_(.+)-{device_id}-(.+)dat"
-
+    device_pattern = re.compile(fr"/it(?P<iteration>\d+)_(.+)-{device_id}-(.+)dat")
+    
     files = glob.glob(path + "/*")
 
     frames = []
@@ -117,7 +117,7 @@ def read_data(device_id, path, it_min=None, it_max=None):
     #             if not datapoint.gid in frames:
     #                 print("foo")
     # else:
-    for file in files:
+    for file in sorted(files):
         if result := re.search(device_pattern, file):
             it = int(result.group('iteration'))
             if (it_min and it < it_min) or (it_max and it >= it_max):

@@ -71,16 +71,14 @@ class NestNetwork(Network):
 
         # self.mm_x = nest.Create('multimeter', 1, {'record_to': self.sim["recording_backend"], 'record_from': ["V_m.s"]})
         # nest.Connect(self.mm_x, self.pyr_pops[0])
-        self.mm_h = nest.Create('multimeter', 1, {'record_to': self.sim["recording_backend"], 'record_from': ["V_m.a_lat", "V_m.s"]})
-        nest.Connect(self.mm_h, self.pyr_pops[1])
-        self.mm_i = nest.Create('multimeter', 1, {'record_to': self.sim["recording_backend"], 'record_from': ["V_m.s"]})
-        nest.Connect(self.mm_i, self.intn_pops[0])
-        self.mm_y = nest.Create('multimeter', 1, {'record_to': self.sim["recording_backend"], 'record_from': ["V_m.s"]})
-        nest.Connect(self.mm_y, self.pyr_pops[2])
+        self.mm = nest.Create('multimeter', 1, {'record_to': self.sim["recording_backend"], 'record_from': ["V_m.a_lat", "V_m.s"]})
+        nest.Connect(self.mm, self.pyr_pops[1])
+        nest.Connect(self.mm, self.intn_pops[0])
+        nest.Connect(self.mm, self.pyr_pops[2])
 
     def simulate(self, T):
         # if self.sim["recording_backend"] == "ascii":
-        nest.SetKernelStatus({"data_prefix": f"it{self.iteration}_"})
+        nest.SetKernelStatus({"data_prefix": f"it{str(self.iteration).zfill(8)}_"})
         nest.Simulate(T)
 
         self.iteration += 1
