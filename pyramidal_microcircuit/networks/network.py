@@ -22,7 +22,7 @@ class Network:
         if self.teacher:
             # TODO: this is wrong!
             self.hx_teacher = self.gen_weights(self.dims[0], self.dims[1], True)
-            self.yh_teacher = self.gen_weights(self.dims[1], self.dims[2], True) / self.nrn["gamma"]
+            self.yh_teacher = self.gen_weights(self.dims[1], self.dims[2], True) # / self.nrn["gamma"]
             self.y = np.random.random(self.dims[2])
             self.output_loss = []
 

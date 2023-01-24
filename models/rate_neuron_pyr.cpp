@@ -153,7 +153,7 @@ nest::rate_neuron_pyr_dynamics( double, const double y[], double f[], void* pnod
  * ---------------------------------------------------------------- */
 
 nest::rate_neuron_pyr::Parameters_::Parameters_()
-  : t_ref( 3.0 ) // ms
+  : t_ref( 0.0 ) // ms
 {
   // parameters for the transfer function
   pyr_params.phi_max = 1;
@@ -165,7 +165,7 @@ nest::rate_neuron_pyr::Parameters_::Parameters_()
   pyr_params.tau_m = 1.0;
 
 
-  pyr_params.curr_target = 0;
+  pyr_params.curr_target_id = 0;
   pyr_params.lambda_curr = 0.0;
   pyr_params.C_m = 1.0; // pF
   pyr_params.use_phi = true;
@@ -173,7 +173,7 @@ nest::rate_neuron_pyr::Parameters_::Parameters_()
 
   // soma parameters
   pyr_params.g_conn[ SOMA ] = 0.0; // nS, soma-dendrite
-  pyr_params.g_L[ SOMA ] = 1;    // nS
+  pyr_params.g_L[ SOMA ] = 1;      // nS
   pyr_params.E_L[ SOMA ] = 0.0;    // mV
   I_e[ SOMA ] = 0.0;               // pA
 
@@ -204,7 +204,7 @@ nest::rate_neuron_pyr::Parameters_::Parameters_( const Parameters_& p )
   pyr_params.beta = p.pyr_params.beta;
   pyr_params.theta = p.pyr_params.theta;
 
-  pyr_params.curr_target = p.pyr_params.curr_target;
+  pyr_params.curr_target_id = p.pyr_params.curr_target_id;
   pyr_params.lambda_curr = p.pyr_params.lambda_curr;
   pyr_params.tau_m = p.pyr_params.tau_m;
   pyr_params.C_m = p.pyr_params.C_m;
@@ -233,7 +233,7 @@ nest::rate_neuron_pyr::Parameters_::operator=( const Parameters_& p )
   pyr_params.theta = p.pyr_params.theta;
   pyr_params.tau_m = p.pyr_params.tau_m;
 
-  pyr_params.curr_target = p.pyr_params.curr_target;
+  pyr_params.curr_target_id = p.pyr_params.curr_target_id;
   pyr_params.lambda_curr = p.pyr_params.lambda_curr;
   pyr_params.C_m = p.pyr_params.C_m;
   pyr_params.use_phi = p.pyr_params.use_phi;
@@ -325,7 +325,7 @@ nest::rate_neuron_pyr::Parameters_::get( DictionaryDatum& d ) const
   def< double >( d, names::g_a, pyr_params.g_conn[ APICAL_LAT ] );
 
   def< double >( d, names::lambda, pyr_params.lambda_curr );
-  def< double >( d, names::target, pyr_params.curr_target );
+  def< double >( d, names::target, pyr_params.curr_target_id );
 
 
   // create subdictionaries for per-compartment parameters
@@ -359,7 +359,7 @@ nest::rate_neuron_pyr::Parameters_::set( const DictionaryDatum& d )
   updateValue< double >( d, Name( names::g_b ), pyr_params.g_conn[ BASAL ] );
   updateValue< double >( d, Name( names::g_a ), pyr_params.g_conn[ APICAL_LAT ] );
 
-  updateValue< double >( d, Name( names::target ), pyr_params.curr_target );
+  updateValue< double >( d, Name( names::target ), pyr_params.curr_target_id );
   updateValue< double >( d, Name( names::lambda ), pyr_params.lambda_curr );
   updateValue< bool >( d, Name( names::use_phi ), pyr_params.use_phi );
 
@@ -601,16 +601,10 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
       const double I_L_dend = P_.pyr_params.g_L[ n ] * V_dnd;
 
       // derivative membrane potential
-      S_.y_[ State_::idx( n, State_::V_M ) ] = V_dnd - I_L_dend + I_dend ;
+      S_.y_[ State_::idx( n, State_::V_M ) ] = V_dnd - I_L_dend + I_dend;
 
       // derivative dendritic current
-      //TODO: what do we do with this?
-      S_.y_[ State_::idx( n, State_::I ) ] = I_dend - I_dend / P_.pyr_params.tau_m;
-      // if ( n == 10 )
-      //{
-      //   std::cout << I_L_dend << ", " << I_conn_d_s << ", " << S_.y_[ State_::idx( 1, State_::V_M ) ] << ", "
-      //             << S_.y_[ State_::idx( 0, State_::V_M ) ] << std::endl;
-      // }
+      S_.y_[ State_::idx( n, State_::I ) ] = 0; //I_dend - I_dend / P_.pyr_params.tau_m;
     }
 
     // derivative membrane potential
@@ -631,15 +625,14 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
     }
 
 
-    SpikeEvent se;
-    se.set_sender( *this );
-    kernel().event_delivery_manager.send( *this, se, lag );
-
-
     for ( size_t n = 0; n < NCOMP; ++n )
     {
       B_.I_stim_[ n ] = 0.0;
     }
+
+    SpikeEvent se;
+    se.set_sender( *this );
+    kernel().event_delivery_manager.send( *this, se, lag );
 
     // set new input currents
     for ( size_t n = 0; n < NCOMP; ++n )
@@ -653,11 +646,11 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
 
     // send current event to target
 
-    if ( P_.pyr_params.curr_target != 0 )
+    if ( P_.pyr_params.curr_target_id != 0 )
     {
       CurrentEvent ce;
       ce.set_current( S_.y_[ S_.idx( SOMA, State_::V_M ) ] );
-      Node* n = kernel().node_manager.get_node_or_proxy( P_.pyr_params.curr_target );
+      Node* n = kernel().node_manager.get_node_or_proxy( P_.pyr_params.curr_target_id );
       ce.set_receiver( *n );
       ce.set_sender_node_id( this->get_node_id() );
       ce.set_rport( 0 ); // TODO: make this flexible to target not only the soma!

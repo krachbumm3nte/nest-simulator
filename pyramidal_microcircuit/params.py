@@ -8,7 +8,7 @@ sigma = 0.3  # standard deviation for membrane potential noise
 
 sim_params = {
     "delta_t": delta_t,
-    "threads": 8,
+    "threads": 10,
     "record_interval": 75,  # interval for storing membrane potentials
     "self_predicting_ff": False,  # initialize feedforward weights to self-predicting state
     "self_predicting_fb": False,  # initialize feedback weights to self-predicting state
@@ -18,9 +18,9 @@ sim_params = {
     "noise": True,  # apply noise to membrane potentials
     "sigma": sigma,
     "noise_factor": np.sqrt(delta_t) * sigma,  # constant noise factor for numpy simulations
-    "dims": [8, 6, 4],  # network dimensions, i.e. neurons per layer
+    "dims": [30, 20, 10],  # network dimensions, i.e. neurons per layer
     "recording_backend": "ascii",  # Backend for NEST multimeter recordings
-    "teacher": True,  # If True, teaching current is injected into output layer
+    "teacher": False,  # If True, teaching current is injected into output layer
 }
 
 
@@ -32,12 +32,12 @@ g_d = 1  # basal compartment coupling conductance
 lambda_ah = g_a / (g_d + g_a + g_l)  # Useful constant for scaling learning rates
 
 # parameters of the activation function phi()
-# gamma = 1
-# beta = 1
-# theta = 0
-gamma = 0.1
+gamma = 1
 beta = 1
-theta = 3
+theta = 0
+# gamma = 0.1
+# beta = 1
+# theta = 3
 
 neuron_params = {
     "tau_x": 3,  # input filtering time constant
@@ -108,14 +108,14 @@ neuron_params["intn"] = intn_params
 # connection specific learning rates
 # TODO: clean this up!
 if sim_params["plasticity"]:
-    eta_yh = 0.01
-    eta_hx = eta_yh / lambda_ah
-    eta_ih = 0.01 / lambda_ah
-    eta_hi = 5 * eta_ih
-    # eta_yh = 0
-    # eta_ih = 0.0002375  # from Sacramento 2018, Fig S1
-    # eta_hi = 0.0005
-    # eta_hx = 0
+    # eta_yh = 0.01
+    # eta_hx = eta_yh / lambda_ah
+    # eta_ih = 0.01 / lambda_ah
+    # eta_hi = 5 * eta_ih
+    eta_yh = 0
+    eta_ih = 0.0002375  # from Sacramento 2018, Fig S1
+    eta_hi = 0.0005
+    eta_hx = 0
 else:
     eta_yh = 0
     eta_hx = 0

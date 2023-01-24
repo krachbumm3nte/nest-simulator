@@ -211,7 +211,7 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
   double t_spike = e.get_stamp().get_ms();
   // use accessor functions (inherited from Connection< >) to obtain delay and target
   Node* target = get_target( t );
-  nest::pp_cond_exp_mc_pyr* target_pyr = static_cast<nest::pp_cond_exp_mc_pyr*>(target);
+  // nest::pp_cond_exp_mc_pyr* target_pyr = static_cast<nest::pp_cond_exp_mc_pyr*>(target);
 
   double dendritic_delay = get_delay();
 
@@ -221,11 +221,11 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
 
   int rport = get_rport();
 
-  if ( rport < 1 or rport > 4 )
+  if ( rport < 1 or rport > 2 )
   {
     std::cout << "connection on port " << rport << " to neuron ";
     std::cout << e.retrieve_sender_node_id_from_source_table() << "\n";
-    // throw IllegalConnection("Urbanczik synapse can only connect to dendrites!");
+    throw IllegalConnection("Urbanczik synapse can only connect to dendrites!");
   }
 
   target->get_urbanczik_history( t_lastspike_ - dendritic_delay, t_spike - dendritic_delay, &start, &finish, rport );
@@ -237,15 +237,14 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
     double const minus_delta_t_up = t_lastspike_ - t_up; // from 0 to -delta t
     double const minus_t_down = t_up - t_spike;          // from -t_spike to 0
     double const tau_s_now = tau_s_trace_ * exp( minus_delta_t_up / tau_Delta_ );
-    if ( rport == 3 )
-    {
-      std::cout << e.retrieve_sender_node_id_from_source_table() << std::endl;
-      PI = (start->dw_ - target_pyr->P_.pyr_params.phi(weight_ * tau_s_now)) * tau_s_now;
-    }
-    else
-    {
-      PI = tau_s_now * start->dw_;
-    }
+    // if ( rport == 3 )
+    // {
+    //   PI = (start->dw_ - target_pyr->P_.pyr_params.phi(weight_ * tau_s_now)) * tau_s_now;
+    // }
+    // else
+    // {
+    PI = tau_s_now * start->dw_;
+    // }
     PI_integral_ += PI;
     dPI_exp_integral += exp( minus_t_down / tau_Delta_ ) * PI;
     ++start;

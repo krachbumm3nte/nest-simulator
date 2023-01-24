@@ -167,7 +167,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_()
   pyr_params.tau_m = 1.0;
 
 
-  pyr_params.curr_target = 0;
+  pyr_params.curr_target_id = 0;
   pyr_params.lambda_curr = 0.0;
   pyr_params.C_m = 1.0; // pF
   pyr_params.use_phi = true;
@@ -175,7 +175,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_()
 
   // soma parameters
   pyr_params.g_conn[ SOMA ] = 0.0; // nS, soma-dendrite
-  pyr_params.g_L[ SOMA ] = 1;    // nS
+  pyr_params.g_L[ SOMA ] = 1;      // nS
   pyr_params.E_L[ SOMA ] = 0.0;    // mV
   I_e[ SOMA ] = 0.0;               // pA
 
@@ -206,7 +206,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_( const Parameters_& p )
   pyr_params.beta = p.pyr_params.beta;
   pyr_params.theta = p.pyr_params.theta;
 
-  pyr_params.curr_target = p.pyr_params.curr_target;
+  pyr_params.curr_target_id = p.pyr_params.curr_target_id;
   pyr_params.lambda_curr = p.pyr_params.lambda_curr;
   pyr_params.tau_m = p.pyr_params.tau_m;
   pyr_params.C_m = p.pyr_params.C_m;
@@ -235,7 +235,11 @@ nest::pp_cond_exp_mc_pyr::Parameters_::operator=( const Parameters_& p )
   pyr_params.theta = p.pyr_params.theta;
   pyr_params.tau_m = p.pyr_params.tau_m;
 
-  pyr_params.curr_target = p.pyr_params.curr_target;
+  pyr_params.curr_target_id = p.pyr_params.curr_target_id;
+  if ( pyr_params.curr_target_id > 0 )
+  {
+    pyr_params.curr_target = kernel().node_manager.get_node_or_proxy( pyr_params.curr_target_id );
+  }
   pyr_params.lambda_curr = p.pyr_params.lambda_curr;
   pyr_params.C_m = p.pyr_params.C_m;
   pyr_params.use_phi = p.pyr_params.use_phi;
@@ -327,7 +331,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::get( DictionaryDatum& d ) const
   def< double >( d, names::g_a, pyr_params.g_conn[ APICAL_LAT ] );
 
   def< double >( d, names::lambda, pyr_params.lambda_curr );
-  def< double >( d, names::target, pyr_params.curr_target );
+  def< double >( d, names::target, pyr_params.curr_target_id );
 
 
   // create subdictionaries for per-compartment parameters
@@ -361,7 +365,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::set( const DictionaryDatum& d )
   updateValue< double >( d, Name( names::g_b ), pyr_params.g_conn[ BASAL ] );
   updateValue< double >( d, Name( names::g_a ), pyr_params.g_conn[ APICAL_LAT ] );
 
-  updateValue< double >( d, Name( names::target ), pyr_params.curr_target );
+  updateValue< double >( d, Name( names::target ), pyr_params.curr_target_id );
   updateValue< double >( d, Name( names::lambda ), pyr_params.lambda_curr );
   updateValue< bool >( d, Name( names::use_phi ), pyr_params.use_phi );
 
@@ -626,6 +630,10 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
     // will optimized most stuff away ...
     for ( size_t n = 1; n < P_.pyr_params.NCOMP; ++n )
     {
+      if ( P_.pyr_params.g_conn[ n ] == 0 )
+      {
+        continue;
+      }
       // membrane potential of dendrite
       const double V_dnd = S_.y_[ State_::idx( n, State_::V_M ) ];
 
@@ -638,15 +646,10 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       const double I_L_dend = P_.pyr_params.g_L[ n ] * V_dnd;
 
       // derivative membrane potential
-      S_.y_[ State_::idx( n, State_::V_M ) ] = V_dnd - I_L_dend + I_dend ;
+      S_.y_[ State_::idx( n, State_::V_M ) ] = V_dnd - I_L_dend + I_dend;
 
       // derivative dendritic current
       S_.y_[ State_::idx( n, State_::I ) ] = 0; // I_dend - I_dend / P_.pyr_params.tau_m;
-      // if ( n == 10 )
-      //{
-      //   std::cout << I_L_dend << ", " << I_conn_d_s << ", " << S_.y_[ State_::idx( 1, State_::V_M ) ] << ", "
-      //             << S_.y_[ State_::idx( 0, State_::V_M ) ] << std::endl;
-      // }
     }
 
     // derivative membrane potential
@@ -724,18 +727,21 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
     {
       --S_.r_;
     }
-    
-    // Store dendritic membrane potential for Urbanczik-Senn plasticity
-    write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ),
-      S_.y_[ S_.idx( BASAL, State_::V_M ) ],
-      S_.y_[ S_.idx( SOMA, State_::V_M ) ],
-      BASAL );
 
-    write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ),
-      S_.y_[ S_.idx( APICAL_LAT, State_::V_M ) ],
-      S_.y_[ S_.idx( SOMA, State_::V_M ) ],
-      APICAL_LAT );
-    
+    // Store dendritic membrane potential for Urbanczik-Senn plasticity
+    if ( P_.pyr_params.g_conn[ BASAL ] > 0 or P_.pyr_params.g_conn[ APICAL_LAT ] > 0 )
+    {
+      write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ),
+        S_.y_[ S_.idx( BASAL, State_::V_M ) ],
+        S_.y_[ S_.idx( SOMA, State_::V_M ) ],
+        BASAL );
+
+      write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ),
+        S_.y_[ S_.idx( APICAL_LAT, State_::V_M ) ],
+        S_.y_[ S_.idx( SOMA, State_::V_M ) ],
+        APICAL_LAT );
+    }
+
     // set new input currents
     for ( size_t n = 0; n < NCOMP; ++n )
     {
@@ -748,12 +754,11 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
 
     // send current event to target
 
-    if ( P_.pyr_params.curr_target != 0 )
+    if ( P_.pyr_params.curr_target_id != 0 )
     {
       CurrentEvent ce;
       ce.set_current( S_.y_[ S_.idx( SOMA, State_::V_M ) ] );
-      Node* n = kernel().node_manager.get_node_or_proxy( P_.pyr_params.curr_target );
-      ce.set_receiver( *n );
+      ce.set_receiver( *pyr_params->curr_target );
       ce.set_sender_node_id( this->get_node_id() );
       ce.set_rport( 0 ); // TODO: make this flexible to target not only the soma!
       ce.set_sender( *this );

@@ -96,7 +96,8 @@ private:
   double theta;   //!< Parameter of the rate function
   double h( double u );
 
-  int curr_target; // target neuron for a singular current synapse
+  int curr_target_id; // target neuron for a singular current synapse
+  Node* curr_target;
   double lambda_curr;
   bool use_phi;
 

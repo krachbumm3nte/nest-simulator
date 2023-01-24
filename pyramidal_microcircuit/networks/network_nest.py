@@ -37,7 +37,7 @@ class NestNetwork(Network):
                 # Connect current to previous layer pyramidal populations
                 synapse_hy = syns["hy"]
                 synapse_hy['weight'] = self.gen_weights(
-                    self.dims[layer], self.dims[layer-1]) / (syns["wmax_init"] * nrn["gamma"])
+                    self.dims[layer], self.dims[layer-1])  # / (syns["wmax_init"] * nrn["gamma"])
                 # TODO: perhaps we can get away with setting weights within the dict directly instead of creating variables here?
                 nest.Connect(pyr_pop, pyr_pop_prev, syn_spec=synapse_hy)
 
@@ -71,7 +71,8 @@ class NestNetwork(Network):
 
         # self.mm_x = nest.Create('multimeter', 1, {'record_to': self.sim["recording_backend"], 'record_from': ["V_m.s"]})
         # nest.Connect(self.mm_x, self.pyr_pops[0])
-        self.mm = nest.Create('multimeter', 1, {'record_to': self.sim["recording_backend"], 'record_from': ["V_m.a_lat", "V_m.s"]})
+        self.mm = nest.Create(
+            'multimeter', 1, {'record_to': self.sim["recording_backend"], 'record_from': ["V_m.a_lat", "V_m.s"]})
         nest.Connect(self.mm, self.pyr_pops[1])
         nest.Connect(self.mm, self.intn_pops[0])
         nest.Connect(self.mm, self.pyr_pops[2])
@@ -96,16 +97,17 @@ class NestNetwork(Network):
             self.pyr_pops[0][i].set({"soma": {"I_e": input_currents[i] / self.nrn["tau_x"]}})
 
     def train(self, input_currents, T):
-        assert self.teacher
 
         self.set_input(input_currents)
 
-        self.y = self.phi(self.yh_teacher * self.phi(self.hx_teacher * np.reshape(input_currents, (-1, 1))))
-        self.y = self.phi_inverse(np.squeeze(np.asarray(self.y)))
-        if not isinstance(self.y, np.ndarray):
-            self.y = [self.y]
-        for i in range(self.dims[-1]):
-            self.pyr_pops[-1].set({"soma": {"I_e": self.nrn["g_s"] * self.y[i]}})
+        if self.teacher:
+            self.y = self.phi(self.yh_teacher * self.phi(self.hx_teacher * np.reshape(input_currents, (-1, 1))))
+            self.y = self.phi_inverse(np.squeeze(np.asarray(self.y)))
+
+            if not isinstance(self.y, np.ndarray):
+                self.y = [self.y]
+            for i in range(self.dims[-1]):
+                self.pyr_pops[-1].set({"soma": {"I_e": self.nrn["g_s"] * self.y[i]}})
 
         self.simulate(T)
 

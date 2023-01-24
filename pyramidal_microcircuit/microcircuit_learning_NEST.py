@@ -13,16 +13,16 @@ import os
 imgdir, datadir = utils.setup_simulation()
 utils.setup_nest(sim_params, datadir)
 
-spiking = False
+spiking = True
 
 setup_models(spiking)
 
 if spiking:
-    weight_scale = 250
+    weight_scale = 100
     syn_params["hi"]["eta"] /= weight_scale**3 * 4
     syn_params["ih"]["eta"] /= weight_scale**3 * 330
-    syn_params["hx"]["eta"] /= weight_scale**3 * 330
-    syn_params["yh"]["eta"] /= weight_scale**3 * 330
+    #syn_params["hx"]["eta"] /= weight_scale**3 * 330
+    #syn_params["yh"]["eta"] /= weight_scale**3 * 330
 
     neuron_params["gamma"] = weight_scale
     neuron_params["pyr"]["gamma"] = weight_scale
@@ -30,6 +30,8 @@ if spiking:
     neuron_params["input"]["gamma"] = weight_scale
     syn_params["wmin_init"] = -1/weight_scale
     syn_params["wmax_init"] = 1/weight_scale
+
+    sim_params["noise"] = False
 
 net = NestNetwork(sim_params, neuron_params, syn_params)
 
@@ -152,7 +154,7 @@ for run in range(sim_params["n_runs"] + 1):
             t = row["target"]
             ax5.plot(row["source"], row["weight"], "x", color=cmap_2(row["target"] % dims[2]), label=f"from {t}")
 
-        ax6.plot(net.output_loss)
+        # ax6.plot(net.output_loss)
 
         ax0.set_title("interneuron - pyramidal error")
         ax1.set_title("apical error")
@@ -171,9 +173,9 @@ for run in range(sim_params["n_runs"] + 1):
         plt.close()
 
         plot_duration = time() - start
-        print(f"mean simulation time: {np.mean(T[-50:]):.2f}s. plot time:{plot_duration:.2f}s. \
+        print(f"mean simulation time: {np.mean(T[-100:]):.3f}s. plot time:{plot_duration:.2f}s. \
 apical error: {apical_error_now:.2f}.")
-        print(f"ff error: {ff_error:.3f}, fb error: {fb_error:.3f}, interneuron error: {intn_error_now:.2f}, absolute somatic voltage: {abs_voltage}\n")
+        print(f"ff error: {ff_error:.4f}, fb error: {fb_error:.4f}, interneuron error: {intn_error_now:.4f}, absolute somatic voltage: {abs_voltage:.3f}\n")
 
-    elif run % 50 == 0:
+    elif run % 100 == 0:
         print(f"run {run} completed.")
