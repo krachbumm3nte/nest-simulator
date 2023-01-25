@@ -1,10 +1,17 @@
 import numpy as np
 import sys
+import matplotlib.pyplot as plt
 sys.path.append("/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit")
 
 from params import *  # nopep8
 from utils import *  # nopep8
 
+def phi(x):
+    return gamma * np.log(1 + np.exp(beta * (x - theta)))
+
+
+def phi_inverse(x):
+    return (1 / beta) * (beta * theta + np.log(np.exp(x/gamma) - 1))
 
 
 dims = [10, 8, 5]

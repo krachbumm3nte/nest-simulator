@@ -7,7 +7,7 @@ from .network import Network
 # the simulate() function to horrific degrees. Since these values do not change at simulation time, They are being
 # set as global variables once in the constructor to be called from within the class. This solution is pretty cursed,
 # but the oop solution sadly makes the code completely unreadable.
-g_a, g_d, g_l, g_s, g_si, tau_x, tau_delta, noise_factor, delta_t, leakage, f_1, f_2 = [0 for i in range(12)]
+g_a, g_d, g_l, g_s, g_si, tau_x, tau_delta, noise_factor, delta_t, leakage, lambda_out, lambda_ah = [0 for i in range(12)]
 
 
 class NumpyNetwork(Network):
@@ -19,7 +19,7 @@ class NumpyNetwork(Network):
         self.record_voltages = True
 
         # Oh lord forgive me
-        global g_a, g_d, g_l, g_s, g_si, noise_factor, delta_t, tau_x, tau_delta, leakage, f_1, f_2
+        global g_a, g_d, g_l, g_s, g_si, noise_factor, delta_t, tau_x, tau_delta, leakage, lambda_out, lambda_ah
         g_a = nrn["g_a"]
         g_d = nrn["g_d"]
         g_l = nrn["g_l"]
@@ -31,8 +31,8 @@ class NumpyNetwork(Network):
         delta_t = sim["delta_t"]
 
         leakage = g_l + g_a + g_d
-        f_1 = g_d / (g_l + g_d)
-        f_2 = g_d / (g_l + g_a + g_d)
+        lambda_out = nrn["lambda_out"]
+        lambda_ah = nrn["lambda_ah"]
 
         self.U_x_record = np.asmatrix(np.zeros((0, self.dims[0])))
         self.U_h_record = np.asmatrix(np.zeros((0, self.dims[1])))
@@ -86,18 +86,18 @@ class NumpyNetwork(Network):
         self.set_input(input_currents)
 
         for i in range(int(T/delta_t)):
-            self.simulate(self.train_nothing)
+            self.simulate(self.train_match_teacher if self.teacher else self.train_nothing)
 
     def test(self, T):
         for i in range(int(T/delta_t)):
             # do not inject output layer current during testing
             self.simulate(self.train_match_teacher if self.teacher else self.train_nothing)
-            self.output_pred = self.phi((g_d / (g_d + g_l)) + self.conns["yh"]["w"] * self.phi(f_2 * self.V_bh).T).T
+            self.output_pred = self.phi(lambda_out * self.conns["yh"]["w"] * self.phi(lambda_ah * self.V_bh).T).T
 
             self.output_loss.append(mse(np.asarray(self.output_pred), np.asarray(self.y)))
 
     def train_match_teacher(self):
-        y_teacher = self.phi(self.yh_teacher * self.phi(self.hx_teacher * self.U_x.T)).T
+        y_teacher = self.phi(self.wyh_trgt * self.phi(self.whx_trgt * self.U_x.T)).T
         return self.phi_inverse(y_teacher)
 
     def train_inverse(self):
@@ -125,17 +125,17 @@ class NumpyNetwork(Network):
         start = time()
 
         self.conns["hx"]["dt_w"] = -self.conns["hx"]["t_w"] + \
-            np.outer(self.r_h - self.phi(self.V_bh * f_2), self.U_x)
+            np.outer(self.r_h - self.phi(self.V_bh * lambda_ah), self.U_x)
 
         self.conns["yh"]["dt_w"] = -self.conns["yh"]["t_w"] + \
-            np.outer(self.r_y - self.phi(self.V_by * f_1), self.r_h)
+            np.outer(self.r_y - self.phi(self.V_by * lambda_out), self.r_h)
 
         # output to hidden synapses learn this way, but eta is almost always zero, so this saves some compute time
         # self.conns["hy"]["dt_w"] = -self.conns["hy"]["t_w"] + \
         #     np.outer(self.r_h - self.phi(self.conns["hy"]["w"] * self.r_y.T).T, self.r_y)
 
         self.conns["ih"]["dt_w"] = -self.conns["ih"]["t_w"] + \
-            np.outer(self.r_i - self.phi(self.V_bi * f_1), self.r_h)
+            np.outer(self.r_i - self.phi(self.V_bi * lambda_out), self.r_h)
 
         self.conns["hi"]["dt_w"] = np.subtract(np.outer(-self.V_ah, self.r_i), self.conns["hi"]["t_w"])
 
@@ -185,7 +185,7 @@ class NumpyNetwork(Network):
             self.U_y_record = np.append(self.U_y_record, self.U_y, axis=0)
             self.V_by_record = np.append(self.V_by_record, self.V_by, axis=0)
 
-            self.output_pred = self.phi(f_1 * self.conns["yh"]["w"] * self.phi(f_2 * self.V_bh).T).T
+            self.output_pred = self.phi(lambda_out * self.conns["yh"]["w"] * self.phi(lambda_ah * self.V_bh).T).T
             self.output_loss.append(mse(np.asarray(self.output_pred), np.asarray(self.y)))
 
         self.iteration += 1
@@ -202,3 +202,10 @@ class NumpyNetwork(Network):
             input_currents -- Iterable of length equal to the input dimension.
         """
         self.I_x = input_currents
+
+    def get_weight_dict(self):
+        weights = {}
+        for k, v in self.conns.items():
+            weights[k] = v["w"]
+        return weights
+

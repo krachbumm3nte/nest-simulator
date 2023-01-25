@@ -21,14 +21,26 @@ class Network:
         self.teacher = sim["teacher"]
         if self.teacher:
             # TODO: this is wrong!
-            self.hx_teacher = self.gen_weights(self.dims[0], self.dims[1], True)
-            self.yh_teacher = self.gen_weights(self.dims[1], self.dims[2], True) # / self.nrn["gamma"]
-            self.y = np.random.random(self.dims[2])
-            self.output_loss = []
+            self.dims_teacher = sim["dims_teacher"]
+            self.whx_trgt = self.gen_weights(self.dims_teacher[0], self.dims_teacher[1], -1, 1, True)
+            self.wyh_trgt = self.gen_weights(self.dims_teacher[1], self.dims_teacher[2], -1, 1, True)
+            self.y = np.random.random(self.dims_teacher[2])
+            self.k_yh = sim["k_yh"]
+            self.k_hx = sim["k_hx"]
+        self.output_loss = []
 
-    def gen_weights(self, lr, next_lr, matrix = False):
-        weights = np.random.uniform(self.syns["wmin_init"], self.syns["wmax_init"], (next_lr, lr))
+    def gen_weights(self, n_in, n_out, wmin=None, wmax=None, matrix = False):
+        if not wmin:
+            wmin = self.syns["wmin_init"]
+        if not wmax:
+            wmax = self.syns["wmax_init"]
+        weights = np.random.uniform(wmin, wmax, (n_out, n_in))
         return np.asmatrix(weights) if matrix else weights
+
+    def calculate_target(self, input_currents):
+        assert self.teacher
+        self.y = np.squeeze(np.asarray(self.phi(self.k_yh * self.wyh_trgt * self.phi(self.k_hx * self.whx_trgt * np.reshape(input_currents, (-1, 1))))))
+
 
     @abstractmethod
     def train(self, input_currents, T):
@@ -36,6 +48,10 @@ class Network:
 
     @abstractmethod
     def test(self, input_currents, T):
+        pass
+
+    @abstractmethod
+    def get_weight_dict(self):
         pass
 
     def phi(self, x):

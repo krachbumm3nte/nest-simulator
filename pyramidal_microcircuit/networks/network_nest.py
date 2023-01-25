@@ -1,8 +1,8 @@
 import nest
 import numpy as np
-from copy import deepcopy
 from .network import Network
 from sklearn.metrics import mean_squared_error as mse
+import pandas as pd
 
 
 class NestNetwork(Network):
@@ -77,6 +77,13 @@ class NestNetwork(Network):
         nest.Connect(self.mm, self.intn_pops[0])
         nest.Connect(self.mm, self.pyr_pops[2])
 
+        # step generators for enabling batch training 
+        self.sgx = nest.Create("step_current_generator")
+        nest.Connect(self.sgx, self.pyr_pops[0], syn_spec={"receptor_type": compartments["soma_curr"]})        
+        self.sgy = nest.Create("step_current_generator")
+        nest.Connect(self.sgy, self.pyr_pops[-1], syn_spec={"receptor_type": compartments["soma_curr"]})
+
+
     def simulate(self, T):
         # if self.sim["recording_backend"] == "ascii":
         nest.SetKernelStatus({"data_prefix": f"it{str(self.iteration).zfill(8)}_"})
@@ -101,19 +108,49 @@ class NestNetwork(Network):
         self.set_input(input_currents)
 
         if self.teacher:
-            self.y = self.phi(self.yh_teacher * self.phi(self.hx_teacher * np.reshape(input_currents, (-1, 1))))
-            self.y = self.phi_inverse(np.squeeze(np.asarray(self.y)))
+            self.calculate_target(input_currents)
+            self.target_curr = self.phi_inverse(self.y)
 
-            if not isinstance(self.y, np.ndarray):
-                self.y = [self.y]
+            if not isinstance(self.target_curr, np.ndarray):
+                self.target_curr = [self.target_curr]
             for i in range(self.dims[-1]):
-                self.pyr_pops[-1].set({"soma": {"I_e": self.nrn["g_s"] * self.y[i]}})
+                self.pyr_pops[-1].set({"soma": {"I_e": self.nrn["g_s"] * self.target_curr[i]}})
 
         self.simulate(T)
 
         if self.teacher:
             output_pred = [e["V_m"] for e in self.pyr_pops[-1].get("soma")]
             self.output_loss.append(mse(self.y, output_pred))
+
+    def train_batches(self, T, batchsize):
+
+        self.input_currents = np.random.random((batchsize, self.dims[0]))
+        self.target_currents = np.zeros((batchsize, self.dims[-1]))
+
+        t_now = nest.GetKernelStatus("biological_time")
+        times = np.arange(t_now + self.sim["delta_t"], t_now + T * batchsize, T)
+
+
+
+        for batch in range(batchsize):
+            self.calculate_target(self.input_currents[batch])
+            self.target_currents[batch,:] = self.phi_inverse(self.y)
+
+        for i, step_generator in enumerate(self.sgx):
+            step_generator.set(amplitude_values = self.input_currents[:,i]/self.nrn["tau_x"], amplitude_times = times)
+        for i, step_generator in enumerate(self.sgy):
+            step_generator.set(amplitude_values = self.target_currents[:,i], amplitude_times = times)
+
+        self.simulate(T*batchsize)
+
+        WHX = pd.DataFrame.from_dict(nest.GetConnections(source=self.pyr_pops[0], target=self.pyr_pops[1]).get())
+        WYH = pd.DataFrame.from_dict(nest.GetConnections(source=self.pyr_pops[1], target=self.pyr_pops[2]).get())
+        WHX = WHX.sort_values(["target", "source"]).weight.values.reshape((self.dims[1], self.dims[0]))
+        WYH = WYH.sort_values(["target", "source"]).weight.values.reshape((self.dims[2], self.dims[1]))
+
+        # calculte output loss for the last example of the batch
+        y_pred = self.phi(self.nrn["lambda_out"] * np.matmul(WYH, self.phi(self.nrn["lambda_ah"] * np.matmul(WHX,  self.input_currents[-1,:]))))
+        self.output_loss.append(mse(y_pred, np.asarray(self.y).flatten()))
 
     def set_target(self, target_currents):
         """Inject a constant current into all neurons in the output layer.
@@ -127,3 +164,24 @@ class NestNetwork(Network):
         # TODO: obsolete?
         for i in range(self.dims[-1]):
             self.pyr_pops[-1][i].set({"soma": {"I_e": self.phi_inverse(target_currents[i]) * self.nrn["g_s"]}})
+
+    def get_weight_dict(self):
+            
+        weights = {}
+
+        in_, hidden, out = self.pyr_pops
+        interneurons = self.intn_pops[0]
+
+        WHY = pd.DataFrame.from_dict(nest.GetConnections(source=out, target=hidden).get())
+        WHI = pd.DataFrame.from_dict(nest.GetConnections(source=interneurons, target=hidden).get())
+        WYH = pd.DataFrame.from_dict(nest.GetConnections(source=hidden, target=out).get())
+        WIH = pd.DataFrame.from_dict(nest.GetConnections(source=hidden, target=interneurons).get())
+        WHX = pd.DataFrame.from_dict(nest.GetConnections(source=in_, target=hidden).get())
+
+        weights["hy"] = WHY.sort_values(["target", "source"]).weight.values.reshape((-1, len(out))).tolist()
+        weights["hi"] = WHI.sort_values(["target", "source"]).weight.values.reshape((-1, len(interneurons))).tolist()
+        weights["yh"] = WYH.sort_values(["target", "source"]).weight.values.reshape((-1, len(hidden))).tolist()
+        weights["ih"] = WIH.sort_values(["target", "source"]).weight.values.reshape((-1, len(hidden))).tolist()
+        weights["hx"] = WHX.sort_values(["target", "source"]).weight.values.reshape((-1, len(in_))).tolist()
+
+        return weights

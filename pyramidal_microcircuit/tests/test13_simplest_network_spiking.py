@@ -75,8 +75,8 @@ nest.Connect(nest_net.mm_i, nest_net.intn_pops[0])
 nest_net.mm_y = nest.Create('multimeter', 1, {'record_to': 'memory', 'record_from': ["V_m.s", "V_m.b"]})
 nest.Connect(nest_net.mm_y, nest_net.pyr_pops[-1])
 
-math_net.yh_teacher = nest_net.yh_teacher
-math_net.hx_teacher = nest_net.hx_teacher
+math_net.wyh_trgt = nest_net.wyh_trgt
+math_net.whx_trgt = nest_net.whx_trgt
 
 cmap = plt.cm.get_cmap('hsv', 7)
 styles = ["solid", "dotted", "dashdot", "dashed"]

@@ -8,7 +8,8 @@ import glob
 import re
 from scipy.ndimage import uniform_filter1d
 import torch
-import nestio
+from networks.network import Network
+import json
 
 
 def regroup_records(records, group_key):
@@ -133,3 +134,13 @@ def rolling_avg(input, size):
 
 def zeros(shape):
     return np.zeros(shape, dtype=np.float32)
+
+def store_synaptic_weights(net: Network, dirname):
+    if len(net.sim["dims"]) != 3:
+        raise ValueError("I'm too lazy to generalize this!")
+
+    weights = net.get_weight_dict()
+
+    with open(os.path.join(dirname, "weights.json"), "w") as f:
+        json.dump(weights, f)
+

@@ -18,26 +18,29 @@ sim_params = {
     "noise": True,  # apply noise to membrane potentials
     "sigma": sigma,
     "noise_factor": np.sqrt(delta_t) * sigma,  # constant noise factor for numpy simulations
-    "dims": [30, 20, 10],  # network dimensions, i.e. neurons per layer
+    "dims": [10, 30, 4],  # network dimensions, i.e. neurons per layer
+    "teacher": True,  # If True, teaching current is injected into output layer
+    "dims_teacher": [10, 5, 4], # teacher network dimensions.
+    "k_yh": 10, # hidden to output teacher weight scaling factor
+    "k_hx": 2, # input to hidden teacher weight scaling factor
     "recording_backend": "ascii",  # Backend for NEST multimeter recordings
-    "teacher": False,  # If True, teaching current is injected into output layer
 }
 
 
 # Neuron parameters
-# TODO: add units maybe?
 g_l = 0.1  # somatic leakage conductance
 g_a = 0.8  # apical compartment coupling conductance
 g_d = 1  # basal compartment coupling conductance
 lambda_ah = g_a / (g_d + g_a + g_l)  # Useful constant for scaling learning rates
+lambda_out = g_d / (g_d + g_l)
 
 # parameters of the activation function phi()
-gamma = 1
-beta = 1
-theta = 0
-# gamma = 0.1
+# gamma = 1
 # beta = 1
-# theta = 3
+# theta = 0
+gamma = 0.1
+beta = 1
+theta = 3
 
 neuron_params = {
     "tau_x": 3,  # input filtering time constant
@@ -48,6 +51,7 @@ neuron_params = {
     "g_som": 0.8,  # somatic conductance TODO:
     "g_si": 0.8,  # interneuron nudging conductance
     "g_s": 0.8,  # output neuron nudging conductance
+    "lambda_out": lambda_out,
     "lambda_ah": lambda_ah,
     'gamma': gamma,
     'beta': beta,
@@ -112,10 +116,14 @@ if sim_params["plasticity"]:
     # eta_hx = eta_yh / lambda_ah
     # eta_ih = 0.01 / lambda_ah
     # eta_hi = 5 * eta_ih
-    eta_yh = 0
-    eta_ih = 0.0002375  # from Sacramento 2018, Fig S1
+    # eta_yh = 0
+    # eta_ih = 0.0002375  # from Sacramento 2018, Fig S1
+    # eta_hi = 0.0005
+    # eta_hx = 0
+    eta_yh = 0.0005
+    eta_ih = 0.0011875  # from Sacramento 2018, Fig 2
     eta_hi = 0.0005
-    eta_hx = 0
+    eta_hx = 0.0011875
 else:
     eta_yh = 0
     eta_hx = 0
@@ -134,10 +142,10 @@ syn_defaults = {
     'delay': sim_params['delta_t'],  # synaptic delay
 }
 
-syn_params = deepcopy(syn_defaults)
+syn_params = {}
 syn_params.update({
-    'wmin_init': -1,  # synaptic weight initialization min
-    'wmax_init': 1,  # synaptic weight initialization max
+    'wmin_init': -0.1,  # synaptic weight initialization min
+    'wmax_init': 0.1,  # synaptic weight initialization max
 })
 
 
