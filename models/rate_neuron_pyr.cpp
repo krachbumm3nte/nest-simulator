@@ -104,7 +104,11 @@ nest::rate_neuron_pyr_dynamics( double, const double y[], double f[], void* pnod
   const double V = y[ S::idx( N::SOMA, S::V_M ) ];
 
   // leak current of soma
-  const double I_L = node.P_.pyr_params.g_L[ N::SOMA ] * V;
+  // TODO: I am misappropriating g_som here, because I am too lazy to create another neuron parameter.
+  // The gist of it is, that all neuron types have effective leakage conductance of (g_l + g_D + g_A),
+  // yet in- and output neurons have an apical conductance of zero. Thus we need to store this sum separately.
+  // as it serves no other purpose, the somatic conductance is used here (temporarily?)
+  const double I_L = node.P_.pyr_params.g_conn[ N::SOMA ] * V;
 
   // coupling from dendrites to soma all summed up
   double I_conn_d_s = 0.0;
@@ -114,6 +118,10 @@ nest::rate_neuron_pyr_dynamics( double, const double y[], double f[], void* pnod
   // will optimized most stuff away ...
   for ( size_t n = 1; n < N::NCOMP; ++n )
   {
+    if ( node.P_.pyr_params.g_conn[ n ] == 0 )
+    {
+      continue;
+    }
     // membrane potential of dendrite
     const double V_dnd = y[ S::idx( n, S::V_M ) ];
 
@@ -123,27 +131,19 @@ nest::rate_neuron_pyr_dynamics( double, const double y[], double f[], void* pnod
     // dendritic current due to input
     const double I_dend = y[ S::idx( n, S::I ) ];
 
-    const double I_L_dend = -node.P_.pyr_params.g_L[ n ] * V_dnd;
+    const double I_L_dend = node.P_.pyr_params.g_L[ n ] * V_dnd;
 
     // derivative membrane potential
-    f[ S::idx( n, S::V_M ) ] = ( I_L_dend + I_dend * 0.1 );
+    f[ S::idx( n, S::V_M ) ] = -I_L_dend + 0.1 * I_dend;
 
     // derivative dendritic current
-    f[ S::idx( n, S::I ) ] = -I_dend / node.P_.pyr_params.tau_m;
-    if ( n == 1 )
-    {
-      std::cout << "foo: " << I_L_dend << ", " << I_conn_d_s << ", " << y[ S::idx( 1, S::V_M ) ] << ", "
-                << y[ S::idx( 0, S::V_M ) ] << std::endl;
-    }
+    f[ S::idx( n, S::I ) ] = -I_dend;
   }
 
   // derivative membrane potential
   // soma
   f[ S::idx( N::SOMA, S::V_M ) ] = -I_L + I_conn_d_s + node.B_.I_stim_[ N::SOMA ] + node.P_.I_e[ N::SOMA ];
 
-  // excitatory conductance soma
-  f[ S::idx( N::SOMA, S::I ) ] = -y[ S::idx( N::SOMA, S::I ) ] / node.P_.pyr_params.tau_m;
-  // std::cout << "soma curr " << y[ S::idx( N::SOMA, S::I)] << "\n";
 
   return GSL_SUCCESS;
 }
@@ -234,6 +234,11 @@ nest::rate_neuron_pyr::Parameters_::operator=( const Parameters_& p )
   pyr_params.tau_m = p.pyr_params.tau_m;
 
   pyr_params.curr_target_id = p.pyr_params.curr_target_id;
+  if ( pyr_params.curr_target_id > 0 )
+  {
+    pyr_params.curr_target = kernel().node_manager.get_node_or_proxy( pyr_params.curr_target_id );
+    std::cout << "set target id: " << pyr_params.curr_target_id << std::endl;
+  }
   pyr_params.lambda_curr = p.pyr_params.lambda_curr;
   pyr_params.C_m = p.pyr_params.C_m;
   pyr_params.use_phi = p.pyr_params.use_phi;
@@ -571,74 +576,50 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
   for ( long lag = from; lag < to; ++lag )
   {
 
-    // membrane potential of soma
-    const double V = S_.y_[ State_::idx( P_.pyr_params.SOMA, State_::V_M ) ];
 
-    // leak current of soma
-    // TODO: I am misappropriating g_som here, because I am too lazy to create another neuron parameter.
-    // The gist of it is, that all neuron types have effective leakage conductance of (g_l + g_D + g_A),
-    // yet in- and output neurons have an apical conductance of zero. Thus we need to store this sum separately.
-    // as it serves no other purpose, the somatic conductance is used here (temporarily?)
-    const double I_L = P_.pyr_params.g_conn[ pyr_params->SOMA ] * V;
+    double t = 0.0;
 
-    // coupling from dendrites to soma all summed up
-    double I_conn_d_s = 0.0;
-
-    // compute dynamics for each dendritic compartment
-    // computations written quite explicitly for clarity, assume compile
-    // will optimized most stuff away ...
-    for ( size_t n = 1; n < P_.pyr_params.NCOMP; ++n )
+    // numerical integration with adaptive step size control:
+    // ------------------------------------------------------
+    // gsl_odeiv_evolve_apply performs only a single numerical
+    // integration step, starting from t and bounded by step;
+    // the while-loop ensures integration over the whole simulation
+    // step (0, step] if more than one integration step is needed due
+    // to a small integration step size;
+    // note that (t+IntegrationStep > step) leads to integration over
+    // (t, step] and afterwards setting t to step, but it does not
+    // enforce setting IntegrationStep to step-t; this is of advantage
+    // for a consistent and efficient integration across subsequent
+    // simulation intervals
+    while ( t < B_.step_ )
     {
-      // membrane potential of dendrite
-      const double V_dnd = S_.y_[ State_::idx( n, State_::V_M ) ];
-
-      // coupling current from dendrite to soma
-      I_conn_d_s += P_.pyr_params.g_conn[ n ] * V_dnd;
-
-      // dendritic current due to input
-      const double I_dend = S_.y_[ State_::idx( n, State_::I ) ];
-
-      const double I_L_dend = P_.pyr_params.g_L[ n ] * V_dnd;
-
-      // derivative membrane potential
-      S_.y_[ State_::idx( n, State_::V_M ) ] = V_dnd - I_L_dend + I_dend;
-
-      // derivative dendritic current
-      S_.y_[ State_::idx( n, State_::I ) ] = 0; //I_dend - I_dend / P_.pyr_params.tau_m;
+      const int status = gsl_odeiv_evolve_apply( B_.e_,
+        B_.c_,
+        B_.s_,
+        &B_.sys_,             // system of ODE
+        &t,                   // from t
+        B_.step_,             // to t <= step
+        &B_.IntegrationStep_, // integration step size
+        S_.y_ );              // neuronal state
+      if ( status != GSL_SUCCESS )
+      {
+        throw GSLSolverFailure( get_name(), status );
+      }
     }
-
-    // derivative membrane potential
-    // soma
-    S_.y_[ State_::idx( P_.pyr_params.SOMA, State_::V_M ) ] =
-      V + 0.1 * ( -I_L + I_conn_d_s + B_.I_stim_[ P_.pyr_params.SOMA ] + P_.I_e[ P_.pyr_params.SOMA ] );
-
-    // excitatory conductance soma
-    S_.y_[ State_::idx( P_.pyr_params.SOMA, State_::I ) ] =
-      0; //-S_.y_[ State_::idx( P_.pyr_params.SOMA, State_::I ) ] / P_.pyr_params.tau_m;
-         // std::cout << "soma curr " << y[ S::idx( N::SOMA, S::I)] << "\n";
-
 
     // add incoming spikes to all compartmens
     for ( size_t n = 0; n < NCOMP; ++n )
     {
       S_.y_[ State_::idx( n, State_::I ) ] += B_.spikes_[ n ].get_value( lag );
+      B_.I_stim_[ n ] = B_.currents_[ n ].get_value( lag );
     }
 
 
-    for ( size_t n = 0; n < NCOMP; ++n )
-    {
-      B_.I_stim_[ n ] = 0.0;
-    }
 
     SpikeEvent se;
     se.set_sender( *this );
     kernel().event_delivery_manager.send( *this, se, lag );
 
-    // set new input currents
-    for ( size_t n = 0; n < NCOMP; ++n )
-    {
-      B_.I_stim_[ n ] = B_.currents_[ n ].get_value( lag );
-    }
 
     // log state data
     B_.logger_.record_data( origin.get_steps() + lag );
@@ -650,8 +631,7 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
     {
       CurrentEvent ce;
       ce.set_current( S_.y_[ S_.idx( SOMA, State_::V_M ) ] );
-      Node* n = kernel().node_manager.get_node_or_proxy( P_.pyr_params.curr_target_id );
-      ce.set_receiver( *n );
+      ce.set_receiver( *pyr_params->curr_target );
       ce.set_sender_node_id( this->get_node_id() );
       ce.set_rport( 0 ); // TODO: make this flexible to target not only the soma!
       ce.set_sender( *this );

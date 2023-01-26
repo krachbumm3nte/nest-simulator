@@ -11,13 +11,13 @@ solution if parameters are set correctly.
 # in the synapse being delayed. For this proof of concept I have multiplied the weight changes in the
 # analytical solution with this magic number.
 
-pyr_in = nest.Create(pyr_model, 1, pyr_params)
+pyr_in = nest.Create(pyr_model_rate, 1, pyr_params)
 mm_in = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
 nest.Connect(mm_in, pyr_in)
 # In the input neuron, tau_m needs to be increased to match the low-pass filtering of input changes.
 pyr_in.set({"soma": {"g": tau_input}, "basal": {"g": 0}, "apical_lat": {"g": 0}, "tau_m": tau_input})
 
-pyr_h = nest.Create(pyr_model, 1, pyr_params)
+pyr_h = nest.Create(pyr_model_rate, 1, pyr_params)
 mm_h = nest.Create("multimeter", 1, {'record_from': ["V_m.s", "V_m.b", "V_m.a_lat"]})
 nest.Connect(mm_h, pyr_h)
 pyr_h.set({'soma': {'g_L': g_l}, 'apical_lat': {'g': g_a}, 'basal': {'g': 0}})

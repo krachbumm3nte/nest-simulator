@@ -27,7 +27,7 @@ class NumpyNetwork(Network):
         g_si = nrn["g_si"]
         tau_x = nrn["tau_x"]
         noise_factor = sim["noise_factor"] if sim["noise"] else 0
-        tau_delta = syns["tau_Delta"]
+        tau_delta = syns["ih"]["tau_Delta"]
         delta_t = sim["delta_t"]
 
         leakage = g_l + g_a + g_d

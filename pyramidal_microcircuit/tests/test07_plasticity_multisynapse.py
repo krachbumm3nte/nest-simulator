@@ -10,15 +10,15 @@ somatic current connection from one of the input neurons.
 """
 nest.SetDefaults("multimeter", {'interval': 0.1})
 
-pyr_x = nest.Create(pyr_model, 1, input_params)
+pyr_x = nest.Create(pyr_model_rate, 1, input_params)
 mm_x = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
 nest.Connect(mm_x, pyr_x)
 
-pyr_h = nest.Create(pyr_model, 1, pyr_params)
+pyr_h = nest.Create(pyr_model_rate, 1, pyr_params)
 mm_h = nest.Create("multimeter", 1, {'record_from': ["V_m.s", "V_m.b", "V_m.a_lat"]})
 nest.Connect(mm_h, pyr_h)
 
-pyr_y = nest.Create(pyr_model, 1, pyr_params)
+pyr_y = nest.Create(pyr_model_rate, 1, pyr_params)
 mm_y = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
 nest.Connect(mm_y, pyr_y)
 

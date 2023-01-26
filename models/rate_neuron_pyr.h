@@ -37,11 +37,11 @@
 #include <gsl/gsl_odeiv.h>
 
 // Includes from nestkernel:
-#include "pyr_archiving_node.h"
-#include "pyr_archiving_node_impl.h"
 #include "connection.h"
 #include "event.h"
 #include "nest_types.h"
+#include "pyr_archiving_node.h"
+#include "pyr_archiving_node_impl.h"
 #include "random_generators.h"
 #include "recordables_map.h"
 #include "ring_buffer.h"
@@ -97,6 +97,7 @@ private:
   double h( double u );
 
   int curr_target_id; // target neuron for a singular current synapse
+  Node* curr_target;
   double lambda_curr;
   bool use_phi;
 
@@ -597,9 +598,9 @@ rate_neuron_pyr::handles_test_event( SpikeEvent&, rport receptor_type )
 inline port
 rate_neuron_pyr::handles_test_event( CurrentEvent&, rport receptor_type )
 {
-  if ( receptor_type < MIN_CURR_RECEPTOR || receptor_type >= SUP_CURR_RECEPTOR )
+  if ( receptor_type < MIN_CURR_RECEPTOR or receptor_type >= SUP_CURR_RECEPTOR )
   {
-    if ( receptor_type >= 0 && receptor_type < MIN_CURR_RECEPTOR )
+    if ( receptor_type >= 0 and receptor_type < MIN_CURR_RECEPTOR )
     {
       throw IncompatibleReceptorType( receptor_type, get_name(), "CurrentEvent" );
     }
@@ -616,7 +617,7 @@ rate_neuron_pyr::handles_test_event( DataLoggingRequest& dlr, rport receptor_typ
 {
   if ( receptor_type != 0 )
   {
-    if ( receptor_type < 0 || receptor_type >= SUP_CURR_RECEPTOR )
+    if ( receptor_type < 0 or receptor_type >= SUP_CURR_RECEPTOR )
     {
       throw UnknownReceptorType( receptor_type, get_name() );
     }
@@ -633,7 +634,7 @@ rate_neuron_pyr::get_status( DictionaryDatum& d ) const
 {
   P_.get( d );
   S_.get( d );
-  PyrArchivingNode < rate_neuron_pyr_parameters>::get_status( d );
+  PyrArchivingNode< rate_neuron_pyr_parameters >::get_status( d );
 
   ( *d )[ names::recordables ] = recordablesMap_.get_list();
 
@@ -670,7 +671,7 @@ rate_neuron_pyr::set_status( const DictionaryDatum& d )
   // write them back to (P_, S_) before we are also sure that
   // the properties to be set in the parent class are internally
   // consistent.
-  PyrArchivingNode < rate_neuron_pyr_parameters>::set_status( d );
+  PyrArchivingNode< rate_neuron_pyr_parameters >::set_status( d );
 
   // if we get here, temporaries contain consistent set of properties
   P_ = ptmp;

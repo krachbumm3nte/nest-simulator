@@ -10,7 +10,7 @@ import numpy as np
 
 nest.SetDefaults("multimeter", {"interval": 0.1})
 
-pyr_in = nest.Create(pyr_model, 1, pyr_params)
+pyr_in = nest.Create(pyr_model_rate, 1, pyr_params)
 mm_in = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
 nest.Connect(mm_in, pyr_in)
 gauss = nest.Create("noise_generator", params={'mean': 0, 'std': sigma})

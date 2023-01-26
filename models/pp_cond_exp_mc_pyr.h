@@ -568,13 +568,6 @@ pp_cond_exp_mc_pyr_parameters::phi( double u )
   //  TODO: which is the correct activation function for this?
 }
 
-inline double
-pp_cond_exp_mc_pyr_parameters::h( double u )
-{
-  return 15.0 * beta / ( 1.0 + ( 1.0 / gamma ) * exp( -beta * ( theta - u ) ) );
-}
-
-
 // Inline functions of pp_cond_exp_mc_pyr
 inline port
 pp_cond_exp_mc_pyr::send_test_event( Node& target, rport receptor_type, synindex, bool )

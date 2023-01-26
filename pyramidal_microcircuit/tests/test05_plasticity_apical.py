@@ -7,24 +7,26 @@ This script shows that the neuron model handles a single apical input exactly li
 solution if parameters are set correctly.
 """
 
-# plasticity in the simulator is slightly faster than in the analytical model! this is due to information
-# in the synapse being delayed. For this proof of concept I have multiplied the weight changes in the
-# analytical solution with this magic number.
+pyr_model_rate = pyr_model_spiking
+record_syn = "foo"
+nest.CopyModel('pyr_synapse', record_syn, {"weight_recorder": wr})
 
-pyr_in = nest.Create(pyr_model, 1, pyr_params)
+syn_hy.update({"synapse_model": record_syn})
+
+pyr_in = nest.Create(pyr_model_rate, 1, pyr_params)
 mm_in = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
 nest.Connect(mm_in, pyr_in)
 # In the input neuron, tau_m needs to be increased to match the low-pass filtering of input changes.
 pyr_in.set({"soma": {"g": tau_input}, "basal": {"g": 0}, "apical_lat": {"g": 0}, "tau_m": tau_input})
 
-pyr_h = nest.Create(pyr_model, 1, pyr_params)
+pyr_h = nest.Create(pyr_model_rate, 1, pyr_params)
 mm_h = nest.Create("multimeter", 1, {'record_from': ["V_m.s", "V_m.b", "V_m.a_lat"]})
 nest.Connect(mm_h, pyr_h)
 pyr_h.set({'soma': {'g_L': g_l}, 'apical_lat': {'g': g_a}, 'basal': {'g': 0}})
 
 eta = 0.03
 w0 = 0.5
-syn_hy.update({"weight": w0, "eta": eta})
+syn_hy.update({"weight": w0, "eta": eta/250})
 nest.Connect(pyr_in, pyr_h, syn_spec=syn_hy)
 
 
@@ -32,7 +34,7 @@ U_i = 0
 U_h = 0
 U_ah = 0
 
-sim_times = [320 for i in range(3)]
+sim_times = [100 for i in range(3)]
 stim_amps = [1, -1, 0]
 
 SIM_TIME = sum(sim_times)
@@ -85,6 +87,7 @@ ax3.plot(W0, label="analytical")
 ax0.set_title("input neuron voltage")
 ax1.set_title("output neuron somatic voltage")
 ax2.set_title("output neuron apical voltage")
+ax3.set_title("synaptic weight")
 
 ax0.legend()
 ax1.legend()

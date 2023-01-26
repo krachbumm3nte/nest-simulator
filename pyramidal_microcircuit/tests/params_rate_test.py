@@ -137,11 +137,9 @@ syn_params = {
 }
 
 # neuron parameters
-pyr_model = 'rate_neuron_pyr'
-pyr_comps = nest.GetDefaults(pyr_model)["receptor_types"]
-
-intn_model = 'rate_neuron_pyr'
-intn_comps = nest.GetDefaults(intn_model)["receptor_types"]
+pyr_model_rate = 'rate_neuron_pyr'
+pyr_model_spiking = 'pp_cond_exp_mc_pyr'
+pyr_comps = nest.GetDefaults(pyr_model_rate)["receptor_types"]
 
 basal_dendrite = pyr_comps['basal']
 apical_dendrite = pyr_comps['apical_lat']

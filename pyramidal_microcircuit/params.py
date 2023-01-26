@@ -8,7 +8,7 @@ sigma = 0.3  # standard deviation for membrane potential noise
 
 sim_params = {
     "delta_t": delta_t,
-    "threads": 10,
+    "threads": 8,
     "record_interval": 75,  # interval for storing membrane potentials
     "self_predicting_ff": False,  # initialize feedforward weights to self-predicting state
     "self_predicting_fb": False,  # initialize feedback weights to self-predicting state
