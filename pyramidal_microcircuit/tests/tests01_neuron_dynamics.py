@@ -162,28 +162,31 @@ class SingleCompartmentDynamics(TestClass):
     """
 
     def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
-
+        
         super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
 
         weight = 1
-        syn["yh"].update({"weight": weight, "eta": 0})
+        syn["hx"].update({"weight": weight, "eta": 0})
 
         if spiking_neurons:
-            weight_scale = nrn["weight_scale"]
-            nrn["input"]["gamma"] *= weight_scale
-            syn["yh"].update({"weight": weight/weight_scale})
-        pyr_in = nest.Create(self.neuron_model, 1, nrn["input"])
-        self.mm_in = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
-        nest.Connect(self.mm_in, pyr_in)
+            weight_scale = 15000
+            nrn["input"]["gamma"] = self.gamma * weight_scale/self.gamma
+            syn["hx"].update({"weight": weight/weight_scale})
+        
 
-        pyr_h = nest.Create(self.neuron_model, 1, nrn["intn"])
+        print(self.gamma, nrn["input"]["gamma"], nrn["gamma"])
+        pyr_x = nest.Create(self.neuron_model, 1, nrn["input"])
+        self.mm_x = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
+        nest.Connect(self.mm_x, pyr_x)
+
+        pyr_h = nest.Create(self.neuron_model, 1, nrn["pyr"])
         self.mm_h = nest.Create("multimeter", 1, {'record_from': ["V_m.s", "V_m.b", "V_m.a_lat"]})
         nest.Connect(self.mm_h, pyr_h)
 
-        nest.Connect(pyr_in, pyr_h, syn_spec=syn["yh"])
+        nest.Connect(pyr_x, pyr_h, syn_spec=syn["hx"])
 
-        n_runs = 5
-        sim_times = [50 for i in range(n_runs)]
+        n_runs = 10
+        sim_times = [150 for i in range(n_runs)]
         stim_amps = np.random.random(n_runs)
         SIM_TIME = sum(sim_times)
 
@@ -193,23 +196,27 @@ class SingleCompartmentDynamics(TestClass):
         self.UX = []
         self.UH = []
         self.VBH = []
-
         for T, amp in zip(sim_times, stim_amps):
-            pyr_in.set({"soma": {"I_e": amp/self.tau_x}})
+            pyr_x.set({"soma": {"I_e": amp/self.tau_x}})
             nest.Simulate(T)
             for i in range(int(T/self.delta_t)):
 
                 delta_u_x = -U_x + amp
-                U_x = U_x + (self.delta_t/self.tau_x) * delta_u_x
-
-                V_bh = U_x * weight
-
                 delta_u_h = -self.g_l_eff * U_h + V_bh * self.g_d
+                
+                U_x = U_x + (self.delta_t/self.tau_x) * delta_u_x
+                r_x = U_x
+
+                V_bh = r_x * weight
                 U_h = U_h + self.delta_t * delta_u_h
+
+
 
                 self.UX.append(U_x)
                 self.UH.append(U_h)
                 self.VBH.append(V_bh)
+
+        print(len(self.wr.events["times"]))
 
     def evaluate(self) -> bool:
         return records_match(self.VBH, self.mm_h.events["V_m.b"]) and records_match(self.UH, self.mm_h.events["V_m.s"])
@@ -218,7 +225,7 @@ class SingleCompartmentDynamics(TestClass):
 
         fig, (ax0, ax1, ax2) = plt.subplots(1, 3, sharex=True, constrained_layout=True)
 
-        ax0.plot(*zip(*read_multimeter(self.mm_in, "V_m.s")), label="NEST computed")
+        ax0.plot(*zip(*read_multimeter(self.mm_x, "V_m.s")), label="NEST computed")
         ax0.plot(self.UX, label="analytical")
 
         ax1.plot(*zip(*read_multimeter(self.mm_h, "V_m.s")), label="NEST computed")
@@ -236,6 +243,95 @@ class SingleCompartmentDynamics(TestClass):
         ax2.legend()
 
 
+
+class SingleCompartmentDynamics2(TestClass):
+    """
+    This test shows that the neuron model handles a single dendritic input exactly like the analytical
+    solution if parameters are set correctly.
+    """
+
+    def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
+
+        super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
+
+        weight = 1
+        syn["hi"].update({"weight": weight, "eta": 0})
+
+        if spiking_neurons:
+            weight_scale = 15000
+            nrn["intn"]["gamma"] = self.gamma * weight_scale
+            syn["hi"].update({"weight": weight/weight_scale})
+        
+        intn = nest.Create(self.neuron_model, 1, nrn["intn"])
+        self.mm_in = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
+        nest.Connect(self.mm_in, intn)
+
+        pyr_h = nest.Create(self.neuron_model, 1, nrn["pyr"])
+        self.mm_h = nest.Create("multimeter", 1, {'record_from': ["V_m.s", "V_m.b", "V_m.a_lat"]})
+        nest.Connect(self.mm_h, pyr_h)
+
+        nest.Connect(intn, pyr_h, syn_spec=syn["hi"])
+
+        n_runs = 5
+        sim_times = [50 for i in range(n_runs)]
+        stim_amps = np.random.random(n_runs)
+        SIM_TIME = sum(sim_times)
+
+        U_i = 0
+        U_h = 0
+        V_ah = 0
+        self.UI = []
+        self.UH = []
+        self.VAH = []
+
+        for T, amp in zip(sim_times, stim_amps):
+            intn.set({"soma": {"I_e": amp}})
+            nest.Simulate(T)
+            for i in range(int(T/self.delta_t)):
+
+                delta_u_i = -self.g_l_eff * U_i + amp
+                delta_u_h = -self.g_l_eff * U_h + V_ah * self.g_a
+                
+                U_i = U_i + self.delta_t * delta_u_i
+                V_ah = self.phi(U_i) * weight
+                U_h = U_h + self.delta_t * delta_u_h
+
+
+
+                self.UI.append(U_i)
+                self.UH.append(U_h)
+                self.VAH.append(V_ah)
+
+        print(len(self.wr.events["times"]))
+
+    def evaluate(self) -> bool:
+        return records_match(self.VAH, self.mm_h.events["V_m.a_lat"]) and records_match(self.UH, self.mm_h.events["V_m.s"])
+
+    def plot_results(self):
+
+        fig, (ax0, ax1, ax2) = plt.subplots(1, 3, sharex=True, constrained_layout=True)
+
+        ax0.plot(*zip(*read_multimeter(self.mm_in, "V_m.s")), label="NEST computed")
+        ax0.plot(self.UI, label="analytical")
+
+        ax1.plot(*zip(*read_multimeter(self.mm_h, "V_m.s")), label="NEST computed")
+        ax1.plot(self.UH, label="analytical")
+
+        ax2.plot(*zip(*read_multimeter(self.mm_h, "V_m.a_lat")), label="NEST computed")
+        ax2.plot(self.VAH, label="analytical")
+
+        ax0.set_title("UI")
+        ax1.set_title("UH")
+        ax2.set_title("VAH")
+
+        ax0.legend()
+        ax1.legend()
+        ax2.legend()
+
+
+
+
+
 class NetworkDynamics(TestClass):
 
     def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
@@ -248,9 +344,9 @@ class NetworkDynamics(TestClass):
 
         if spiking_neurons:
             weight_scale = nrn["weight_scale"]
-            nrn["input"]["gamma"] *= weight_scale
-            nrn["pyr"]["gamma"] *= weight_scale
-            nrn["intn"]["gamma"] *= weight_scale
+            nrn["input"]["gamma"] = weight_scale
+            nrn["pyr"]["gamma"] = weight_scale * nrn["pyr"]["gamma"]
+            nrn["intn"]["gamma"] = weight_scale * nrn["intn"]["gamma"]
             syn["wmin_init"] = -1/weight_scale
             syn["wmax_init"] = 1/weight_scale
         else:
@@ -321,11 +417,11 @@ class NetworkDynamics(TestClass):
             axes[0][4].plot(self.nest_UI[:, i], color=cmap(i))
             axes[1][4].plot(self.numpy_net.U_i_record[:, i], color=cmap(i))
 
-        axes[0][0].set_title("Input neuron Voltage")
-        axes[0][1].set_title("Hidden neuron Voltage")
-        axes[0][2].set_title("Hidden neuron apical Voltage")
-        axes[0][3].set_title("Output neuron Voltage")
-        axes[0][4].set_title("Interneuron Voltage")
+        axes[0][0].set_title("UX")
+        axes[0][1].set_title("UH")
+        axes[0][2].set_title("VAH")
+        axes[0][3].set_title("UY")
+        axes[0][4].set_title("UI")
         axes[0][0].set_ylabel("NEST computed")
         axes[1][0].set_ylabel("Target activation")
 

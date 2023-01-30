@@ -15,8 +15,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         classes = [eval(sys.argv[1])]
     else:
-        classes = [FilteredInputCurrent, CurrentConnection, SingleCompartmentDynamics, TargetCurrent, NetworkDynamics, PlasticityBasal, PlasticityApical, NetworkPlasticity]
-
+        classes = [FilteredInputCurrent, CurrentConnection, TargetCurrent, SingleCompartmentDynamics, SingleCompartmentDynamics2, NetworkDynamics, PlasticityBasal, PlasticityApical, NetworkPlasticity]
 
     root, imgdir, datadir = utils.setup_simulation(
         "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/tests/runs")

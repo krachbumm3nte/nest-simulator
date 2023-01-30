@@ -31,9 +31,9 @@ class TestClass(ABC):
         self.dims = sim["dims"]
         self.spiking_neurons = spiking_neurons
         self.lambda_ah = nrn["lambda_ah"]
+        self.lambda_bh = nrn["lambda_bh"]
         self.lambda_out = nrn["lambda_out"]
         self.tau_delta = syn["tau_Delta"]
-
 
 
 

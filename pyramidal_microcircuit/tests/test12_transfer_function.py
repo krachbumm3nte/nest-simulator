@@ -28,7 +28,7 @@ U_x_record = []
 V_bh_record = []
 
 sim_time = 500
-amps = np.random.random(5) * 2 - 1
+amps = np.random.random(5)
 start, stop, N = 0, 10, 11
 spike_multipliers = np.logspace(start, stop, N)
 exponents = np.linspace(start, stop, N)
@@ -36,6 +36,11 @@ exponents = np.linspace(start, stop, N)
 V_dend = np.zeros((len(amps) * sim_time, len(spike_multipliers)))
 total_spikes = np.zeros(len(spike_multipliers), dtype=int)
 
+gamma = 3
+
+
+def phi(x):
+    return gamma * np.log(1 + np.exp(beta * (x - theta)))
 
 for a, amp in enumerate(amps):
     for t_it in range(sim_time):

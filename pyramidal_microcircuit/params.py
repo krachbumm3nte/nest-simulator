@@ -32,6 +32,8 @@ g_l = 0.1  # somatic leakage conductance
 g_a = 0.8  # apical compartment coupling conductance
 g_d = 1  # basal compartment coupling conductance
 lambda_ah = g_a / (g_d + g_a + g_l)  # Useful constant for scaling learning rates
+lambda_bh = g_d / (g_d + g_a + g_l)  # Useful constant for scaling learning rates
+
 lambda_out = g_d / (g_d + g_l)
 g_l_eff = g_l + g_d + g_a
 
@@ -40,6 +42,7 @@ g_l_eff = g_l + g_d + g_a
 # gamma = 1
 # beta = 1
 # theta = 0
+
 gamma = 0.1
 beta = 1
 theta = 3
@@ -55,11 +58,12 @@ neuron_params = {
     "g_s": 0.8,  # output neuron nudging conductance
     "lambda_out": lambda_out,
     "lambda_ah": lambda_ah,
+    "lambda_bh": lambda_bh,
     'gamma': gamma,
     'beta': beta,
     'theta': theta,
     "g_l_eff": g_l_eff,
-    "weight_scale": 150
+    "weight_scale": 25000
 }
 
 
@@ -139,10 +143,10 @@ syn_params = {
 # connection specific learning rates
 if sim_params["plasticity"]:
     # from the mathematica script
-    eta_yh = 0.01
-    eta_hx = eta_yh / lambda_ah
-    eta_ih = 0.01 / lambda_ah
-    eta_hi = 5 * eta_ih
+    # eta_yh = 0.01
+    # eta_hx = eta_yh / lambda_ah
+    # eta_ih = 0.01 / lambda_ah
+    # eta_hi = 5 * eta_ih
     
     # from Sacramento 2018, Fig S1
     # eta_yh = 0
@@ -151,10 +155,10 @@ if sim_params["plasticity"]:
     # eta_hx = 0
 
     # from Sacramento 2018, Fig 2
-    # eta_yh = 0.0005
-    # eta_ih = 0.0011875  
-    # eta_hi = 0.0005
-    # eta_hx = 0.0011875
+    eta_yh = 0.0005
+    eta_ih = 0.0011875  
+    eta_hi = 0.0005
+    eta_hx = 0.0011875
 else:
     eta_yh = 0
     eta_hx = 0
