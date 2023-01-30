@@ -16,16 +16,11 @@ imgdir, datadir = setup_simulation()
 sim_params["record_interval"] = 0.1
 sim_params["noise"] = True
 sim_params["dims"] = [1, 1, 1]
-sim_params["teacher"] = True
+sim_params["dims_teacher"] = [1, 1, 1]
+sim_params["teacher"] = False
 
 setup_nest(sim_params, datadir)
 wr = setup_models(True, True)
-
-# syn_params["hi"]["eta"] *= 0
-# syn_params["ih"]["eta"] *= 0
-# syn_params["yh"]["eta"] *= 0
-# syn_params["hx"]["eta"] *= 0
-
 
 math_net = NumpyNetwork(sim_params, neuron_params, syn_params)
 
@@ -75,14 +70,14 @@ nest.Connect(nest_net.mm_i, nest_net.intn_pops[0])
 nest_net.mm_y = nest.Create('multimeter', 1, {'record_to': 'memory', 'record_from': ["V_m.s", "V_m.b"]})
 nest.Connect(nest_net.mm_y, nest_net.pyr_pops[-1])
 
-math_net.wyh_trgt = nest_net.wyh_trgt
-math_net.whx_trgt = nest_net.whx_trgt
+# math_net.wyh_trgt = nest_net.wyh_trgt
+# math_net.whx_trgt = nest_net.whx_trgt
 
 cmap = plt.cm.get_cmap('hsv', 7)
 styles = ["solid", "dotted", "dashdot", "dashed"]
 
 amps = [0.5, 1, 0]
-n_runs = 25
+n_runs = 10
 SIM_TIME = 100
 SIM_TIME_TOTAL = n_runs * SIM_TIME
 

@@ -75,3 +75,4 @@ cscope.out
 *.orig
 
 pyramidal_microcircuit/runs/
+pyramidal_microcircuit/tests/runs/

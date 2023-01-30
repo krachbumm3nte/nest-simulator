@@ -10,6 +10,7 @@ from scipy.ndimage import uniform_filter1d
 import torch
 from networks.network import Network
 import json
+from copy import deepcopy
 
 
 def regroup_records(records, group_key):
@@ -62,16 +63,16 @@ def matrix_from_spikes(data, conn, t_max, delta_t):
     return weight_df.values
 
 
-def setup_simulation():
+def setup_simulation(root="/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/runs"):
     # TODO: remove personal path!
-    root = f"/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/runs/{datetime.now().strftime('%Y_%m_%d-%H_%M_%S')}"
+    root = os.path.join(root, datetime.now().strftime('%Y_%m_%d-%H_%M_%S'))
 
     imgdir = os.path.join(root, "plots")
     datadir = os.path.join(root, "data")
-    for p in [root, imgdir, datadir]:
-        os.mkdir(p)
+    for dir in [root, imgdir, datadir]:
+        os.mkdir(dir)
 
-    return imgdir, datadir
+    return root, imgdir, datadir
 
 
 def setup_nest(sim_params, datadir=os.getcwd()):
@@ -80,12 +81,6 @@ def setup_nest(sim_params, datadir=os.getcwd()):
     nest.SetKernelStatus({"local_num_threads": sim_params["threads"]})
     nest.SetDefaults("multimeter", {'interval': sim_params["record_interval"]})
     nest.SetKernelStatus({"data_path": datadir})
-
-    # if "sionlib" in nest.recording_backends:
-    #     print("sionlib was found and will be used for recording simulations!")
-    #     sim_params["recording_backend"] = "sionlib"
-    # else:
-    sim_params["recording_backend"] = "ascii"
 
 
 def setup_torch(use_cuda=True):
@@ -107,7 +102,7 @@ def setup_torch(use_cuda=True):
 
 def read_data(device_id, path, it_min=None, it_max=None):
     device_pattern = re.compile(fr"/it(?P<iteration>\d+)_(.+)-{device_id}-(.+)dat")
-    
+
     files = glob.glob(path + "/*")
 
     frames = []
@@ -135,12 +130,81 @@ def rolling_avg(input, size):
 def zeros(shape):
     return np.zeros(shape, dtype=np.float32)
 
+
 def store_synaptic_weights(net: Network, dirname):
     if len(net.sim["dims"]) != 3:
         raise ValueError("I'm too lazy to generalize this!")
 
     weights = net.get_weight_dict()
 
+    for k,v in weights.items():
+        weights[k] = v.tolist()
+
     with open(os.path.join(dirname, "weights.json"), "w") as f:
         json.dump(weights, f)
 
+
+def setup_models(spiking, nrn, sim, syn, record_weights=False):
+    if not spiking:
+        nrn["pyr"]["basal"]["g_L"] = 1
+        nrn["pyr"]["apical_lat"]["g_L"] = 1
+        nrn["intn"]["basal"]["g_L"] = 1
+        nrn["intn"]["apical_lat"]["g_L"] = 1
+        nrn["input"]["basal"]["g_L"] = 1
+        nrn["input"]["apical_lat"]["g_L"] = 1
+
+    neuron_model = 'pp_cond_exp_mc_pyr' if spiking else 'rate_neuron_pyr'
+    nrn["model"] = neuron_model
+    syn_model = 'pyr_synapse' if spiking else 'pyr_synapse_rate'
+    static_syn_model = 'static_synapse'
+    wr = None
+    if record_weights:
+        wr = nest.Create("weight_recorder")
+        nest.CopyModel(syn_model, 'record_syn', {"weight_recorder": wr})
+        syn_model = 'record_syn'
+        nest.CopyModel(static_syn_model, 'static_record_syn', {"weight_recorder": wr})
+        static_syn_model = 'static_record_syn'
+
+    syn["synapse_model"] = syn_model
+
+    syn_static = {
+        "synapse_model": static_syn_model,
+        "delay": sim["delta_t"]
+    }
+
+    for syn_name in ["hx", "yh", "hy", "ih", "hi"]:
+        if syn[syn_name]["eta"] > 0:
+            syn[syn_name].update({'synapse_model': syn_model})
+        else:
+            # if learning rate is zero, we can save a lot of compute time by utilizing the static
+            # synapse type.
+            syn[syn_name] = deepcopy(syn_static)
+
+    pyr_comps = nest.GetDefaults(neuron_model)["receptor_types"]
+    basal_dendrite = pyr_comps['basal']
+    apical_dendrite = pyr_comps['apical_lat']
+    syn["hx"]['receptor_type'] = basal_dendrite
+    syn["yh"]['receptor_type'] = basal_dendrite
+    syn["ih"]['receptor_type'] = basal_dendrite
+    syn["hy"]['receptor_type'] = apical_dendrite
+    syn["hi"]['receptor_type'] = apical_dendrite
+
+    return wr
+
+def read_wr(grouped_df, source, target, sim_time, delta_t):
+
+    source_id = sorted(source.global_id)
+    target_id = sorted(target.global_id)
+
+    weight_array = np.zeros((int(sim_time/delta_t), len(target_id), len(source_id)))
+
+    for i, id_source in enumerate(source_id):
+        for j, id_target in enumerate(target_id):
+            group = grouped_df.get_group((id_source, id_target))
+            group = group.drop_duplicates("times")
+            group = group.set_index("times")
+            group = group.reindex(np.arange(0, sim_time, delta_t))
+            group = group.fillna(method="backfill").fillna(method="ffill")
+            weight_array[:, j, i] = group.weights.values
+
+    return weight_array

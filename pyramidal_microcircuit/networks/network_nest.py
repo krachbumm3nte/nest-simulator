@@ -36,8 +36,7 @@ class NestNetwork(Network):
             if layer > 1:
                 # Connect current to previous layer pyramidal populations
                 synapse_hy = syns["hy"]
-                synapse_hy['weight'] = self.gen_weights(
-                    self.dims[layer], self.dims[layer-1])  # / (syns["wmax_init"] * nrn["gamma"])
+                synapse_hy['weight'] = self.gen_weights(self.dims[layer], self.dims[layer-1])
                 # TODO: perhaps we can get away with setting weights within the dict directly instead of creating variables here?
                 nest.Connect(pyr_pop, pyr_pop_prev, syn_spec=synapse_hy)
 
@@ -60,11 +59,11 @@ class NestNetwork(Network):
                 nest.Connect(intn_pop, pyr_pop_prev, syn_spec=synapse_hi)
 
         self.pyr_pops[-1].set({"apical_lat": {"g": 0}})
-
+        compartments = nest.GetDefaults(nrn["model"])["receptor_types"]
+        
         if self.sim["noise"]:
             # Inject Gaussian white noise into neuron somata.
             self.noise = nest.Create("noise_generator", 1, {"mean": 0., "std": self.sigma_noise})
-            compartments = nest.GetDefaults(nrn["model"])["receptor_types"]
             populations = self.pyr_pops[1:] + self.intn_pops  # Everything except input neurons receives noise.
             for pop in populations:
                 nest.Connect(self.noise, pop, syn_spec={"receptor_type": compartments["soma_curr"]})
@@ -73,9 +72,10 @@ class NestNetwork(Network):
         # nest.Connect(self.mm_x, self.pyr_pops[0])
         self.mm = nest.Create(
             'multimeter', 1, {'record_to': self.sim["recording_backend"], 'record_from': ["V_m.a_lat", "V_m.s"]})
+        nest.Connect(self.mm, self.pyr_pops[0])
         nest.Connect(self.mm, self.pyr_pops[1])
-        nest.Connect(self.mm, self.intn_pops[0])
         nest.Connect(self.mm, self.pyr_pops[2])
+        nest.Connect(self.mm, self.intn_pops[0])
 
         # step generators for enabling batch training 
         self.sgx = nest.Create("step_current_generator")
@@ -100,6 +100,7 @@ class NestNetwork(Network):
         Arguments:
             input_currents -- Iterable of length equal to the input dimension.
         """
+        self.input_currents = input_currents
         for i in range(self.dims[0]):
             self.pyr_pops[0][i].set({"soma": {"I_e": input_currents[i] / self.nrn["tau_x"]}})
 
@@ -108,7 +109,7 @@ class NestNetwork(Network):
         self.set_input(input_currents)
 
         if self.teacher:
-            self.calculate_target(input_currents)
+            self.y = self.calculate_target(input_currents)
             self.target_curr = self.phi_inverse(self.y)
 
             if not isinstance(self.target_curr, np.ndarray):
@@ -117,40 +118,44 @@ class NestNetwork(Network):
                 self.pyr_pops[-1].set({"soma": {"I_e": self.nrn["g_s"] * self.target_curr[i]}})
 
         self.simulate(T)
+        self.calculate_loss()
 
-        if self.teacher:
-            output_pred = [e["V_m"] for e in self.pyr_pops[-1].get("soma")]
-            self.output_loss.append(mse(self.y, output_pred))
 
     def train_batches(self, T, batchsize):
 
-        self.input_currents = np.random.random((batchsize, self.dims[0]))
-        self.target_currents = np.zeros((batchsize, self.dims[-1]))
+        input_currents = np.random.random((batchsize, self.dims[0]))
+        target_currents = np.zeros((batchsize, self.dims[-1]))
 
         t_now = nest.GetKernelStatus("biological_time")
         times = np.arange(t_now + self.sim["delta_t"], t_now + T * batchsize, T)
 
 
-
+        target_currents = np.zeros((batchsize, self.dims[-1]))
         for batch in range(batchsize):
-            self.calculate_target(self.input_currents[batch])
-            self.target_currents[batch,:] = self.phi_inverse(self.y)
+            targets = self.calculate_target(input_currents[batch])
+            target_currents[batch,:] = self.phi_inverse(targets)
 
         for i, step_generator in enumerate(self.sgx):
-            step_generator.set(amplitude_values = self.input_currents[:,i]/self.nrn["tau_x"], amplitude_times = times)
+            step_generator.set(amplitude_values = input_currents[:,i]/self.nrn["tau_x"], amplitude_times = times)
         for i, step_generator in enumerate(self.sgy):
-            step_generator.set(amplitude_values = self.target_currents[:,i], amplitude_times = times)
+            step_generator.set(amplitude_values = target_currents[:,i], amplitude_times = times)
 
+        self.input_currents = input_currents[-1,:]
+        self.y = target_currents[-1,:]
         self.simulate(T*batchsize)
+        self.calculate_loss()
 
+    def calculate_loss(self):
+        if not self.teacher:
+            return   
         WHX = pd.DataFrame.from_dict(nest.GetConnections(source=self.pyr_pops[0], target=self.pyr_pops[1]).get())
         WYH = pd.DataFrame.from_dict(nest.GetConnections(source=self.pyr_pops[1], target=self.pyr_pops[2]).get())
         WHX = WHX.sort_values(["target", "source"]).weight.values.reshape((self.dims[1], self.dims[0]))
         WYH = WYH.sort_values(["target", "source"]).weight.values.reshape((self.dims[2], self.dims[1]))
 
         # calculte output loss for the last example of the batch
-        y_pred = self.phi(self.nrn["lambda_out"] * np.matmul(WYH, self.phi(self.nrn["lambda_ah"] * np.matmul(WHX,  self.input_currents[-1,:]))))
-        self.output_loss.append(mse(y_pred, np.asarray(self.y).flatten()))
+        y_pred = self.phi(self.nrn["lambda_out"] * np.matmul(WYH, self.phi(self.nrn["lambda_ah"] * np.matmul(WHX,  self.input_currents))))
+        self.output_loss.append(mse(y_pred, self.y))
 
     def set_target(self, target_currents):
         """Inject a constant current into all neurons in the output layer.
@@ -161,7 +166,7 @@ class NestNetwork(Network):
         Arguments:
             input_currents -- Iterable of length equal to the output dimension.
         """
-        # TODO: obsolete?
+        self.target_curr = target_currents
         for i in range(self.dims[-1]):
             self.pyr_pops[-1][i].set({"soma": {"I_e": self.phi_inverse(target_currents[i]) * self.nrn["g_s"]}})
 
@@ -178,10 +183,10 @@ class NestNetwork(Network):
         WIH = pd.DataFrame.from_dict(nest.GetConnections(source=hidden, target=interneurons).get())
         WHX = pd.DataFrame.from_dict(nest.GetConnections(source=in_, target=hidden).get())
 
-        weights["hy"] = WHY.sort_values(["target", "source"]).weight.values.reshape((-1, len(out))).tolist()
-        weights["hi"] = WHI.sort_values(["target", "source"]).weight.values.reshape((-1, len(interneurons))).tolist()
-        weights["yh"] = WYH.sort_values(["target", "source"]).weight.values.reshape((-1, len(hidden))).tolist()
-        weights["ih"] = WIH.sort_values(["target", "source"]).weight.values.reshape((-1, len(hidden))).tolist()
-        weights["hx"] = WHX.sort_values(["target", "source"]).weight.values.reshape((-1, len(in_))).tolist()
+        weights["hy"] = WHY.sort_values(["target", "source"]).weight.values.reshape((-1, len(out)))
+        weights["hi"] = WHI.sort_values(["target", "source"]).weight.values.reshape((-1, len(interneurons)))
+        weights["yh"] = WYH.sort_values(["target", "source"]).weight.values.reshape((-1, len(hidden)))
+        weights["ih"] = WIH.sort_values(["target", "source"]).weight.values.reshape((-1, len(hidden)))
+        weights["hx"] = WHX.sort_values(["target", "source"]).weight.values.reshape((-1, len(in_)))
 
         return weights

@@ -10,29 +10,26 @@ import utils
 import os
 import json
 
-imgdir, datadir = utils.setup_simulation()
+root, imgdir, datadir = utils.setup_simulation()
 utils.setup_nest(sim_params, datadir)
 
-spiking = False
+spiking = True
 
-setup_models(spiking)
-
+utils.setup_models(spiking, neuron_params, sim_params, syn_params, False)
 
 if spiking:
-    weight_scale = 100
-    syn_params["hi"]["eta"] /= weight_scale**3 * 4
-    syn_params["ih"]["eta"] /= weight_scale**3 * 330
-    syn_params["hx"]["eta"] /= weight_scale**3 * 330
-    syn_params["yh"]["eta"] /= weight_scale**3 * 330
+    weight_scale = 1
+    neuron_params["weight_scale"] = weight_scale
+    neuron_params["input"]["gamma"] *= weight_scale
+    neuron_params["pyr"]["gamma"] *= weight_scale
+    neuron_params["intn"]["gamma"] *= weight_scale
+    neuron_params["wmin_init"] = -1/weight_scale
+    neuron_params["wmax_init"] = 1/weight_scale
+    for syn_name in ["hx", "yh", "hy", "hi", "ih"]:
+        if "eta" in syn_params[syn_name]:
+            syn_params[syn_name]["eta"] /= weight_scale**2 * 30
 
-    neuron_params["gamma"] = weight_scale
-    neuron_params["pyr"]["gamma"] = weight_scale
-    neuron_params["intn"]["gamma"] = weight_scale
-    neuron_params["input"]["gamma"] = weight_scale
-    syn_params["wmin_init"] = -1/weight_scale
-    syn_params["wmax_init"] = 1/weight_scale
-
-    sim_params["noise"] = False
+sim_params["noise"] = False
 
 net = NestNetwork(sim_params, neuron_params, syn_params)
 

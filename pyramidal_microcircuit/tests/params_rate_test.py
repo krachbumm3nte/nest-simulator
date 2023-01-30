@@ -89,6 +89,7 @@ intn_params['apical_lat']['g'] = 0.0
 # transmitted to the hidden layer without the nonlinearity phi.
 input_params = deepcopy(pyr_params)
 input_params["soma"]["g"] = tau_input
+input_params["apical_lat"]["g"] = 0
 input_params["use_phi"] = False
 input_params['basal']['g'] = 0
 input_params['tau_m'] = tau_input

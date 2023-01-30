@@ -192,7 +192,6 @@ private:
   double eta_;
   double Wmin_;
   double Wmax_;
-  size_t counter;
 };
 
 template < typename targetidentifierT >
@@ -252,6 +251,9 @@ pyr_synapse_rate< targetidentifierT >::send( Event& e, thread t, const CommonSyn
     double V_W_star = weight_ * target_pyr->P_.pyr_params.phi(U_sender);
     dend_error = (target_pyr->P_.pyr_params.phi( U_target ) - target_pyr->P_.pyr_params.phi( V_W_star ));
     rport -= 1; // send all top-down signals to the apical compartment by changing rport
+    if (eta_ > 0) {
+      std::cout << "plastic top-down synapse!" << std::endl;
+    }
   }
   delta_tilde_w = -tilde_w + dend_error * rate_sender;
   // std::cout << "a: " << rport << ", " << tilde_w << ", " << V_dend << ", " << delta_tilde_w << std::endl;
@@ -273,7 +275,6 @@ pyr_synapse_rate< targetidentifierT >::send( Event& e, thread t, const CommonSyn
 
   // std::cout << "syn: " << rate_sender << ", " << weight_ << ", " << tilde_w << ", " << delta_tilde_w << ", " <<
   // dend_error << ", " << V_W_star << std::endl;
-  counter = 0;
   //if ( sender->get_node_id() == 3 and target->get_node_id() == 5 )
   //{
   //  std::cout << "syn: " << weight_ << ", " << tilde_w << ", " << delta_tilde_w << std::endl;
@@ -296,7 +297,6 @@ pyr_synapse_rate< targetidentifierT >::pyr_synapse_rate()
   , eta_( 0.07 )
   , Wmin_( -1.0 )
   , Wmax_( 1.0 )
-  , counter( 0 )
 {
 }
 

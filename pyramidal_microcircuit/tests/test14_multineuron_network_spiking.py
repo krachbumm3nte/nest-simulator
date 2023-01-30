@@ -14,12 +14,13 @@ from networks.network_numpy import NumpyNetwork  # nopep8
 
 dims = [30, 20, 10]
 dims = [4, 3, 2]
-imgdir, datadir = setup_simulation()
+root, imgdir, datadir = setup_simulation()
 sim_params["record_interval"] = 50
 sim_params["noise"] = True
 sim_params["dims"] = dims
 sim_params["delta_t"] = delta_t
 sim_params["teacher"] = True
+sim_params["dims_teacher"] = dims
 
 setup_nest(sim_params, datadir)
 wr = setup_models(True, True)

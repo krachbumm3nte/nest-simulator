@@ -27,7 +27,7 @@ class NumpyNetwork(Network):
         g_si = nrn["g_si"]
         tau_x = nrn["tau_x"]
         noise_factor = sim["noise_factor"] if sim["noise"] else 0
-        tau_delta = syns["ih"]["tau_Delta"]
+        tau_delta = syns["tau_Delta"]
         delta_t = sim["delta_t"]
 
         leakage = g_l + g_a + g_d
@@ -74,7 +74,7 @@ class NumpyNetwork(Network):
 
         for name, p in conn_setup.items():
             self.conns[name] = {
-                "eta": syns[name]["eta"],
+                "eta": syns[name]["eta"] if "eta" in syns[name] else 0,
                 "w": self.gen_weights(p["in"], p["out"], True) * p["init_scale"],
                 "dt_w": np.asmatrix(np.zeros((p["out"], p["in"]))),
                 "t_w": np.asmatrix(np.zeros((p["out"], p["in"]))),
@@ -108,21 +108,15 @@ class NumpyNetwork(Network):
         return np.asmatrix(np.zeros(self.dims[2]))
 
     def train_static(self):
-        return np.asmatrix(np.full(self.dims[2], self.target_amp))
+        return np.asmatrix(self.phi_inverse(self.target_currents))
 
     def simulate(self, train_function):
-
-        start = time()
-        print("timing...")
 
         delta_u_x = -self.U_x + self.I_x
         delta_u_h = -leakage * self.U_h + g_d * self.V_bh + g_a * self.V_ah
         delta_u_y = -leakage * self.U_y + g_d * self.V_by + g_s * self.y
         delta_u_i = -leakage * self.U_i + g_d * self.V_bi + g_si * self.U_y
 
-        stop = time()
-        print(stop - start)
-        start = time()
 
         self.conns["hx"]["dt_w"] = -self.conns["hx"]["t_w"] + \
             np.outer(self.r_h - self.phi(self.V_bh * lambda_ah), self.U_x)
@@ -137,11 +131,8 @@ class NumpyNetwork(Network):
         self.conns["ih"]["dt_w"] = -self.conns["ih"]["t_w"] + \
             np.outer(self.r_i - self.phi(self.V_bi * lambda_out), self.r_h)
 
-        self.conns["hi"]["dt_w"] = np.subtract(np.outer(-self.V_ah, self.r_i), self.conns["hi"]["t_w"])
+        self.conns["hi"]["dt_w"] = - self.conns["hi"]["t_w"] + np.outer(-self.V_ah, self.r_i)
 
-        stop = time()
-        print(stop - start)
-        start = time()
 
         self.U_x = self.U_x + (delta_t/tau_x) * delta_u_x
 
@@ -160,10 +151,6 @@ class NumpyNetwork(Network):
         self.U_i = self.U_i + delta_t * delta_u_i + noise_factor * np.random.standard_normal(self.dims[2])
         self.r_i = self.phi(self.U_i)
 
-        stop = time()
-        print(stop - start)
-        start = time()
-
         store_state = self.record_voltages and self.iteration % int(self.sim["record_interval"]/delta_t) == 0
 
         for name, d in self.conns.items():
@@ -172,9 +159,6 @@ class NumpyNetwork(Network):
             if store_state:
                 d["record"] = np.append(d["record"], np.expand_dims(d["w"], axis=0), axis=0)
 
-        stop = time()
-        print(f"{stop - start}")
-        start = time()
         if store_state:
             self.U_x_record = np.append(self.U_x_record, self.U_x, axis=0)
             self.U_h_record = np.append(self.U_h_record, self.U_h, axis=0)
@@ -190,10 +174,6 @@ class NumpyNetwork(Network):
 
         self.iteration += 1
 
-        stop = time()
-        print(stop - start)
-        start = time()
-        print("done")
 
     def set_input(self, input_currents):
         """Inject a constant current into all neurons in the input layer.
@@ -209,3 +189,5 @@ class NumpyNetwork(Network):
             weights[k] = v["w"]
         return weights
 
+    def set_target(self, target_currents):
+        self.target_currents = target_currents

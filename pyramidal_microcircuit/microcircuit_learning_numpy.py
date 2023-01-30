@@ -9,7 +9,7 @@ import utils as utils
 import os
 
 
-imgdir, datadir = utils.setup_simulation()
+root, imgdir, datadir = utils.setup_simulation()
 utils.setup_nest(sim_params, datadir)
 setup_models(False, False)
 

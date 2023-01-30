@@ -228,6 +228,7 @@ urbanczik_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSy
   double const C_m = target->get_C_m( comp );
   double const tau_s = weight_ > 0.0 ? target->get_tau_syn_ex( comp ) : target->get_tau_syn_in( comp );
   double dPI_exp_integral = 0.0;
+  std::cout << target->get_node_id() << ": " << t_lastspike_ << ", " << start->t_ << " to " << finish->t_ << std::endl;
 
   while ( start != finish )
   {

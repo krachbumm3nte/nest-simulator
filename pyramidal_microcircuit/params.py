@@ -8,7 +8,7 @@ sigma = 0.3  # standard deviation for membrane potential noise
 
 sim_params = {
     "delta_t": delta_t,
-    "threads": 8,
+    "threads": 10,
     "record_interval": 75,  # interval for storing membrane potentials
     "self_predicting_ff": False,  # initialize feedforward weights to self-predicting state
     "self_predicting_fb": False,  # initialize feedback weights to self-predicting state
@@ -18,9 +18,9 @@ sim_params = {
     "noise": True,  # apply noise to membrane potentials
     "sigma": sigma,
     "noise_factor": np.sqrt(delta_t) * sigma,  # constant noise factor for numpy simulations
-    "dims": [10, 30, 4],  # network dimensions, i.e. neurons per layer
+    "dims": [3, 2, 2],  # network dimensions, i.e. neurons per layer
     "teacher": True,  # If True, teaching current is injected into output layer
-    "dims_teacher": [10, 5, 4], # teacher network dimensions.
+    "dims_teacher": [3, 2, 2], # teacher network dimensions.
     "k_yh": 10, # hidden to output teacher weight scaling factor
     "k_hx": 2, # input to hidden teacher weight scaling factor
     "recording_backend": "ascii",  # Backend for NEST multimeter recordings
@@ -33,6 +33,8 @@ g_a = 0.8  # apical compartment coupling conductance
 g_d = 1  # basal compartment coupling conductance
 lambda_ah = g_a / (g_d + g_a + g_l)  # Useful constant for scaling learning rates
 lambda_out = g_d / (g_d + g_l)
+g_l_eff = g_l + g_d + g_a
+
 
 # parameters of the activation function phi()
 # gamma = 1
@@ -56,6 +58,8 @@ neuron_params = {
     'gamma': gamma,
     'beta': beta,
     'theta': theta,
+    "g_l_eff": g_l_eff,
+    "weight_scale": 150
 }
 
 
@@ -85,7 +89,7 @@ pyr_params['apical_lat']['g'] = g_a
 pyr_params['soma']['g_L'] = g_l
 # misappropriation of somatic conductance. this is the effective somatic leakage conductance now!
 # TODO: create a separate parameter in the neuron model for this
-pyr_params['soma']['g'] = g_l + g_d + neuron_params["g_si"]
+pyr_params['soma']['g'] = g_l_eff
 
 
 # Interneurons are effectively pyramidal neurons with a silenced apical compartment.
@@ -109,21 +113,48 @@ neuron_params["pyr"] = pyr_params
 neuron_params["input"] = input_params
 neuron_params["intn"] = intn_params
 
+
+
+
+
+
+
+
+
+
+# Dicts derived from this can be passed directly to nest.Connect() as synapse parameters
+tau_delta = 30
+syn_params = {
+    'synapse_model': None,  # Synapse model (for NEST simulations only)
+    'tau_Delta': tau_delta,  # Synaptic time constant
+    'Wmin': -10,  # minimum weight
+    'Wmax': 10,  # maximum weight
+    'delay': sim_params['delta_t'],  # synaptic delay
+    'wmin_init': -0.1,  # synaptic weight initialization min
+    'wmax_init': 0.1,  # synaptic weight initialization max
+    'tau_Delta': tau_delta
+}
+
+
 # connection specific learning rates
-# TODO: clean this up!
 if sim_params["plasticity"]:
-    # eta_yh = 0.01
-    # eta_hx = eta_yh / lambda_ah
-    # eta_ih = 0.01 / lambda_ah
-    # eta_hi = 5 * eta_ih
+    # from the mathematica script
+    eta_yh = 0.01
+    eta_hx = eta_yh / lambda_ah
+    eta_ih = 0.01 / lambda_ah
+    eta_hi = 5 * eta_ih
+    
+    # from Sacramento 2018, Fig S1
     # eta_yh = 0
-    # eta_ih = 0.0002375  # from Sacramento 2018, Fig S1
+    # eta_ih = 0.0002375 
     # eta_hi = 0.0005
     # eta_hx = 0
-    eta_yh = 0.0005
-    eta_ih = 0.0011875  # from Sacramento 2018, Fig 2
-    eta_hi = 0.0005
-    eta_hx = 0.0011875
+
+    # from Sacramento 2018, Fig 2
+    # eta_yh = 0.0005
+    # eta_ih = 0.0011875  
+    # eta_hi = 0.0005
+    # eta_hx = 0.0011875
 else:
     eta_yh = 0
     eta_hx = 0
@@ -131,64 +162,13 @@ else:
     eta_ih = 0
 eta_hy = 0
 
-
-# Dicts derived from this can be passed directly to nest.Connect() as synapse parameters
-syn_defaults = {
-    'synapse_model': None,  # Synapse model (for NEST simulations only)
-    'tau_Delta': 30,  # Synaptic time constant
-    'Wmin': -10,  # minimum weight
-    'Wmax': 10,  # maximum weight
-    'eta': 0.0,  # learning rate
-    'delay': sim_params['delta_t'],  # synaptic delay
-}
-
-syn_params = {}
-syn_params.update({
-    'wmin_init': -0.1,  # synaptic weight initialization min
-    'wmax_init': 0.1,  # synaptic weight initialization max
-})
-
-
-def setup_models(spiking, record_weights=False):
-    if not spiking:
-        neuron_params["pyr"]["basal"]["g_L"] = 1
-        neuron_params["pyr"]["apical_lat"]["g_L"] = 1
-        neuron_params["intn"]["basal"]["g_L"] = 1
-        neuron_params["intn"]["apical_lat"]["g_L"] = 1
-        neuron_params["input"]["basal"]["g_L"] = 1
-        neuron_params["input"]["apical_lat"]["g_L"] = 1
-
-    neuron_model = 'pp_cond_exp_mc_pyr' if spiking else 'rate_neuron_pyr'
-    neuron_params["model"] = neuron_model
-    syn_model = 'pyr_synapse' if spiking else 'pyr_synapse_rate'
-    wr = None
-    if record_weights:
-        wr = nest.Create("weight_recorder")
-        nest.CopyModel(syn_model, 'record_syn', {"weight_recorder": wr})
-        syn_model = 'record_syn'
-
-    syn_defaults["synapse_model"] = syn_model
-
-    syn_static = {
-        "synapse_model": "static_synapse",
-        "delay": sim_params["delta_t"]
+for syn_name, eta in zip(["hx", "yh", "hy", "ih", "hi"], [eta_hx, eta_yh, eta_hy, eta_ih, eta_hi]):
+    syn_params[syn_name] = {
+        'tau_Delta': syn_params["tau_Delta"],
+        'Wmin': -10,  # minimum weight
+        'Wmax': 10,  # maximum weight
+        'eta': eta,
+        'delay': 0.1
     }
 
 
-    for syn_name, eta in zip(["hx", "yh", "hy", "ih", "hi"], [eta_hx, eta_yh, eta_hy, eta_ih, eta_hi]):
-        if eta > 0:
-            syn_params[syn_name] = deepcopy(syn_defaults)
-            syn_params[syn_name]["eta"] = eta
-        else:
-            syn_params[syn_name] = deepcopy(syn_static)
-
-    pyr_comps = nest.GetDefaults(neuron_model)["receptor_types"]
-    basal_dendrite = pyr_comps['basal']
-    apical_dendrite = pyr_comps['apical_lat']
-    syn_params["hx"]['receptor_type'] = basal_dendrite
-    syn_params["yh"]['receptor_type'] = basal_dendrite
-    syn_params["ih"]['receptor_type'] = basal_dendrite
-    syn_params["hy"]['receptor_type'] = apical_dendrite
-    syn_params["hi"]['receptor_type'] = apical_dendrite
-
-    return wr

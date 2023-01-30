@@ -99,37 +99,45 @@ nest::PyrArchivingNode< pyr_parameters >::get_urbanczik_history( double t1,
 template < class pyr_parameters >
 void
 nest::PyrArchivingNode< pyr_parameters >::write_urbanczik_history( Time const& t_sp,
-  double V_W, 
+  double V_W,
   double V_SOM,
   int comp )
 {
-  const double t_ms = t_sp.get_ms();
-
-  double comp_deviation = 0.0;
-
-  if (comp == 0) {
-    std::cout << "pyr history written for somatic compartment";
-  } else if (comp == 1) {
-    // basal compartment
-    const double g_b = pyr_params->g_conn[ pyr_parameters::BASAL ];
-    const double g_a = pyr_params->g_conn[ pyr_parameters::APICAL_LAT ];
-    const double g_L = pyr_params->g_L[ pyr_parameters::SOMA ];
-
-    double V_W_star = ( g_b * V_W ) / ( g_L + g_b + g_a);
-    // TODO: find out what would happen if we actually multiplied by delta_t here.
-    // comp_deviation =  (pyr_params->phi( V_SOM ) - pyr_params->phi( V_W_star )) * Time::get_resolution().get_ms();
-    comp_deviation =  (pyr_params->phi( V_SOM ) - pyr_params->phi( V_W_star ));
-  } else if (comp == 2) {
-    // apical compartment for lateral interneuron-pyr connections
-    // TODO: is E_L a legitimate placeholder vor v_rest?
-    comp_deviation = - V_W;
-  } else if (comp == 3) {
-    // apical compartment for top-down pyr-pyr connections
-    comp_deviation = pyr_params->phi(V_SOM);
-  }
-
   if ( n_incoming_ )
   {
+    const double t_ms = t_sp.get_ms();
+
+    double comp_deviation = 0.0;
+
+    if ( comp == 0 )
+    {
+      std::cout << "pyr history written for somatic compartment";
+    }
+    else if ( comp == 1 )
+    {
+      // basal compartment
+      const double g_b = pyr_params->g_conn[ pyr_parameters::BASAL ];
+      const double g_a = pyr_params->g_conn[ pyr_parameters::APICAL_LAT ];
+      const double g_L = pyr_params->g_L[ pyr_parameters::SOMA ];
+
+      double V_W_star = ( g_b * V_W ) / ( g_L + g_b + g_a );
+      // TODO: find out what would happen if we actually multiplied by delta_t here.
+      // comp_deviation =  (pyr_params->phi( V_SOM ) - pyr_params->phi( V_W_star )) * Time::get_resolution().get_ms();
+      comp_deviation = ( pyr_params->phi( V_SOM ) - pyr_params->phi( V_W_star ) );
+    }
+    else if ( comp == 2 )
+    {
+      // apical compartment for lateral interneuron-pyr connections
+      // TODO: is E_L a legitimate placeholder vor v_rest?
+      comp_deviation = -V_W;
+    }
+    else if ( comp == 3 )
+    {
+      // apical compartment for top-down pyr-pyr connections
+      comp_deviation = pyr_params->phi( V_SOM );
+    }
+
+
     // prune all entries from history which are no longer needed
     // except the penultimate one. we might still need it.
     while ( pyr_history_[ comp - 1 ].size() > 1 )
@@ -137,13 +145,15 @@ nest::PyrArchivingNode< pyr_parameters >::write_urbanczik_history( Time const& t
       // This is a disgusting workaround for the issue that archiving_node.access_counter_ is unable to differentiate
       // between compartments, causing the history of multi-compartment models to increase continuously.
       size_t access_counter = 0;
-      for (int i = 0; i < 2; i++) {
-        access_counter += pyr_history_[i].front().access_counter_;
+      for ( int i = 0; i < 2; i++ )
+      {
+        access_counter += pyr_history_[ i ].front().access_counter_;
       }
 
       if ( access_counter >= n_incoming_ )
       {
-        for (int i = 0; i < 2; i++) {
+        for ( int i = 0; i < 2; i++ )
+        {
           pyr_history_[ i ].pop_front();
         }
       }
@@ -153,7 +163,7 @@ nest::PyrArchivingNode< pyr_parameters >::write_urbanczik_history( Time const& t
       }
     }
 
-    pyr_history_[ comp - 1 ].push_back( histentry_extended( t_ms, comp_deviation, 0 ) );
+    pyr_history_[ comp - 1 ].push_back( histentry_extended( t_ms, comp_deviation * Time::get_resolution().get_ms(), 0 ) );
   }
 }
 

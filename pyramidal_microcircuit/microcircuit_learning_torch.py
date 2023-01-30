@@ -9,7 +9,7 @@ import utils as utils
 import os
 import torch
 
-imgdir, datadir = utils.setup_simulation()
+root, imgdir, datadir = utils.setup_simulation()
 utils.setup_torch(False)
 setup_models(False, False)
 

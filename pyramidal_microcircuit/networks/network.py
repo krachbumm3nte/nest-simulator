@@ -39,7 +39,7 @@ class Network:
 
     def calculate_target(self, input_currents):
         assert self.teacher
-        self.y = np.squeeze(np.asarray(self.phi(self.k_yh * self.wyh_trgt * self.phi(self.k_hx * self.whx_trgt * np.reshape(input_currents, (-1, 1))))))
+        return np.squeeze(np.asarray(self.phi(self.k_yh * self.wyh_trgt * self.phi(self.k_hx * self.whx_trgt * np.reshape(input_currents, (-1, 1))))))
 
 
     @abstractmethod
