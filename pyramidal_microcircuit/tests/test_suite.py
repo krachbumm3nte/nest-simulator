@@ -15,7 +15,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         classes = [eval(sys.argv[1])]
     else:
-        classes = [FilteredInputCurrent, CurrentConnection, TargetCurrent, SingleCompartmentDynamics, SingleCompartmentDynamics2, NetworkDynamics, PlasticityBasal, PlasticityApical, NetworkPlasticity]
+        classes = [FilteredInputCurrent, CurrentConnection, TargetCurrent, DynamicsHX, DynamicsHI, DynamicsYH, NetworkDynamics, PlasticityHX, PlasticityHI, PlasticityYH, NetworkPlasticity]
 
     root, imgdir, datadir = utils.setup_simulation(
         "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/tests/runs")
@@ -35,6 +35,7 @@ if __name__ == "__main__":
             print(f"{test_name} with {spiking_str} neurons:")
             try:
                 instance = test_class(nrn, sim, syn, use_spiking_neurons)
+                instance.run()
             except Exception as e:
                 print(f"Test {test_name} raised an exception: ")
                 print(e)

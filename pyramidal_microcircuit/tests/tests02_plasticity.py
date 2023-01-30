@@ -1,40 +1,21 @@
 from test_utils import *
+from tests01_neuron_dynamics import *
 
 
-class PlasticityBasal(TestClass):
+class PlasticityYH(DynamicsYH):
 
     def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
-        nrn["weight_scale"] = 250
         super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
+        self.eta = 0.04
 
-        weight = 0.5
-        eta = 0.04
-
-        synapse = syn["yh"]
-
-        synapse.update({"weight": weight, "eta": eta})
+        conn = nest.GetConnections(self.neuron_01, self.neuron_02)
         if spiking_neurons:
-            self.weight_scale = nrn["weight_scale"]
-            nrn["pyr"]["gamma"] = nrn["pyr"]["gamma"] * self.weight_scale 
-            synapse.update({"weight": weight/self.weight_scale, "eta": eta/(self.weight_scale**2 * 30)})
+            conn.eta = self.eta/(self.weight_scale**2 * 30)
+            conn.weight = self.weight / self.weight_scale
         else:
-            self.weight_scale = 1
+            conn.eta = self.eta
 
-        pyr_h = nest.Create(self.neuron_model, 1, nrn["pyr"])
-        self.mm_h = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
-        nest.Connect(self.mm_h, pyr_h)
-
-        pyr_y = nest.Create(self.neuron_model, 1, nrn["intn"])
-        self.mm_y = nest.Create("multimeter", 1, {'record_from': ["V_m.s", "V_m.b", "V_m.a_lat"]})
-        nest.Connect(self.mm_y, pyr_y)
-
-        nest.Connect(pyr_h, pyr_y, syn_spec=synapse)
-
-        n_runs = 10
-        sim_times = [150 for i in range(n_runs)]
-        stim_amps = np.random.random(n_runs)
-        self.SIM_TIME = sum(sim_times)
-
+    def run(self):
         U_h = 0
         r_h = 0
         V_by = 0
@@ -47,8 +28,8 @@ class PlasticityBasal(TestClass):
         self.VBY = []
         self.weight_ = []
 
-        for T, amp in zip(sim_times, stim_amps):
-            pyr_h.set({"soma": {"I_e": amp}})
+        for T, amp in zip(self.sim_times, self.stim_amps):
+            self.neuron_01.set({"soma": {"I_e": amp}})
             nest.Simulate(T)
             for i in range(int(T/self.delta_t)):
                 delta_u_x = -self.g_l_eff * U_h + amp
@@ -59,13 +40,13 @@ class PlasticityBasal(TestClass):
                 U_h = U_h + self.delta_t * delta_u_x
                 r_h = self.phi(U_h)
 
-                V_by = r_h * weight
+                V_by = r_h * self.weight
                 U_y = U_y + self.delta_t * delta_u_h
                 r_y = self.phi(U_y)
 
                 tilde_w = tilde_w + (self.delta_t/self.tau_delta) * delta_tilde_w
-                weight = weight + eta * self.delta_t * tilde_w
-                self.weight_.append(weight)
+                self.weight = self.weight + self.eta * self.delta_t * tilde_w
+                self.weight_.append(self.weight)
 
                 self.UH.append(U_h)
                 self.UY.append(U_y)
@@ -73,7 +54,8 @@ class PlasticityBasal(TestClass):
 
     def evaluate(self) -> bool:
         weight_df = pd.DataFrame.from_dict(self.wr.events).drop_duplicates("times")
-        weight_df["weights"] *= self.weight_scale
+        if self.spiking_neurons:
+            weight_df["weights"] *= self.weight_scale
         weight_df = weight_df.set_index("times")
         weight_df = weight_df.reindex(np.arange(0, self.SIM_TIME, self.delta_t))
         weight_df = weight_df.fillna(method="backfill").fillna(method="ffill")
@@ -84,15 +66,15 @@ class PlasticityBasal(TestClass):
     def plot_results(self):
         fig, axes = plt.subplots(1, 4, sharex=True, constrained_layout=True)
 
-        axes[0].plot(*zip(*read_multimeter(self.mm_h, "V_m.s")), label="NEST")
+        axes[0].plot(*zip(*read_multimeter(self.mm_01, "V_m.s")), label="NEST")
         axes[0].plot(self.UH, label="target")
         axes[0].set_title("Input neuron Voltage")
 
-        axes[1].plot(*zip(*read_multimeter(self.mm_y, "V_m.b")), label="NEST")
+        axes[1].plot(*zip(*read_multimeter(self.mm_02, "V_m.b")), label="NEST")
         axes[1].plot(self.VBY, label="target")
         axes[1].set_title("Hidden basal voltage")
 
-        axes[2].plot(*zip(*read_multimeter(self.mm_y, "V_m.s")), label="NEST")
+        axes[2].plot(*zip(*read_multimeter(self.mm_02, "V_m.s")), label="NEST")
         axes[2].plot(self.UY, label="target")
         axes[2].set_title("Hidden somatic voltage")
 
@@ -102,40 +84,20 @@ class PlasticityBasal(TestClass):
         axes[3].set_title("synaptic weight")
 
 
-class PlasticityBasal2(TestClass):
+class PlasticityHX(DynamicsHX):
 
     def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
-        nrn["weight_scale"] = 250
         super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
+        self.eta = 0.04
 
-        weight = 0.5
-        eta = 0.04
-
-        synapse = syn["hx"]
-
-        synapse.update({"weight": weight, "eta": eta})
+        conn = nest.GetConnections(self.neuron_01, self.neuron_02)
         if spiking_neurons:
-            self.weight_scale = nrn["weight_scale"]
-            nrn["input"]["gamma"] = self.gamma * self.weight_scale/self.gamma
-            synapse.update({"weight": weight/self.weight_scale, "eta": eta/(self.weight_scale**2 * 30)})
+            conn.eta = self.eta/(self.weight_scale**2 * 30)
+            conn.weight = self.weight / self.weight_scale
         else:
-            self.weight_scale = 1
+            conn.eta = self.eta
 
-        pyr_x = nest.Create(self.neuron_model, 1, nrn["input"])
-        self.mm_x = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
-        nest.Connect(self.mm_x, pyr_x)
-
-        pyr_h = nest.Create(self.neuron_model, 1, nrn["pyr"])
-        self.mm_h = nest.Create("multimeter", 1, {'record_from': ["V_m.s", "V_m.b", "V_m.a_lat"]})
-        nest.Connect(self.mm_h, pyr_h)
-
-        nest.Connect(pyr_x, pyr_h, syn_spec=synapse)
-
-        n_runs = 25
-        sim_times = [150 for i in range(n_runs)]
-        stim_amps = np.random.random(n_runs)
-        self.SIM_TIME = sum(sim_times)
-
+    def run(self):
         U_x = 0
         r_x = 0
         V_bh = 0
@@ -148,8 +110,8 @@ class PlasticityBasal2(TestClass):
         self.VBH = []
         self.weight_ = []
 
-        for T, amp in zip(sim_times, stim_amps):
-            pyr_x.set({"soma": {"I_e": amp/self.tau_x}})
+        for T, amp in zip(self.sim_times, self.stim_amps):
+            self.neuron_01.set({"soma": {"I_e": amp/self.tau_x}})
             nest.Simulate(T)
             for i in range(int(T/self.delta_t)):
                 delta_u_x = -U_x + amp
@@ -160,13 +122,13 @@ class PlasticityBasal2(TestClass):
                 U_x = U_x + (self.delta_t/self.tau_x) * delta_u_x
                 r_x = U_x
 
-                V_bh = r_x * weight
+                V_bh = r_x * self.weight
                 U_h = U_h + self.delta_t * delta_u_h
                 r_h = self.phi(U_h)
 
                 tilde_w = tilde_w + (self.delta_t/self.tau_delta) * delta_tilde_w
-                weight = weight + eta * self.delta_t * tilde_w
-                self.weight_.append(weight)
+                self.weight = self.weight + self.eta * self.delta_t * tilde_w
+                self.weight_.append(self.weight)
 
                 self.UX.append(U_x)
                 self.UH.append(U_h)
@@ -174,7 +136,8 @@ class PlasticityBasal2(TestClass):
 
     def evaluate(self) -> bool:
         weight_df = pd.DataFrame.from_dict(self.wr.events).drop_duplicates("times")
-        weight_df["weights"] *= self.weight_scale
+        if self.spiking_neurons:
+            weight_df["weights"] *= self.weight_scale
         weight_df = weight_df.set_index("times")
         weight_df = weight_df.reindex(np.arange(0, self.SIM_TIME, self.delta_t))
         weight_df = weight_df.fillna(method="backfill").fillna(method="ffill")
@@ -185,15 +148,15 @@ class PlasticityBasal2(TestClass):
     def plot_results(self):
         fig, axes = plt.subplots(1, 4, sharex=True, constrained_layout=True)
 
-        axes[0].plot(*zip(*read_multimeter(self.mm_x, "V_m.s")), label="NEST")
+        axes[0].plot(*zip(*read_multimeter(self.mm_01, "V_m.s")), label="NEST")
         axes[0].plot(self.UX, label="target")
         axes[0].set_title("Input neuron Voltage")
 
-        axes[1].plot(*zip(*read_multimeter(self.mm_h, "V_m.b")), label="NEST")
+        axes[1].plot(*zip(*read_multimeter(self.mm_02, "V_m.b")), label="NEST")
         axes[1].plot(self.VBH, label="target")
         axes[1].set_title("Hidden basal voltage")
 
-        axes[2].plot(*zip(*read_multimeter(self.mm_h, "V_m.s")), label="NEST")
+        axes[2].plot(*zip(*read_multimeter(self.mm_02, "V_m.s")), label="NEST")
         axes[2].plot(self.UH, label="target")
         axes[2].set_title("Hidden somatic voltage")
 
@@ -203,40 +166,19 @@ class PlasticityBasal2(TestClass):
         axes[3].set_title("synaptic weight")
 
 
-class PlasticityApical(TestClass):
+class PlasticityHI(DynamicsHI):
     def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
-        nrn["weight_scale"] = 250
         super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
+        self.eta = 0.04
 
-        weight = 0.5
-        eta = 0.0003
-
-        synapse = syn["hi"]
-
-        synapse.update({"weight": weight, "eta": eta})
+        conn = nest.GetConnections(self.neuron_01, self.neuron_02)
         if spiking_neurons:
-            self.weight_scale = nrn["weight_scale"]
-            nrn["input"]["gamma"] *= self.weight_scale
-            synapse.update({"weight": weight/self.weight_scale, "eta": eta/(self.weight_scale**2 * 30)})
+            conn.eta = self.eta/(self.weight_scale**2 * 30)
+            conn.weight = self.weight / self.weight_scale
         else:
-            self.weight_scale = 1
+            conn.eta = self.eta
 
-        pyr_in = nest.Create(self.neuron_model, 1, nrn["input"])
-        self.mm_in = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
-        pyr_in.use_phi = True
-        nest.Connect(self.mm_in, pyr_in)
-
-        pyr_h = nest.Create(self.neuron_model, 1, nrn["pyr"])
-        self.mm_h = nest.Create("multimeter", 1, {'record_from': ["V_m.s", "V_m.b", "V_m.a_lat"]})
-        nest.Connect(self.mm_h, pyr_h)
-
-        nest.Connect(pyr_in, pyr_h, syn_spec=synapse)
-
-        n_runs = 50
-        sim_times = [150 for i in range(n_runs)]
-        stim_amps = np.random.random(n_runs)
-        self.SIM_TIME = sum(sim_times)
-
+    def run(self):
         U_x = 0
         r_x = 0
         V_ah = 0
@@ -249,8 +191,8 @@ class PlasticityApical(TestClass):
         self.VBH = []
         self.weight_ = []
 
-        for T, amp in zip(sim_times, stim_amps):
-            pyr_in.set({"soma": {"I_e": amp/self.tau_x}})
+        for T, amp in zip(self.sim_times, self.stim_amps):
+            self.neuron_01.set({"soma": {"I_e": amp/self.tau_x}})
             nest.Simulate(T)
             for i in range(int(T/self.delta_t)):
 
@@ -260,15 +202,15 @@ class PlasticityApical(TestClass):
                 U_x = U_x + (self.delta_t/self.tau_x) * delta_u_x
                 r_x = self.phi(U_x)
 
-                V_ah = r_x * weight
+                V_ah = r_x * self.weight
 
                 delta_u_h = -self.g_l_eff * U_h + V_ah * self.g_a
                 U_h = U_h + self.delta_t * delta_u_h
                 r_h = self.phi(U_h)
 
                 tilde_w = tilde_w + (self.delta_t/self.tau_delta) * delta_tilde_w
-                weight = weight + eta * self.delta_t * tilde_w
-                self.weight_.append(weight)
+                self.weight = self.weight + self.eta * self.delta_t * tilde_w
+                self.weight_.append(self.weight)
 
                 self.UX.append(U_x)
                 self.UH.append(U_h)
@@ -287,15 +229,15 @@ class PlasticityApical(TestClass):
     def plot_results(self):
         fig, axes = plt.subplots(1, 4, sharex=True, constrained_layout=True)
 
-        axes[0].plot(*zip(*read_multimeter(self.mm_in, "V_m.s")), label="NEST")
+        axes[0].plot(*zip(*read_multimeter(self.mm_01, "V_m.s")), label="NEST")
         axes[0].plot(self.UX, label="target")
         axes[0].set_title("Input neuron Voltage")
 
-        axes[1].plot(*zip(*read_multimeter(self.mm_h, "V_m.a_lat")), label="NEST")
+        axes[1].plot(*zip(*read_multimeter(self.mm_02, "V_m.a_lat")), label="NEST")
         axes[1].plot(self.VBH, label="target")
         axes[1].set_title("Hidden apical voltage")
 
-        axes[2].plot(*zip(*read_multimeter(self.mm_h, "V_m.s")), label="NEST")
+        axes[2].plot(*zip(*read_multimeter(self.mm_02, "V_m.s")), label="NEST")
         axes[2].plot(self.UH, label="target")
         axes[2].set_title("Hidden somatic voltage")
 
@@ -309,12 +251,11 @@ class NetworkPlasticity(TestClass):
     def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
         sim["teacher"] = False
         sim["noise"] = False
-        sim["dims"] = [6, 4, 3]
-        super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
+        sim["dims"] = [4, 3, 2]
 
+        super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
         self.numpy_net = NumpyNetwork(deepcopy(sim), deepcopy(nrn), deepcopy(syn))
         if spiking_neurons:
-            self.weight_scale = nrn["weight_scale"]
             nrn["input"]["gamma"] = self.weight_scale
             nrn["pyr"]["gamma"] = self.weight_scale * nrn["pyr"]["gamma"]
             nrn["intn"]["gamma"] = self.weight_scale * nrn["intn"]["gamma"]
@@ -325,8 +266,11 @@ class NetworkPlasticity(TestClass):
                     syn[syn_name]["eta"] /= self.weight_scale**2 * 30
         else:
             self.weight_scale = 1
+
+
         self.nest_net = NestNetwork(sim, nrn, syn)
 
+    def run(self):
         input_currents = np.random.random(self.dims[0])
         target_currents = np.random.random(self.dims[2])
 
@@ -341,7 +285,7 @@ class NetworkPlasticity(TestClass):
         for conn in ["hi", "ih", "hx", "hy", "yh"]:
             self.numpy_net.conns[conn]["w"] = weights[conn] * self.weight_scale
 
-        self.sim_time = 500
+        self.sim_time = 100
         self.nest_net.simulate(self.sim_time)
         for i in range(int(self.sim_time/self.delta_t)):
             self.numpy_net.simulate(self.numpy_net.train_static)
@@ -373,9 +317,8 @@ class NetworkPlasticity(TestClass):
         cmap = plt.cm.get_cmap('hsv', max(self.dims)+1)
         linestyles = ["solid", "dotted", "dashdot", "dashed"]
 
-
         for i, name in enumerate(["hx", "yh", "ih", "hi", "hy"]):
-            
+
             weights_nest = eval(f"self.{name}_nest")
             weights_numpy = self.numpy_net.conns[name]["record"]
             axes[0][i].set_title(name)
@@ -383,11 +326,12 @@ class NetworkPlasticity(TestClass):
                 for target in range(weights_nest.shape[1]):
                     col = cmap(sender)
                     style = linestyles[target]
-                    axes[0][i].plot(weights_nest[:,target,sender], linestyle=style, color=col)
-                    axes[1][i].plot(weights_numpy[:,target,sender], linestyle=style, color=col)
+                    axes[0][i].plot(weights_nest[:, target, sender], linestyle=style, color=col)
+                    axes[1][i].plot(weights_numpy[:, target, sender], linestyle=style, color=col)
 
         axes[0][0].set_ylabel("NEST computed")
         axes[1][0].set_ylabel("Target activation")
+
 
 class Dummy(TestClass):
 
