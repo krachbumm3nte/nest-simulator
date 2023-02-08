@@ -577,6 +577,14 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
 
   for ( long lag = from; lag < to; ++lag )
   {
+
+
+    // add incoming spikes to all compartmens
+    for ( size_t n = 0; n < NCOMP; ++n )
+    {
+      S_.y_[ State_::idx( n, State_::I ) ] += B_.spikes_[ n ].get_value( lag );
+      B_.I_stim_[ n ] = B_.currents_[ n ].get_value( lag );
+    }
     // membrane potential of soma
     const double V = S_.y_[ State_::idx( P_.pyr_params.SOMA, State_::V_M ) ];
 
@@ -628,12 +636,6 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
          // std::cout << "soma curr " << y[ S::idx( N::SOMA, S::I)] << "\n";
 
 
-    // add incoming spikes to all compartmens
-    for ( size_t n = 0; n < NCOMP; ++n )
-    {
-      S_.y_[ State_::idx( n, State_::I ) ] += B_.spikes_[ n ].get_value( lag );
-      B_.I_stim_[ n ] = B_.currents_[ n ].get_value( lag );
-    }
 
     // Declaration outside if statement because we need it later
     unsigned long n_spikes = 0;
@@ -700,7 +702,6 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
         S_.y_[ S_.idx( SOMA, State_::V_M ) ],
         APICAL_LAT );
     }
-
 
     // log state data
     B_.logger_.record_data( origin.get_steps() + lag );

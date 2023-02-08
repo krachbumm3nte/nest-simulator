@@ -575,6 +575,13 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
   for ( long lag = from; lag < to; ++lag )
   {
 
+
+    // add incoming spikes to all compartmens
+    for ( size_t n = 0; n < NCOMP; ++n )
+    {
+      S_.y_[ State_::idx( n, State_::I ) ] += B_.spikes_[ n ].get_value( lag );
+      B_.I_stim_[ n ] = B_.currents_[ n ].get_value( lag );
+    }
     // membrane potential of soma
     const double V = S_.y_[ State_::idx( P_.pyr_params.SOMA, State_::V_M ) ];
 
@@ -593,6 +600,10 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
     // will optimized most stuff away ...
     for ( size_t n = 1; n < P_.pyr_params.NCOMP; ++n )
     {
+      if ( P_.pyr_params.g_conn[ n ] == 0 )
+      {
+        continue;
+      }
       // membrane potential of dendrite
       const double V_dnd = S_.y_[ State_::idx( n, State_::V_M ) ];
 
@@ -608,7 +619,7 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
       S_.y_[ State_::idx( n, State_::V_M ) ] = V_dnd - I_L_dend + I_dend;
 
       // derivative dendritic current
-      S_.y_[ State_::idx( n, State_::I ) ] = 0; //I_dend - I_dend / P_.pyr_params.tau_m;
+      S_.y_[ State_::idx( n, State_::I ) ] = 0; // I_dend - I_dend / P_.pyr_params.tau_m;
     }
 
     // derivative membrane potential
@@ -622,27 +633,10 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
          // std::cout << "soma curr " << y[ S::idx( N::SOMA, S::I)] << "\n";
 
 
-    // add incoming spikes to all compartmens
-    for ( size_t n = 0; n < NCOMP; ++n )
-    {
-      S_.y_[ State_::idx( n, State_::I ) ] += B_.spikes_[ n ].get_value( lag );
-    }
-
-
-    for ( size_t n = 0; n < NCOMP; ++n )
-    {
-      B_.I_stim_[ n ] = 0.0;
-    }
 
     SpikeEvent se;
     se.set_sender( *this );
     kernel().event_delivery_manager.send( *this, se, lag );
-
-    // set new input currents
-    for ( size_t n = 0; n < NCOMP; ++n )
-    {
-      B_.I_stim_[ n ] = B_.currents_[ n ].get_value( lag );
-    }
 
     // log state data
     B_.logger_.record_data( origin.get_steps() + lag );
