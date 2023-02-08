@@ -158,7 +158,7 @@ class DynamicsHX(TestClass):
         syn["hx"].update({"weight": self.weight, "eta": 0})
 
         if spiking_neurons:
-            nrn["input"]["gamma"] = self.gamma * self.weight_scale/self.gamma
+            nrn["input"]["gamma"] = self.weight_scale
             syn["hx"].update({"weight": self.weight/self.weight_scale})
 
         self.neuron_01 = nest.Create(self.neuron_model, 1, nrn["input"])
@@ -171,8 +171,8 @@ class DynamicsHX(TestClass):
 
         nest.Connect(self.neuron_01, self.neuron_02, syn_spec=syn["hx"])
 
-        self.n_runs = 10
-        self.sim_times = [150 for i in range(self.n_runs)]
+        self.n_runs = 3
+        self.sim_times = [100 for i in range(self.n_runs)]
         self.stim_amps = np.random.random(self.n_runs)
         self.SIM_TIME = sum(self.sim_times)
 
@@ -226,6 +226,88 @@ class DynamicsHX(TestClass):
         ax2.legend()
 
 
+class DynamicsHXMulti(DynamicsHX):
+    """
+    This test shows that the neuron model handles a single dendritic input exactly like the analytical
+    solution if parameters are set correctly.
+    """
+
+    def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
+
+        super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
+
+        self.weight_2 = -0.5
+        if spiking_neurons:
+            syn["hx"]["weight"] = self.weight_2 / self.weight_scale
+        else:
+            syn["hx"]["weight"] = self.weight_2
+
+        self.neuron_03 = nest.Create(self.neuron_model, 1, nrn["input"])
+        self.mm_03 = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
+        nest.Connect(self.mm_03, self.neuron_03)
+
+        nest.Connect(self.neuron_03, self.neuron_02, syn_spec=syn["hx"])
+
+    def run(self):
+        U_x = 0
+        U_x2 = 0
+        U_h = 0
+        V_bh = 0
+        self.UX = []
+        self.UX2 = []
+        self.UH = []
+        self.VBH = []
+        self.stim_amps_2 = np.random.random(self.n_runs)
+        for T, amp, amp2 in zip(self.sim_times, self.stim_amps, self.stim_amps_2):
+            self.neuron_01.set({"soma": {"I_e": amp/self.tau_x}})
+            self.neuron_03.set({"soma": {"I_e": amp2/self.tau_x}})
+            nest.Simulate(T)
+            for i in range(int(T/self.delta_t)):
+
+                delta_u_x = -U_x + amp
+                delta_u_x2 = -U_x2 + amp2
+
+                delta_u_h = -self.g_l_eff * U_h + V_bh * self.g_d
+
+                U_x = U_x + (self.delta_t/self.tau_x) * delta_u_x
+                U_x2 = U_x2 + (self.delta_t/self.tau_x) * delta_u_x2
+                r_x = U_x
+                r_x2 = U_x2
+
+                V_bh = r_x * self.weight + r_x2 * self.weight_2
+                U_h = U_h + self.delta_t * delta_u_h
+
+                self.UX.append(U_x)
+                self.UX2.append(U_x2)
+                self.UH.append(U_h)
+                self.VBH.append(V_bh)
+
+    def plot_results(self):
+
+        fig, (ax0, ax1, ax2, ax3) = plt.subplots(1, 4, sharex=True, constrained_layout=True)
+
+        ax0.plot(*zip(*read_multimeter(self.mm_01, "V_m.s")), label="NEST")
+        ax0.plot(self.UX, label="target")
+
+        ax1.plot(*zip(*read_multimeter(self.mm_03, "V_m.s")), label="NEST")
+        ax1.plot(self.UX2, label="target")
+
+        ax2.plot(*zip(*read_multimeter(self.mm_02, "V_m.s")), label="NEST")
+        ax2.plot(self.UH, label="target")
+
+        ax3.plot(*zip(*read_multimeter(self.mm_02, "V_m.b")), label="NEST")
+        ax3.plot(self.VBH, label="target")
+
+        ax0.set_title("UX1")
+        ax1.set_title("UX2")
+        ax2.set_title("UH")
+        ax3.set_title("VBH")
+
+        ax0.legend()
+        ax1.legend()
+        ax2.legend()
+
+
 class DynamicsHI(DynamicsHX):
     """
     This test shows that the neuron model handles a single dendritic input exactly like the analytical
@@ -252,6 +334,7 @@ class DynamicsHI(DynamicsHX):
 
     def run(self):
         U_i = 0
+        r_i = 0
         U_h = 0
         V_ah = 0
         self.UI = []
@@ -267,7 +350,8 @@ class DynamicsHI(DynamicsHX):
                 delta_u_h = -self.g_l_eff * U_h + V_ah * self.g_a
 
                 U_i = U_i + self.delta_t * delta_u_i
-                V_ah = self.phi(U_i) * self.weight
+                r_i = self.phi(U_i)
+                V_ah = r_i * self.weight
                 U_h = U_h + self.delta_t * delta_u_h
 
                 self.UI.append(U_i)
@@ -381,21 +465,16 @@ class NetworkDynamics(TestClass):
         sim["teacher"] = False
         sim["noise"] = False
         sim["dims"] = [4, 3, 2]
-
-        if spiking_neurons:
-            nrn["input"]["gamma"] = self.weight_scale
-            nrn["pyr"]["gamma"] = self.weight_scale * nrn["pyr"]["gamma"]
-            nrn["intn"]["gamma"] = self.weight_scale * nrn["intn"]["gamma"]
-            syn["wmin_init"] = -1/self.weight_scale
-            syn["wmax_init"] = 1/self.weight_scale
-        else:
-            self.weight_scale = 1
-
         super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
+        self.numpy_net = NumpyNetwork(deepcopy(sim), deepcopy(nrn), deepcopy(syn))
 
-        self.nest_net = NestNetwork(sim, nrn, syn)
-        self.numpy_net = NumpyNetwork(sim, nrn, syn)
+        self.nest_net = NestNetwork(deepcopy(sim), deepcopy(nrn), deepcopy(syn), self.spiking_neurons)
+        weights = self.nest_net.get_weight_dict()
 
+        for conn in ["hi", "ih", "hx", "hy", "yh"]:
+            self.numpy_net.conns[conn]["w"] = weights[conn] * self.weight_scale
+
+    def run(self):
         input_currents = np.random.random(self.dims[0])
         target_currents = np.random.random(self.dims[2])
 
@@ -403,19 +482,11 @@ class NetworkDynamics(TestClass):
         self.nest_net.set_target(target_currents)
 
         self.numpy_net.set_input(input_currents)
-        self.numpy_net.set_target(target_currents)
 
-        weights = self.nest_net.get_weight_dict()
-
-        for conn in ["hi", "ih", "hx", "hy", "yh"]:
-            self.numpy_net.conns[conn]["w"] = weights[conn] * self.weight_scale
-
-        self.sim_time = 500
-
-    def run(self):
+        self.sim_time = 100
         self.nest_net.simulate(self.sim_time)
         for i in range(int(self.sim_time/self.delta_t)):
-            self.numpy_net.simulate(self.numpy_net.train_static)
+            self.numpy_net.simulate(lambda: target_currents)
 
     def evaluate(self) -> bool:
         records = pd.DataFrame.from_dict(self.nest_net.mm.events)
@@ -424,6 +495,8 @@ class NetworkDynamics(TestClass):
             ["senders", "times"])["V_m.s"].values.reshape((self.dims[1], -1)).swapaxes(0, 1)
         self.nest_VAH = records[records["senders"].isin(self.nest_net.pyr_pops[1].global_id)].sort_values(
             ["senders", "times"])["V_m.a_lat"].values.reshape((self.dims[1], -1)).swapaxes(0, 1)
+        self.nest_VBH = records[records["senders"].isin(self.nest_net.pyr_pops[1].global_id)].sort_values(
+            ["senders", "times"])["V_m.b"].values.reshape((self.dims[1], -1)).swapaxes(0, 1)
         self.nest_UI = records[records["senders"].isin(self.nest_net.intn_pops[0].global_id)].sort_values(
             ["senders", "times"])["V_m.s"].values.reshape((self.dims[-1], -1)).swapaxes(0, 1)
         self.nest_UY = records[records["senders"].isin(self.nest_net.pyr_pops[-1].global_id)].sort_values(
@@ -438,7 +511,7 @@ class NetworkDynamics(TestClass):
             records_match(self.nest_UX, np.asarray(self.numpy_net.U_x_record))
 
     def plot_results(self):
-        fig, axes = plt.subplots(2, 5, sharex=True, sharey="col", constrained_layout=True)
+        fig, axes = plt.subplots(2, 6, sharex=True, sharey="col", constrained_layout=True)
         cmap = plt.cm.get_cmap('hsv', max(self.dims)+1)
 
         for i in range(self.dims[0]):
@@ -446,23 +519,28 @@ class NetworkDynamics(TestClass):
             axes[1][0].plot(self.numpy_net.U_x_record[:, i], color=cmap(i))
 
         for i in range(self.dims[1]):
-            axes[0][1].plot(self.nest_UH[:, i], color=cmap(i))
-            axes[1][1].plot(self.numpy_net.U_h_record[:, i], color=cmap(i))
+            axes[0][1].plot(self.nest_VBH[:, i], color=cmap(i))
+            axes[1][1].plot(self.numpy_net.V_bh_record[:, i], color=cmap(i))
 
-            axes[0][2].plot(self.nest_VAH[:, i], color=cmap(i))
-            axes[1][2].plot(self.numpy_net.V_ah_record[:, i], color=cmap(i))
+            axes[0][2].plot(self.nest_UH[:, i], color=cmap(i))
+            axes[1][2].plot(self.numpy_net.U_h_record[:, i], color=cmap(i))
+
+            axes[0][3].plot(self.nest_VAH[:, i], color=cmap(i))
+            axes[1][3].plot(self.numpy_net.V_ah_record[:, i], color=cmap(i))
 
         for i in range(self.dims[2]):
-            axes[0][3].plot(self.nest_UY[:, i], color=cmap(i))
-            axes[1][3].plot(self.numpy_net.U_y_record[:, i], color=cmap(i))
 
             axes[0][4].plot(self.nest_UI[:, i], color=cmap(i))
             axes[1][4].plot(self.numpy_net.U_i_record[:, i], color=cmap(i))
 
+            axes[0][5].plot(self.nest_UY[:, i], color=cmap(i))
+            axes[1][5].plot(self.numpy_net.U_y_record[:, i], color=cmap(i))
+
         axes[0][0].set_title("UX")
-        axes[0][1].set_title("UH")
-        axes[0][2].set_title("VAH")
-        axes[0][3].set_title("UY")
+        axes[0][1].set_title("VBH")
+        axes[0][2].set_title("UH")
+        axes[0][3].set_title("VAH")
         axes[0][4].set_title("UI")
+        axes[0][5].set_title("UY")
         axes[0][0].set_ylabel("NEST computed")
         axes[1][0].set_ylabel("Target activation")

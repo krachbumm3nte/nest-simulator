@@ -13,15 +13,17 @@ from params import *  # nopep8
 if __name__ == "__main__":
 
     if len(sys.argv) > 1:
-        classes = [eval(sys.argv[1])]
+        classes = [eval(arg) for arg in sys.argv[1:]]
     else:
-        classes = [FilteredInputCurrent, CurrentConnection, TargetCurrent, DynamicsHX, DynamicsHI, DynamicsYH, NetworkDynamics, PlasticityHX, PlasticityHI, PlasticityYH, NetworkPlasticity]
+        classes = [FilteredInputCurrent, CurrentConnection, TargetCurrent, DynamicsHX, DynamicsHXMulti, DynamicsHI, DynamicsYH, NetworkDynamics, PlasticityHX, PlasticityHXMulti, PlasticityHI, PlasticityYH, NetworkPlasticity]
 
     root, imgdir, datadir = utils.setup_simulation(
         "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/tests/runs")
 
+    # classes = [NetworkBatchTraining]
     sim_params["record_interval"] = 0.1
     sim_params["recording_backend"] = "memory"
+    sim_params["datadir"] = datadir
 
     plot_all_runs = True
 
@@ -56,3 +58,8 @@ if __name__ == "__main__":
                     plt.close()
                     print(f"\tTest plot saved under: {filename}")
                 print()
+
+            # remove simulation data from the previous run
+            for file in sorted(os.listdir(datadir)):
+                f = os.path.join(datadir,file)
+                os.remove(f)

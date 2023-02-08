@@ -15,7 +15,11 @@ import utils  # nopep8
 class TestClass(ABC):
 
     def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
-        self.wr = utils.setup_models(spiking_neurons, nrn, sim, syn, True)
+        if "record_weights" in kwargs:
+            record_weights = kwargs["record_weights"]
+        else:
+            record_weights = False
+        self.wr = utils.setup_models(spiking_neurons, nrn, sim, syn, record_weights)
         self.nrn = nrn
         self.sim = sim
         self.syn = syn
@@ -36,7 +40,7 @@ class TestClass(ABC):
         self.lambda_bh = nrn["lambda_bh"]
         self.lambda_out = nrn["lambda_out"]
         self.tau_delta = syn["tau_Delta"]
-        self.weight_scale = nrn["weight_scale"]
+        self.weight_scale = nrn["weight_scale"] if spiking_neurons else 1
 
     @abstractmethod
     def run(self):
