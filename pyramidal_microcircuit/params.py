@@ -9,20 +9,20 @@ sigma = 0.3  # standard deviation for membrane potential noise
 sim_params = {
     "delta_t": delta_t,
     "threads": 10,
-    "record_interval": 75,  # interval for storing membrane potentials
-    "self_predicting_ff": False,  # initialize feedforward weights to self-predicting state
-    "self_predicting_fb": False,  # initialize feedback weights to self-predicting state
+    "record_interval": 200,  # interval for storing membrane potentials
+    "self_predicting_ff": True,  # initialize feedforward weights to self-predicting state
+    "self_predicting_fb": True,  # initialize feedback weights to self-predicting state
     "plasticity": True,  # enable synaptic plasticity
     "SIM_TIME": 100,  # simulation time per input pattern in ms
     "n_runs": 100000,  # number of training iterations
-    "noise": True,  # apply noise to membrane potentials
+    "noise": False,  # apply noise to membrane potentials
     "sigma": sigma,
     "noise_factor": np.sqrt(delta_t) * sigma,  # constant noise factor for numpy simulations
-    "dims": [3, 2, 2],  # network dimensions, i.e. neurons per layer
+    "dims": [9, 30, 3],  # network dimensions, i.e. neurons per layer
     "teacher": True,  # If True, teaching current is injected into output layer
-    "dims_teacher": [3, 2, 2], # teacher network dimensions.
+    "dims_teacher": [9, 10, 3], # teacher network dimensions.
     "k_yh": 10, # hidden to output teacher weight scaling factor
-    "k_hx": 2, # input to hidden teacher weight scaling factor
+    "k_hx": 1, # input to hidden teacher weight scaling factor
     "recording_backend": "ascii",  # Backend for NEST multimeter recordings
 }
 
@@ -63,7 +63,7 @@ neuron_params = {
     'beta': beta,
     'theta': theta,
     "g_l_eff": g_l_eff,
-    "weight_scale": 25000
+    "weight_scale": 250
 }
 
 
@@ -136,7 +136,12 @@ syn_params = {
     'delay': sim_params['delta_t'],  # synaptic delay
     'wmin_init': -0.1,  # synaptic weight initialization min
     'wmax_init': 0.1,  # synaptic weight initialization max
-    'tau_Delta': tau_delta
+    'tau_Delta': tau_delta,
+    'w_init_hx': 1,
+    'w_init_hi': 1,
+    'w_init_ih': 1,
+    'w_init_hy': 1,
+    'w_init_yh': 1,
 }
 
 
@@ -155,10 +160,22 @@ if sim_params["plasticity"]:
     # eta_hx = 0
 
     # from Sacramento 2018, Fig 2
-    eta_yh = 0.0005
-    eta_ih = 0.0011875  
-    eta_hi = 0.0005
-    eta_hx = 0.0011875
+    # eta_yh = 0.0005
+    # eta_ih = 0.0011875  
+    # eta_hi = 0.0005
+    # eta_hx = 0.0011875
+
+    # from Sacramento 2018, Fig 2
+    # eta_yh = 0.05
+    # eta_ih = 0.11875  
+    # eta_hi = 0.05
+    # eta_hx = 0.11875
+
+    # from Haider 2021, Fig 3, T_pres = 100 * tau_eff
+    eta_yh = 0.001
+    eta_ih = 0.002 
+    eta_hi = 0.0
+    eta_hx = 0.005
 else:
     eta_yh = 0
     eta_hx = 0

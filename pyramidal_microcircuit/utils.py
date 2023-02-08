@@ -159,7 +159,7 @@ def setup_models(spiking, nrn, sim, syn, record_weights=False):
     static_syn_model = 'static_synapse'
     wr = None
     if record_weights:
-        wr = nest.Create("weight_recorder")
+        wr = nest.Create("weight_recorder", params={'record_to': "ascii", "precision":12})
         nest.CopyModel(syn_model, 'record_syn', {"weight_recorder": wr})
         syn_model = 'record_syn'
         nest.CopyModel(static_syn_model, 'static_record_syn', {"weight_recorder": wr})
@@ -201,8 +201,8 @@ def read_wr(grouped_df, source, target, sim_time, delta_t):
     for i, id_source in enumerate(source_id):
         for j, id_target in enumerate(target_id):
             group = grouped_df.get_group((id_source, id_target))
-            group = group.drop_duplicates("times")
-            group = group.set_index("times")
+            group = group.drop_duplicates("time_ms")
+            group = group.set_index("time_ms")
             group = group.reindex(np.arange(0, sim_time, delta_t))
             group = group.fillna(method="backfill").fillna(method="ffill")
             weight_array[:, j, i] = group.weights.values

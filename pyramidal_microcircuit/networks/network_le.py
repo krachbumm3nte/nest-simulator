@@ -2,7 +2,6 @@ import numpy as np
 from sklearn.metrics import mean_squared_error as mse
 from time import time
 from .network import Network
-from copy import deepcopy
 
 # These values reappear over and over again in the computation. Writing self.value 5 times per line bloats
 # the simulate() function to horrific degrees. Since these values do not change at simulation time, They are being
@@ -12,12 +11,13 @@ g_a, g_d, g_l, g_s, g_si, tau_x, tau_delta, noise_factor, delta_t, leakage, lamb
     0 for i in range(13)]
 
 
-class NumpyNetwork(Network):
+class LatentEquilibriumNetwork(Network):
 
     def __init__(self, sim, nrn, syns) -> None:
         super().__init__(sim, nrn, syns)
 
         self.conns = {}
+        self.record_voltages = True
 
         # Oh lord forgive me
         global g_a, g_d, g_l, g_s, g_si, noise_factor, delta_t, tau_x, tau_delta, leakage, lambda_out, lambda_ah, lambda_bh
@@ -82,44 +82,45 @@ class NumpyNetwork(Network):
                 "t_w": np.zeros((p["out"], p["in"])),
                 "record": np.zeros((0, p["out"], p["in"]))
             }
-        
-        if self.sim["self_predicting_fb"]:
-            self.conns["hi"]["w"] = deepcopy(self.conns["hy"]["w"]) * -1
-        if self.sim["self_predicting_ff"]:
-            self.conns["ih"]["w"] = deepcopy(self.conns["yh"]["w"]) # * lambda_bh / lambda_out # scaling is from Haider 2021. TODO: understand exactly
 
-
-    def train_teacher(self, T):
-        input_currents = np.random.random(self.dims[0])
+    def train(self, input_currents, T):
 
         self.set_input(input_currents)
 
         for i in range(int(T/delta_t)):
-            self.simulate(self.target_teacher)
+            self.simulate(self.target_teacher if self.teacher else self.target_nothing)
 
-    def target_teacher(self):
-        return self.calculate_target(self.U_x)
+    def train_bars(self, T):
 
-    def test_teacher(self, T):
+        inputs, target = self.generate_bar_data()
+
+        self.set_input(inputs.flatten())
+        target_curr = np.zeros(self.dims[-1])
+        target_curr[target] = 1
+        self.set_target(target_curr)
+        for i in range(int(T/delta_t)):
+            self.simulate(lambda: target_curr)
+
+    def test(self, T):
         for i in range(int(T/delta_t)):
             # do not inject output layer current during testing
             self.simulate(self.target_teacher if self.teacher else self.target_nothing)
             self.output_pred = lambda_out * self.conns["yh"]["w"] @ self.phi(lambda_bh * self.V_bh)
-            # TODO: fix scaling between teacher and predicted output!
-            self.output_loss.append(mse(np.asarray(self.y), self.output_pred))
 
-    def train_bars(self, T):
-        x_train, y_train = self.generate_bar_data()
+            self.output_loss.append(mse(self.y, self.output_pred))
 
-        self.set_input(x_train)
-        for i in range(int(T/delta_t)):
-            self.simulate(lambda: y_train)
+    def target_teacher(self):
+        return self.wyh_trgt @ self.phi(self.whx_trgt @ self.U_x)
 
-    def test_bars(self):
-        x_test, y_actual = self.generate_bar_data()
-        y_pred = lambda_out * self.conns["yh"]["w"] @ self.phi(lambda_bh * self.conns["hx"]["w"] @ x_test)
+    def target_invert(self):
+        assert self.dims[0] == self.dims[-1]
+        return -self.U_x
 
-        self.test_loss.append(mse(y_actual, y_pred))
+    def target_nothing(self):
+        return np.zeros(self.dims[2])
+
+    def train_static(self):
+        return self.target_currents
 
     def simulate(self, train_function):
 
@@ -160,7 +161,7 @@ class NumpyNetwork(Network):
         self.U_i = self.U_i + delta_t * delta_u_i  # + noise_factor * np.random.standard_normal(self.dims[2])
         self.r_i = self.phi(self.U_i)
 
-        store_state = self.iteration % int(self.sim["record_interval"]/delta_t) == 0
+        store_state = self.record_voltages and self.iteration % int(self.sim["record_interval"]/delta_t) == 0
 
         for name, d in self.conns.items():
             d["t_w"] = d["t_w"] + (delta_t/tau_delta) * d["dt_w"]
@@ -178,7 +179,9 @@ class NumpyNetwork(Network):
             self.U_y_record = np.concatenate((self.U_y_record, np.expand_dims(self.U_y, 0)), axis=0)
             self.V_by_record = np.concatenate((self.V_by_record, np.expand_dims(self.V_by, 0)), axis=0)
 
-            self.train_loss.append(mse(self.y, self.U_y))
+            self.output_pred = self.phi(lambda_out * self.conns["yh"]["w"] @ self.phi(lambda_bh * self.V_bh))
+            self.output_loss.append(mse(np.asarray(self.y), np.asarray(self.output_pred)))
+
         self.iteration += 1
 
     def set_input(self, input_currents):
@@ -194,3 +197,6 @@ class NumpyNetwork(Network):
         for k, v in self.conns.items():
             weights[k] = v["w"]
         return weights
+
+    def set_target(self, target_currents):
+        self.target_currents = target_currents

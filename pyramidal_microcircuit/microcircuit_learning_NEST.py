@@ -13,32 +13,21 @@ import json
 root, imgdir, datadir = utils.setup_simulation()
 utils.setup_nest(sim_params, datadir)
 
-spiking = True
-
+spiking = False
 utils.setup_models(spiking, neuron_params, sim_params, syn_params, False)
 
-if spiking:
-    weight_scale = 1
-    neuron_params["weight_scale"] = weight_scale
-    neuron_params["input"]["gamma"] *= weight_scale
-    neuron_params["pyr"]["gamma"] *= weight_scale
-    neuron_params["intn"]["gamma"] *= weight_scale
-    neuron_params["wmin_init"] = -1/weight_scale
-    neuron_params["wmax_init"] = 1/weight_scale
-    for syn_name in ["hx", "yh", "hy", "hi", "ih"]:
-        if "eta" in syn_params[syn_name]:
-            syn_params[syn_name]["eta"] /= weight_scale**2 * 30
-
+sim_params["teacher"] = False
 sim_params["noise"] = False
 
-net = NestNetwork(sim_params, neuron_params, syn_params)
+net = NestNetwork(sim_params, neuron_params, syn_params, spiking)
 
 dims = sim_params["dims"]
 
 cmap_1 = plt.cm.get_cmap('hsv', dims[1]+1)
 cmap_2 = plt.cm.get_cmap('hsv', dims[2]+1)
 
-plot_interval = 10
+plot_interval = 20
+batchsize = 50
 
 T = []
 ff_errors = []
@@ -58,21 +47,19 @@ out_id = sorted(out.get("global_id"))
 
 interneurons = net.intn_pops[0]
 intn_id = sorted(interneurons.get("global_id"))
-print("setup complete, running simulations...")
 
 # dump simulation parameters to a .json file
 with open(os.path.join(os.path.dirname(imgdir), "params.json"), "w") as f:
+    # print(sim_params, neuron_params, syn_params)
+    for conn in ["hx", "yh", "hy", "ih", "hi"]:
+        syn_params[conn]["weight"] = syn_params[conn]["weight"].tolist()
     json.dump({"simulation": sim_params, "neurons": neuron_params, "synapses": syn_params}, f)
-
-batchsize = 100
+print("setup complete, running simulations...")
 
 try:
     for run in range(sim_params["n_runs"] + 1):
-        inputs = np.random.rand(dims[0])
-        # input_index = 0
         start = time()
-        # net.train(inputs, sim_params["SIM_TIME"])
-        net.train_batches(sim_params["SIM_TIME"], batchsize)
+        net.train_batches_bars(batchsize)
         t = (time() - start) / batchsize
         T.append(t)
 
@@ -80,7 +67,7 @@ try:
             print(f"plotting run {run}")
             start = time()
             fig, axes = plt.subplots(4, 2, constrained_layout=True)
-            [[ax0, ax1], [ax2, ax3], [ax4, ax5], [ax6, ax7]] = axes
+            [ax0, ax1, ax2, ax3, ax4, ax5, ax6, ax7] = axes.flatten()
             plt.rcParams['savefig.dpi'] = 300
 
             # plot somatic voltages of hidden interneurons and output pyramidal neurons
@@ -102,7 +89,7 @@ try:
                 intn_errors[idx].extend(error)
 
             abs_voltage = np.mean(abs_voltage)
-            mean_error = utils.rolling_avg(np.mean(intn_errors, axis=0), size=2)
+            mean_error = utils.rolling_avg(np.mean(intn_errors, axis=0), size=200)
             ax0.plot(mean_error, color="black")
 
             intn_error_now = np.mean(mean_error[-20:])
@@ -112,30 +99,25 @@ try:
             # plot apical error
             U_H = neuron_data[neuron_data.sender.isin(hidden_id)]
 
-            apical_error = U_H.abs().groupby("time_ms")["V_m.a_lat"].mean()
-            apical_errors.extend(apical_error.values)
-            ax1.plot(apical_errors)
+            apical_error = np.linalg.norm(np.stack(U_H.groupby("time_ms")["V_m.a_lat"].apply(np.array).values), axis=1)
+            apical_errors.extend(apical_error)
+            ax1.plot(utils.rolling_avg(apical_errors, size=150))
 
-            apical_error_now = np.mean(apical_error.values)
+            apical_error_now = np.mean(apical_error)
             ax1_2 = ax1.secondary_yaxis("right")
             ax1_2.set_yticks([apical_error_now])
 
             # Synaptic weights
-            WHY = pd.DataFrame.from_dict(nest.GetConnections(source=out, target=hidden).get())
-            WHI = pd.DataFrame.from_dict(nest.GetConnections(source=interneurons, target=hidden).get())
-            WYH = pd.DataFrame.from_dict(nest.GetConnections(source=hidden, target=out).get())
-            WIH = pd.DataFrame.from_dict(nest.GetConnections(source=hidden, target=interneurons).get())
+            WHY = pd.DataFrame.from_dict(nest.GetConnections(source=out, target=hidden).get()).sort_values(["target", "source"])
+            WHI = pd.DataFrame.from_dict(nest.GetConnections(source=interneurons, target=hidden).get()).sort_values(["target", "source"])
+            WYH = pd.DataFrame.from_dict(nest.GetConnections(source=hidden, target=out).get()).sort_values(["target", "source"])
+            WIH = pd.DataFrame.from_dict(nest.GetConnections(source=hidden, target=interneurons).get()).sort_values(["target", "source"])
 
-            # plot weight error
-            WHY = WHY.sort_values(["target", "source"])
-            WHI = WHI.sort_values(["target", "source"])
             fb_error = mse(WHY["weight"], -WHI["weight"])
             fb_errors.append(fb_error)
             error_scale = np.arange(0, (run+1), plot_interval) * sim_params["SIM_TIME"]/sim_params["record_interval"]
             ax2.plot(error_scale, fb_errors, label=f"FB error: {fb_error:.3f}")
 
-            WYH = WYH.sort_values(["source", "target"])
-            WIH = WIH.sort_values(["source", "target"])
             ff_error = mse(WYH["weight"], WIH["weight"])
             ff_errors.append(ff_error)
             ax3.plot(error_scale, ff_errors, label=f"FF error: {ff_error:.3f}")
@@ -158,28 +140,31 @@ try:
                 t = row["target"]
                 ax5.plot(row["source"], row["weight"], "x", color=cmap_2(row["target"] % dims[2]), label=f"from {t}")
 
-            ax6.plot(net.output_loss)
-
+            ax6.plot(net.train_loss)
+            ax7.plot(net.test_loss)
             ax0.set_title("interneuron - pyramidal error")
             ax1.set_title("apical error")
             ax2.set_title("Feedback error")
             ax3.set_title("Feedforward error")
             ax4.set_title("Feedback weights")
             ax5.set_title("Feedforward weights")
-            ax6.set_title("Output loss")
+            ax6.set_title("Train loss")
+            ax7.set_title("Test Loss")
 
             ax0.set_ylim(bottom=0)
             ax1.set_ylim(bottom=0)
             ax2.set_ylim(bottom=0)
             ax3.set_ylim(bottom=0)
+            ax6.set_ylim(bottom=0)
+            ax7.set_ylim(bottom=0)
 
             plt.savefig(os.path.join(imgdir, f"{run*batchsize}.png"))
             plt.close()
 
             plot_duration = time() - start
-            print(f"mean simulation time: {np.mean(T[-10:]):.3f}s. plot time:{plot_duration:.2f}s. \
+            print(f"mean simulation time: {np.mean(T[-10:]):.4f}s. plot time:{plot_duration:.2f}s. \
     apical error: {apical_error_now:.2f}.")
-            print(f"ff error: {ff_error:.4f}, fb error: {fb_error:.4f}, interneuron error: {intn_error_now:.4f}, absolute somatic voltage: {abs_voltage:.3f}\n")
+            print(f"ff error: {ff_error:.5f}, fb error: {fb_error:.5f}, interneuron error: {intn_error_now:.4f}, absolute somatic voltage: {abs_voltage:.3f}\n")
 
         elif run % 100 == 0:
             print(f"run {run} completed.")

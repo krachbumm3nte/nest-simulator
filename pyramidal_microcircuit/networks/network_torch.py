@@ -114,11 +114,10 @@ class TorchNetwork(Network):
             self.simulate(self.train_match_teacher if self.teacher else self.train_nothing)
             self.output_pred = self.phi(f_1 * self.conns["yh"]["w"](self.phi(f_2 * self.V_bh)))
 
-            self.output_loss.append(mse(np.asarray(self.output_pred), np.asarray(self.y)))
+            self.output_loss.append(mse(np.asarray(self.y), np.asarray(self.output_pred)))
 
     def train_match_teacher(self):
-        y_teacher = self.phi(self.yh_teacher(self.phi(self.hx_teacher(self.U_x))))
-        return self.phi_inverse(y_teacher)
+        return self.phi(self.yh_teacher(self.phi(self.hx_teacher(self.U_x))))
 
     def train_inverse(self):
         assert self.dims[0] == self.dims[-1]
@@ -206,7 +205,7 @@ class TorchNetwork(Network):
             self.V_by_record = torch.cat((self.V_by_record, self.V_by.unsqueeze(dim=0)), axis=0)
 
             self.output_pred = self.phi(f_1 * self.conns["yh"]["w"](self.phi(f_2 * self.V_bh)))
-            self.output_loss.append(mse(self.output_pred.cpu(), self.y.cpu()))
+            self.output_loss.append(mse(self.y.cpu(), self.output_pred.cpu()))
 
         self.iteration += 1
 
