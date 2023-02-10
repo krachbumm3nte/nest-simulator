@@ -11,7 +11,7 @@ class PlasticityYH(DynamicsYH):
 
         conn = nest.GetConnections(self.neuron_01, self.neuron_02)
         if spiking_neurons:
-            conn.eta = self.eta/(self.weight_scale**2 * 30)
+            conn.eta = self.eta/(self.weight_scale**2 * self.syn["tau_Delta"])
             conn.weight = self.weight / self.weight_scale
         else:
             conn.eta = self.eta
@@ -95,7 +95,7 @@ class PlasticityHX(DynamicsHX):
 
         conn = nest.GetConnections(self.neuron_01, self.neuron_02)
         if spiking_neurons:
-            conn.eta = self.eta/(self.weight_scale**2 * 30)
+            conn.eta = self.eta/(self.weight_scale**2 * self.syn["tau_Delta"])
             conn.weight = self.weight / self.weight_scale
         else:
             conn.eta = self.eta
@@ -190,7 +190,7 @@ class PlasticityHXMulti(PlasticityHX):
         self.weight2 = -0.5
         if spiking_neurons:
             syn["hx"]["weight"] = self.weight2 / self.weight_scale
-            syn["hx"]["eta"] = self.eta/(self.weight_scale**2 * 30)
+            syn["hx"]["eta"] = self.eta/(self.weight_scale**2 * self.syn["tau_Delta"])
         else:
             syn["hx"]["weight"] = self.weight2
             syn["hx"]["eta"] = self.eta
@@ -317,7 +317,7 @@ class PlasticityHI(DynamicsHI):
 
         conn = nest.GetConnections(self.neuron_01, self.neuron_02)
         if spiking_neurons:
-            conn.eta = self.eta/(self.weight_scale**2 * 30)
+            conn.eta = self.eta/(self.weight_scale**2 * self.syn["tau_Delta"])
             conn.weight = self.weight / self.weight_scale
         else:
             conn.eta = self.eta

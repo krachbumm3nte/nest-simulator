@@ -202,7 +202,7 @@ class DynamicsHX(TestClass):
                 self.VBH.append(V_bh)
 
     def evaluate(self) -> bool:
-        return records_match(self.VBH, self.mm_02.events["V_m.b"]) and records_match(self.UH, self.mm_02.events["V_m.s"])
+        return records_match(self.VBH, self.mm_02.events["V_m.b"], 0.01) and records_match(self.UH, self.mm_02.events["V_m.s"], 0.01)
 
     def plot_results(self):
 

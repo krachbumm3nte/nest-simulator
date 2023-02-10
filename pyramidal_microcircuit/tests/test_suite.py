@@ -15,7 +15,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         classes = [eval(arg) for arg in sys.argv[1:]]
     else:
-        classes = [FilteredInputCurrent, CurrentConnection, TargetCurrent, DynamicsHX, DynamicsHXMulti, DynamicsHI, DynamicsYH, NetworkDynamics, PlasticityHX, PlasticityHXMulti, PlasticityHI, PlasticityYH, NetworkPlasticity]
+        classes = [FilteredInputCurrent, CurrentConnection, TargetCurrent, DynamicsHX, DynamicsHXMulti, DynamicsHI, DynamicsYH, NetworkDynamics, PlasticityHX, PlasticityHXMulti, PlasticityHI, PlasticityYH, NetworkPlasticity, NetworkBatchTraining]
 
     root, imgdir, datadir = utils.setup_simulation(
         "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/tests/runs")
@@ -24,6 +24,10 @@ if __name__ == "__main__":
     sim_params["record_interval"] = 0.1
     sim_params["recording_backend"] = "memory"
     sim_params["datadir"] = datadir
+
+    # increase learning rates to absurd levels to make plasticity visible
+    for syn_name in ["hx", "yh", "hy", "ih", "hi"]:
+        syn_params[syn_name]["eta"] = 0.5
 
     plot_all_runs = True
 
