@@ -98,7 +98,7 @@ class NumpyNetwork(Network):
             self.simulate(self.target_teacher)
 
     def target_teacher(self):
-        return self.calculate_target(self.U_x)
+        return self.get_teacher_output(self.U_x)
 
     def test_teacher(self, T):
         for i in range(int(T/delta_t)):
@@ -108,40 +108,52 @@ class NumpyNetwork(Network):
             # TODO: fix scaling between teacher and predicted output!
             self.output_loss.append(mse(np.asarray(self.y), self.output_pred))
 
-    def train_bars(self, T):
-        x_train, y_train = self.generate_bar_data()
+    def train_epoch(self, x_batch, y_batch):
+        for x_train, y_train in zip(x_batch, y_batch):
+            self.set_input(x_train)
+            for i in range(int(self.sim_time/self.delta_t)):
+                self.simulate(lambda: y_train)
 
-        self.set_input(x_train)
-        for i in range(int(T/delta_t)):
-            self.simulate(lambda: y_train)
+    def test_bars(self, n_samples = 5):
+        acc = []
+        loss_mse = []
+        for i in range(n_samples):
+            x_test, y_actual = self.generate_bar_data(i)
+            self.set_input(x_test)
+            for i in range(int(self.sim_time/self.delta_t)):
+                self.simulate(lambda: np.zeros(self.dims[-1]), False, False)
+            y_pred = self.U_y
+            # y_pred = lambda_out * self.conns["yh"]["w"] @ self.phi(lambda_bh * self.conns["hx"]["w"] @ x_test)
 
-    def test_bars(self):
-        x_test, y_actual = self.generate_bar_data()
-        y_pred = lambda_out * self.conns["yh"]["w"] @ self.phi(lambda_bh * self.conns["hx"]["w"] @ x_test)
+            loss_mse.append(mse(y_actual, y_pred))
+            acc.append(np.argmax(y_actual)== np.argmax(y_pred))
+        self.test_acc.append(np.mean(acc))
+        self.test_loss.append(np.mean(loss_mse))
 
-        self.test_loss.append(mse(y_actual, y_pred))
 
-    def simulate(self, train_function):
+    def simulate(self, train_function, enable_recording=True, plasticity=True):
+        store_state = self.iteration % int(self.sim["record_interval"]/delta_t) == 0 and enable_recording
 
         delta_u_x = -self.U_x + self.I_x
         delta_u_h = -leakage * self.U_h + g_d * self.V_bh + g_a * self.V_ah
         delta_u_y = -leakage * self.U_y + g_d * self.V_by + g_s * self.y
         delta_u_i = -leakage * self.U_i + g_d * self.V_bi + g_si * self.U_y
 
-        self.conns["hx"]["dt_w"] = -self.conns["hx"]["t_w"] + \
-            np.outer(self.r_h - self.phi(self.V_bh * lambda_bh), self.U_x)
+        if plasticity:
+            self.conns["hx"]["dt_w"] = -self.conns["hx"]["t_w"] + \
+                np.outer(self.r_h - self.phi(self.V_bh * lambda_bh), self.U_x)
 
-        self.conns["yh"]["dt_w"] = -self.conns["yh"]["t_w"] + \
-            np.outer(self.r_y - self.phi(self.V_by * lambda_out), self.r_h)
+            self.conns["yh"]["dt_w"] = -self.conns["yh"]["t_w"] + \
+                np.outer(self.r_y - self.phi(self.V_by * lambda_out), self.r_h)
 
-        # output to hidden synapses learn this way, but eta is almost always zero, so this saves some compute time
-        # self.conns["hy"]["dt_w"] = -self.conns["hy"]["t_w"] + \
-        #     np.outer(self.r_h - self.phi(self.conns["hy"]["w"] * self.r_y.T).T, self.r_y)
+            # output to hidden synapses learn this way, but eta is almost always zero, so this saves some compute time
+            # self.conns["hy"]["dt_w"] = -self.conns["hy"]["t_w"] + \
+            #     np.outer(self.r_h - self.phi(self.conns["hy"]["w"] * self.r_y.T).T, self.r_y)
 
-        self.conns["ih"]["dt_w"] = -self.conns["ih"]["t_w"] + \
-            np.outer(self.r_i - self.phi(self.V_bi * lambda_out), self.r_h)
+            self.conns["ih"]["dt_w"] = -self.conns["ih"]["t_w"] + \
+                np.outer(self.r_i - self.phi(self.V_bi * lambda_out), self.r_h)
 
-        self.conns["hi"]["dt_w"] = -self.conns["hi"]["t_w"] + np.outer(-self.V_ah, self.r_i)
+            self.conns["hi"]["dt_w"] = -self.conns["hi"]["t_w"] + np.outer(-self.V_ah, self.r_i)
 
         self.U_x = self.U_x + (delta_t/tau_x) * delta_u_x
 
@@ -160,26 +172,27 @@ class NumpyNetwork(Network):
         self.U_i = self.U_i + delta_t * delta_u_i  # + noise_factor * np.random.standard_normal(self.dims[2])
         self.r_i = self.phi(self.U_i)
 
-        store_state = self.iteration % int(self.sim["record_interval"]/delta_t) == 0
+        if plasticity:
+            for name, d in self.conns.items():
+                # d["t_w"] = d["t_w"] + (delta_t/tau_delta) * d["dt_w"]
+                d["w"] = d["w"] + d["eta"] * delta_t * d["dt_w"]
+                d["w"] = np.clip(d["w"], self.Wmin, self.Wmax)
+                if store_state:
+                    d["record"] = np.concatenate((d["record"], np.expand_dims(d["w"], axis=0)), axis=0)
 
-        for name, d in self.conns.items():
-            d["t_w"] = d["t_w"] + (delta_t/tau_delta) * d["dt_w"]
-            d["w"] = d["w"] + d["eta"] * delta_t * d["t_w"]
+        if enable_recording:
             if store_state:
-                d["record"] = np.concatenate((d["record"], np.expand_dims(d["w"], axis=0)), axis=0)
+                self.U_x_record = np.concatenate((self.U_x_record, np.expand_dims(self.U_x, 0)), axis=0)
+                self.U_h_record = np.concatenate((self.U_h_record, np.expand_dims(self.U_h, 0)), axis=0)
+                self.V_ah_record = np.concatenate((self.V_ah_record, np.expand_dims(self.V_ah, 0)), axis=0)
+                self.V_bh_record = np.concatenate((self.V_bh_record, np.expand_dims(self.V_bh, 0)), axis=0)
+                self.U_i_record = np.concatenate((self.U_i_record, np.expand_dims(self.U_i, 0)), axis=0)
+                self.V_bi_record = np.concatenate((self.V_bi_record, np.expand_dims(self.V_bi, 0)), axis=0)
+                self.U_y_record = np.concatenate((self.U_y_record, np.expand_dims(self.U_y, 0)), axis=0)
+                self.V_by_record = np.concatenate((self.V_by_record, np.expand_dims(self.V_by, 0)), axis=0)
 
-        if store_state:
-            self.U_x_record = np.concatenate((self.U_x_record, np.expand_dims(self.U_x, 0)), axis=0)
-            self.U_h_record = np.concatenate((self.U_h_record, np.expand_dims(self.U_h, 0)), axis=0)
-            self.V_ah_record = np.concatenate((self.V_ah_record, np.expand_dims(self.V_ah, 0)), axis=0)
-            self.V_bh_record = np.concatenate((self.V_bh_record, np.expand_dims(self.V_bh, 0)), axis=0)
-            self.U_i_record = np.concatenate((self.U_i_record, np.expand_dims(self.U_i, 0)), axis=0)
-            self.V_bi_record = np.concatenate((self.V_bi_record, np.expand_dims(self.V_bi, 0)), axis=0)
-            self.U_y_record = np.concatenate((self.U_y_record, np.expand_dims(self.U_y, 0)), axis=0)
-            self.V_by_record = np.concatenate((self.V_by_record, np.expand_dims(self.V_by, 0)), axis=0)
-
-            self.train_loss.append(mse(self.y, self.U_y))
-        self.iteration += 1
+                self.train_loss.append(mse(self.y, self.U_y))
+            self.iteration += 1
 
     def set_input(self, input_currents):
         """Inject a constant current into all neurons in the input layer.

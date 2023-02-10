@@ -21,7 +21,7 @@ dims = sim_params["dims"]
 cmap_1 = plt.cm.get_cmap('hsv', dims[1]+1)
 cmap_2 = plt.cm.get_cmap('hsv', dims[2]+1)
 
-plot_interval = 1000
+plot_interval = 50
 
 T = []
 ff_errors = []
@@ -41,12 +41,12 @@ print("setup complete, running simulations...")
 try:
     for run in range(sim_params["n_runs"] + 1):
         start = time()
-        net.train_bars(sim_params["SIM_TIME"])
+        net.train_epoch_bars()
         t = time() - start
         T.append(t)
 
         if run % plot_interval == 0:
-            net.train_bars()
+            net.test_bars()
             print(f"plotting run {run}")
             start = time()
             fig, axes = plt.subplots(4, 2, constrained_layout=True)
@@ -98,30 +98,30 @@ try:
                     ax5.plot(i, WYH[j, i], ".", color=col, label=f"to {t}")
                     ax5.plot(i, WIH[j, i], "x", color=col, label=f"from {t}")
 
-            ax6.plot(utils.rolling_avg(net.train_loss, 25))
-            ax7.plot(net.test_loss)
+            ax6.plot(utils.rolling_avg(net.test_acc, 2))
+            ax7.plot(utils.rolling_avg(net.test_loss, 2))
             ax0.set_title("interneuron - pyramidal error")
             ax1.set_title("apical error")
             ax2.set_title("Feedback error")
             ax3.set_title("Feedforward error")
             ax4.set_title("Feedback weights")
             ax5.set_title("Feedforward weights")
-            ax6.set_title("Train loss")
+            ax6.set_title("Test Accuracy")
             ax7.set_title("Test Loss")
 
             ax0.set_ylim(bottom=0)
             ax1.set_ylim(bottom=0)
             ax2.set_ylim(bottom=0)
             ax3.set_ylim(bottom=0)
-            ax6.set_ylim(bottom=0)
-            ax7.set_ylim(bottom=0)
+            ax6.set_ylim(0, 1)
+            ax7.set_ylim(0, 1)
 
             plt.savefig(os.path.join(imgdir, f"{run}.png"))
             plt.close()
 
             plot_duration = time() - start
             print(f"mean simulation time: {np.mean(T[-50:]):.4f}s. plot time:{plot_duration:.2f}s. \
-    apical error: {apical_error_now:.2f}.")
+    apical error: {apical_error_now:.2f}, train loss: {net.train_loss[-1]:.4f}, test loss: {net.test_loss[-1]:.4f}")
             print(
                 f"ff error: {ff_error:.5f}, fb error: {fb_error:.5f}, interneuron error: {intn_error_now:.4f}, absolute somatic voltage: {abs_voltage:.3f}\n")
 

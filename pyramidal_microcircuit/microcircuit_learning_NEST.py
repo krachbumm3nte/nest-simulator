@@ -13,7 +13,7 @@ import json
 root, imgdir, datadir = utils.setup_simulation()
 utils.setup_nest(sim_params, datadir)
 
-spiking = False
+spiking = True
 utils.setup_models(spiking, neuron_params, sim_params, syn_params, False)
 
 sim_params["teacher"] = False
@@ -26,8 +26,7 @@ dims = sim_params["dims"]
 cmap_1 = plt.cm.get_cmap('hsv', dims[1]+1)
 cmap_2 = plt.cm.get_cmap('hsv', dims[2]+1)
 
-plot_interval = 20
-batchsize = 50
+plot_interval = 50
 
 T = []
 ff_errors = []
@@ -59,11 +58,12 @@ print("setup complete, running simulations...")
 try:
     for run in range(sim_params["n_runs"] + 1):
         start = time()
-        net.train_batches_bars(batchsize)
-        t = (time() - start) / batchsize
+        net.train_epoch_bars()
+        t = time() - start
         T.append(t)
 
         if run % plot_interval == 0:
+            net.test_bars()
             print(f"plotting run {run}")
             start = time()
             fig, axes = plt.subplots(4, 2, constrained_layout=True)
@@ -140,25 +140,25 @@ try:
                 t = row["target"]
                 ax5.plot(row["source"], row["weight"], "x", color=cmap_2(row["target"] % dims[2]), label=f"from {t}")
 
-            ax6.plot(net.train_loss)
-            ax7.plot(net.test_loss)
+            ax6.plot(utils.rolling_avg(net.test_acc, 2))
+            ax7.plot(utils.rolling_avg(net.test_loss, 2))
             ax0.set_title("interneuron - pyramidal error")
             ax1.set_title("apical error")
             ax2.set_title("Feedback error")
             ax3.set_title("Feedforward error")
             ax4.set_title("Feedback weights")
             ax5.set_title("Feedforward weights")
-            ax6.set_title("Train loss")
+            ax6.set_title("Test Accuracy")
             ax7.set_title("Test Loss")
 
             ax0.set_ylim(bottom=0)
             ax1.set_ylim(bottom=0)
             ax2.set_ylim(bottom=0)
             ax3.set_ylim(bottom=0)
-            ax6.set_ylim(bottom=0)
-            ax7.set_ylim(bottom=0)
+            ax6.set_ylim(0,1)
+            ax7.set_ylim(0,1)
 
-            plt.savefig(os.path.join(imgdir, f"{run*batchsize}.png"))
+            plt.savefig(os.path.join(imgdir, f"{run}.png"))
             plt.close()
 
             plot_duration = time() - start

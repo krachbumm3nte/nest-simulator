@@ -12,12 +12,16 @@ class Network:
 
         self.dims = sim["dims"]
         self.sim_time = sim["SIM_TIME"]
+        self.delta_t = sim["delta_t"]
         self.iteration = 0
         self.sigma_noise = sim["sigma"]
 
         self.gamma = nrn["gamma"]
         self.beta = nrn["beta"]
         self.theta = nrn["theta"]
+
+        self.Wmin = syns["Wmin"]
+        self.Wmax = syns["Wmax"]
 
         self.teacher = sim["teacher"]
         if self.teacher:
@@ -30,6 +34,7 @@ class Network:
 
         self.train_loss = []
         self.test_loss = []
+        self.test_acc = []
 
     def gen_weights(self, n_in, n_out, wmin=None, wmax=None):
         if not wmin:
@@ -38,9 +43,6 @@ class Network:
             wmax = 0.1
         return np.random.uniform(wmin, wmax, (n_out, n_in))
 
-    def calculate_target(self, input_currents):
-        assert self.teacher
-        return self.k_yh * self.wyh_trgt @ self.phi(self.k_hx * self.whx_trgt @ input_currents)
     
     @abstractmethod
     def train(self, input_currents, T):
@@ -52,6 +54,18 @@ class Network:
 
     @abstractmethod
     def get_weight_dict(self):
+        pass
+
+    @abstractmethod
+    def train_epoch(self, x_batch, y_batch):
+        pass
+
+    @abstractmethod
+    def test_teacher(self):
+        pass
+
+    @abstractmethod
+    def test_bars(self):
         pass
 
     def phi(self, x):
@@ -110,4 +124,30 @@ class Network:
     def generate_teacher_data(self):
         x = np.random.random(self.dims[0])
 
-        return x, self.calculate_target(x)
+        return x, self.get_teacher_output(x)
+
+    def get_teacher_output(self, input_currents):
+        assert self.teacher
+        return self.k_yh * self.wyh_trgt @ self.phi(self.k_hx * self.whx_trgt @ input_currents)
+
+    def train_epoch_bars(self, n_samples=3):
+        data_indices = list(range(8)) * n_samples
+
+        x_batch = np.zeros((len(data_indices), self.dims[0]))
+        y_batch = np.zeros((len(data_indices), self.dims[-1]))
+        for i, datapoint in enumerate(data_indices):
+            x, y = self.generate_bar_data(datapoint)
+            x_batch[i] = x
+            y_batch[i] = y
+        self.train_epoch(x_batch, y_batch)
+
+
+    def train_epoch_teacher(self, batchsize):
+        x_batch = np.zeros((batchsize, self.dims[0]))
+        y_batch = np.zeros((batchsize, self.dims[-1]))
+        for i in range(batchsize):
+            x, y = self.generate_teacher_data()
+            x_batch[i] = x
+            y_batch[i] = y
+        self.train_epoch(x_batch, y_batch)
+        self.test_teacher()

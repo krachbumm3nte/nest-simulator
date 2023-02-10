@@ -27,9 +27,9 @@ class NestNetwork(Network):
             self.syns['w_init_yh'] /= self.weight_scale
             for syn_name in ["hx", "yh", "hy", "ih"]:
                 if "eta" in syn[syn_name]:
-                    syn[syn_name]["eta"] /= self.weight_scale**3 * 30
+                    syn[syn_name]["eta"] /= self.weight_scale**3 * self.syns["tau_Delta"]
             if "eta" in syn["hi"]:
-                syn["hi"]["eta"] /= self.weight_scale**2 * 30
+                syn["hi"]["eta"] /= self.weight_scale**2 * self.syns["tau_Delta"]
 
         self.setup_populations(self.syns, self.nrn)
 
@@ -126,32 +126,20 @@ class NestNetwork(Network):
         for i in range(self.dims[0]):
             self.pyr_pops[0][i].set({"soma": {"I_e": input_currents[i] / self.nrn["tau_x"]}})
 
-    def train_batches_bars(self, batchsize):
-        self.run_batch(batchsize, self.generate_bar_data)
-        self.test_bars()
 
+    def train_epoch(self, x_batch, y_batch):
 
-    def train_batches_teacher(self, batchsize):
-        self.run_batch(batchsize, self.generate_teacher_data)
-        self.test_teacher()
-
-    def run_batch(self, batchsize, data_generator):
-        x_batch = np.zeros((batchsize, self.dims[0]))
-        y_batch = np.zeros((batchsize, self.dims[-1]))
-        for i in range(batchsize):
-            x, y = data_generator()
-            x_batch[i] = x
-            y_batch[i] = y
+        l_epoch = len(x_batch)
 
         t_now = nest.GetKernelStatus("biological_time")
-        times = np.arange(t_now + self.sim["delta_t"], t_now + self.sim_time * batchsize, self.sim_time)
+        times = np.arange(t_now + self.sim["delta_t"], t_now + self.sim_time * l_epoch, self.sim_time)
 
         for i, sg in enumerate(self.sgx):
             sg.set(amplitude_values=x_batch[:, i]/self.nrn["tau_x"], amplitude_times=times)
         for i, sg in enumerate(self.sgy):
             sg.set(amplitude_values=y_batch[:, i]*self.nrn["g_s"], amplitude_times=times)
         
-        self.simulate(self.sim_time*batchsize)
+        self.simulate(self.sim_time*l_epoch)
 
         y_actual = y_batch[-1, :]
         y_pred = [nrn.get("soma")["V_m"] for nrn in self.pyr_pops[-1]]
@@ -160,29 +148,43 @@ class NestNetwork(Network):
 
 
 
-    def test_teacher(self):
+    def test_teacher(self, n_samples = 5):
         assert self.teacher
-        x_test, y_actual = self.generate_teacher_data()
-        
-        WHX = pd.DataFrame.from_dict(nest.GetConnections(source=self.pyr_pops[0], target=self.pyr_pops[1]).get())
-        WYH = pd.DataFrame.from_dict(nest.GetConnections(source=self.pyr_pops[1], target=self.pyr_pops[2]).get())
-        WHX = WHX.sort_values(["target", "source"]).weight.values.reshape((self.dims[1], self.dims[0]))
-        WYH = WYH.sort_values(["target", "source"]).weight.values.reshape((self.dims[2], self.dims[1]))
-        y_pred = self.nrn["lambda_out"] * self.weight_scale * \
-            WYH @ self.phi(self.nrn["lambda_ah"] * self.weight_scale * WHX @ x_test)
-        
-        self.test_loss.append(mse(y_actual, y_pred))
+        loss = []
+        for i in range(n_samples):
+            x_test, y_actual = self.generate_teacher_data()
+            
+            WHX = self.get_weight_array(self.pyr_pops[0], self.pyr_pops[1])
+            WYH = self.get_weight_array(self.pyr_pops[1], self.pyr_pops[2])
+            y_pred = self.nrn["lambda_out"] * self.weight_scale * \
+                WYH @ self.phi(self.nrn["lambda_ah"] * self.weight_scale * WHX @ x_test)
+            loss.append(mse(y_actual, y_pred))
+        self.test_loss.append(np.mean(loss))
 
-    def test_bars(self):
-        x_test, y_actual = self.generate_bar_data()
 
-        WHX = pd.DataFrame.from_dict(nest.GetConnections(source=self.pyr_pops[0], target=self.pyr_pops[1]).get())
-        WYH = pd.DataFrame.from_dict(nest.GetConnections(source=self.pyr_pops[1], target=self.pyr_pops[2]).get())
-        WHX = WHX.sort_values(["target", "source"]).weight.values.reshape((self.dims[1], self.dims[0]))
-        WYH = WYH.sort_values(["target", "source"]).weight.values.reshape((self.dims[2], self.dims[1]))
-        y_pred = self.weight_scale * WYH @ self.phi(self.weight_scale * WHX @ x_test)
-        
-        self.test_loss.append(mse(y_actual, y_pred))
+    def test_bars(self, n_samples = 5):
+        acc = []
+        loss_mse = []
+        nest.GetConnections(synapse_model=self.syns["synapse_model"]).set({"eta":0})
+        for i in range(n_samples):
+            x_test, y_actual = self.generate_bar_data()
+            t_now = nest.GetKernelStatus("biological_time") + self.delta_t
+            for i, sg in enumerate(self.sgx):
+                sg.set(amplitude_values=[x_test[i]/self.nrn["tau_x"]], amplitude_times=[t_now])
+            for i, sg in enumerate(self.sgy):
+                sg.set(amplitude_values=[0], amplitude_times=[t_now])
+            self.simulate(self.sim_time)
+
+            y_pred = [nrn.get("soma")["V_m"] for nrn in self.pyr_pops[-1]]
+            loss_mse.append(mse(y_actual, y_pred))
+            acc.append(np.argmax(y_actual)== np.argmax(y_pred))
+        self.test_acc.append(np.mean(acc))
+        self.test_loss.append(np.mean(loss_mse))
+
+        nest.GetConnections(self.pyr_pops[0], self.pyr_pops[1]).set({"eta": self.syns["hx"]["eta"]})
+        nest.GetConnections(self.pyr_pops[1], self.intn_pops[0]).set({"eta": self.syns["ih"]["eta"]})
+        # nest.GetConnections(self.intn_pops[0], self.pyr_pops[1]).set({"eta": self.syns["hi"]["eta"]})
+        nest.GetConnections(self.pyr_pops[1], self.pyr_pops[2]).set({"eta": self.syns["yh"]["eta"]})
 
     def set_target(self, target_currents):
         """Inject a constant current into all neurons in the output layer.
@@ -196,6 +198,10 @@ class NestNetwork(Network):
         self.target_curr = target_currents
         for i in range(self.dims[-1]):
             self.pyr_pops[-1][i].set({"soma": {"I_e": target_currents[i] * self.nrn["g_s"]}})
+
+    def get_weight_array(self, source, target):
+        weights = pd.DataFrame.from_dict(nest.GetConnections(source=source, target=target).get())
+        return weights.sort_values(["target", "source"]).weight.values.reshape((len(target), len(source)))
 
     def get_weight_dict(self):
 
