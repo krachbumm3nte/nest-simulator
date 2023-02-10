@@ -13,7 +13,7 @@ sim_params = {
     "self_predicting_ff": True,  # initialize feedforward weights to self-predicting state
     "self_predicting_fb": True,  # initialize feedback weights to self-predicting state
     "plasticity": True,  # enable synaptic plasticity
-    "SIM_TIME": 100,  # simulation time per input pattern in ms
+    "SIM_TIME": 150,  # simulation time per input pattern in ms
     "n_runs": 100000,  # number of training iterations
     "noise": False,  # apply noise to membrane potentials
     "sigma": sigma,
@@ -28,9 +28,11 @@ sim_params = {
 
 
 # Neuron parameters
-g_l = 0.1  # somatic leakage conductance
-g_a = 0.8  # apical compartment coupling conductance
-g_d = 1  # basal compartment coupling conductance
+g_l = 0.03  # somatic leakage conductance
+g_a = 0.06  # apical compartment coupling conductance
+g_d = 0.1  # basal compartment coupling conductance
+g_s = 0.06
+g_si = 0.06
 lambda_ah = g_a / (g_d + g_a + g_l)  # Useful constant for scaling learning rates
 lambda_bh = g_d / (g_d + g_a + g_l)  # Useful constant for scaling learning rates
 
@@ -39,23 +41,22 @@ g_l_eff = g_l + g_d + g_a
 
 
 # parameters of the activation function phi()
-# gamma = 1
-# beta = 1
-# theta = 0
-
-gamma = 0.1
+gamma = 1
 beta = 1
-theta = 3
+theta = 0
+
+# gamma = 0.1
+# beta = 1
+# theta = 3
 
 neuron_params = {
-    "tau_x": 3,  # input filtering time constant
+    "tau_x": 0.1,  # input filtering time constant
     "g_l": g_l,
     "g_lk_dnd": delta_t,  # dendritic leakage conductance
     "g_a": g_a,
     "g_d": g_d,
-    "g_som": 0.8,  # somatic conductance TODO:
-    "g_si": 0.8,  # interneuron nudging conductance
-    "g_s": 0.8,  # output neuron nudging conductance
+    "g_si": g_si,  # interneuron nudging conductance
+    "g_s": g_s,  # output neuron nudging conductance
     "lambda_out": lambda_out,
     "lambda_ah": lambda_ah,
     "lambda_bh": lambda_bh,
@@ -70,7 +71,7 @@ neuron_params = {
 comp_defaults = {
     'V_m': 0.0,  # Membrane potential
     'g_L': neuron_params["g_lk_dnd"],
-    'g': neuron_params["g_som"]
+    'g': neuron_params["g_s"]
 }
 
 
@@ -127,15 +128,13 @@ neuron_params["intn"] = intn_params
 
 
 # Dicts derived from this can be passed directly to nest.Connect() as synapse parameters
-tau_delta = 30
+tau_delta = 10
 syn_params = {
     'synapse_model': None,  # Synapse model (for NEST simulations only)
     'tau_Delta': tau_delta,  # Synaptic time constant
-    'Wmin': -10,  # minimum weight
-    'Wmax': 10,  # maximum weight
+    'Wmin': -4,  # minimum weight
+    'Wmax': 4,  # maximum weight
     'delay': sim_params['delta_t'],  # synaptic delay
-    'wmin_init': -0.1,  # synaptic weight initialization min
-    'wmax_init': 0.1,  # synaptic weight initialization max
     'tau_Delta': tau_delta,
     'w_init_hx': 1,
     'w_init_hi': 1,
@@ -172,10 +171,10 @@ if sim_params["plasticity"]:
     # eta_hx = 0.11875
 
     # from Haider 2021, Fig 3, T_pres = 100 * tau_eff
-    eta_yh = 0.001
-    eta_ih = 0.002 
-    eta_hi = 0.0
-    eta_hx = 0.005
+    eta_ih = 0.000002 
+    eta_yh = 0.000001
+    eta_hi = 0.0000
+    eta_hx = 0.000005
 else:
     eta_yh = 0
     eta_hx = 0
