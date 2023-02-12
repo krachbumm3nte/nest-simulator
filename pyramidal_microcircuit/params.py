@@ -9,12 +9,12 @@ sigma = 0.3  # standard deviation for membrane potential noise
 sim_params = {
     "delta_t": delta_t,
     "threads": 10,
-    "record_interval": 200,  # interval for storing membrane potentials
+    "record_interval": 300,  # interval for storing membrane potentials in ms
     "self_predicting_ff": True,  # initialize feedforward weights to self-predicting state
     "self_predicting_fb": True,  # initialize feedback weights to self-predicting state
     "plasticity": True,  # enable synaptic plasticity
-    "SIM_TIME": 150,  # simulation time per input pattern in ms
-    "n_runs": 100000,  # number of training iterations
+    "SIM_TIME": 100,  # simulation time per input pattern in ms
+    "n_runs": 10000,  # number of training iterations
     "noise": False,  # apply noise to membrane potentials
     "sigma": sigma,
     "noise_factor": np.sqrt(delta_t) * sigma,  # constant noise factor for numpy simulations
@@ -23,6 +23,7 @@ sim_params = {
     "dims_teacher": [9, 10, 3], # teacher network dimensions.
     "k_yh": 10, # hidden to output teacher weight scaling factor
     "k_hx": 1, # input to hidden teacher weight scaling factor
+    "use_mm": False, # If true, record activity of nest neurons using multimeters
     "recording_backend": "ascii",  # Backend for NEST multimeter recordings
 }
 
@@ -128,7 +129,7 @@ neuron_params["intn"] = intn_params
 
 
 # Dicts derived from this can be passed directly to nest.Connect() as synapse parameters
-tau_delta = 10
+tau_delta = 1
 syn_params = {
     'synapse_model': None,  # Synapse model (for NEST simulations only)
     'tau_Delta': tau_delta,  # Synaptic time constant
@@ -171,10 +172,10 @@ if sim_params["plasticity"]:
     # eta_hx = 0.11875
 
     # from Haider 2021, Fig 3, T_pres = 100 * tau_eff
-    eta_ih = 0.000002 
-    eta_yh = 0.000001
-    eta_hi = 0.0000
-    eta_hx = 0.000005
+    eta_ih = 0.0002 
+    eta_yh = 0.0001
+    eta_hi = 0.00
+    eta_hx = 0.0005
 else:
     eta_yh = 0
     eta_hx = 0

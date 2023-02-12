@@ -1,20 +1,22 @@
+import nest
 import matplotlib.pyplot as plt
 import numpy as np
 from params import *
 import pandas as pd
-from networks.network_numpy import NumpyNetwork
+from networks.network_nest import NestNetwork
 from sklearn.metrics import mean_squared_error as mse
 from time import time
 import utils
 import os
 import json
 
-root, imgdir, datadir = utils.setup_simulation()
+root_dir, imgdir, datadir = utils.setup_simulation()
+utils.setup_nest(sim_params, datadir)
 
-utils.setup_models(False, neuron_params, sim_params, syn_params, False)
+spiking = True
+utils.setup_models(spiking, neuron_params, sim_params, syn_params, False)
 
-
-net = NumpyNetwork(sim_params, neuron_params, syn_params)
+net = NestNetwork(sim_params, neuron_params, syn_params, spiking)
 
 dims = sim_params["dims"]
 
@@ -29,13 +31,24 @@ fb_errors = []
 apical_errors = []
 intn_errors = [[] for i in range(dims[-1])]
 
+# storing populations and their ids for easy access during plotting.
+in_ = net.pyr_pops[0]
+in_id = sorted(in_.get("global_id"))
 
-# dump simulation parameters to a .json file
-with open(os.path.join(os.path.dirname(imgdir), "params.json"), "w") as f:
-    # print(sim_params, neuron_params, syn_params)
-    for conn in ["hx", "yh", "hy", "ih", "hi"]:
-        syn_params[conn]["weight"] = net.conns[conn]["w"].tolist()
+hidden = net.pyr_pops[1]
+hidden_id = sorted(hidden.get("global_id"))
+
+out = net.pyr_pops[2]
+out_id = sorted(out.get("global_id"))
+
+interneurons = net.intn_pops[0]
+intn_id = sorted(interneurons.get("global_id"))
+
+# dump simulation parameters and initial weights to .json files
+with open(os.path.join(root_dir, "params.json"), "w") as f:
     json.dump({"simulation": sim_params, "neurons": neuron_params, "synapses": syn_params}, f)
+utils.store_synaptic_weights(net, root_dir, "init_weights.json")
+
 print("setup complete, running simulations...")
 
 try:
@@ -46,17 +59,35 @@ try:
         T.append(t)
 
         if run % plot_interval == 0:
-            net.test_bars()
+            if run % plot_interval == 0:
+                net.test_bars()
+
             print(f"plotting run {run}")
             start = time()
             fig, axes = plt.subplots(4, 2, constrained_layout=True)
             [ax0, ax1, ax2, ax3, ax4, ax5, ax6, ax7] = axes.flatten()
             plt.rcParams['savefig.dpi'] = 300
 
-            intn_error = np.square(net.U_y_record - net.U_i_record)
+            # plot somatic voltages of hidden interneurons and output pyramidal neurons
+            neuron_data = utils.read_data(net.mm.global_id, datadir, it_min=run-plot_interval+1)
 
-            mean_error = utils.rolling_avg(np.sum(intn_error, axis=1), size=200)
-            abs_voltage = np.mean(np.concatenate([net.U_y_record[-5:], net.U_i_record[-5:]]))
+            U_I = neuron_data[neuron_data.sender.isin(intn_id)].groupby("sender")["V_m.s"]
+            U_Y = neuron_data[neuron_data.sender.isin(out_id)].groupby("sender")["V_m.s"]
+
+            abs_voltage = []
+            for idx, (intn, pyr) in enumerate(zip(intn_id, out_id)):
+                data_intn = U_I.get_group(intn)
+                data_pyr = U_Y.get_group(pyr)
+                int_v = data_intn.array
+                pyr_v = data_pyr.array
+
+                abs_voltage.append(np.abs(int_v))
+                abs_voltage.append(np.abs(pyr_v))
+                error = np.square(int_v-pyr_v)
+                intn_errors[idx].extend(error)
+
+            mean_error = utils.rolling_avg(np.mean(intn_errors, axis=0), size=200)
+            abs_voltage = np.mean(abs_voltage)
             ax0.plot(mean_error, color="black")
 
             intn_error_now = np.mean(mean_error[-20:])
@@ -64,18 +95,22 @@ try:
             ax0_2.set_yticks([intn_error_now])
 
             # plot apical error
-            apical_error = utils.rolling_avg(np.linalg.norm(net.V_ah_record, axis=1), size=150)
-            ax1.plot(apical_error)
+            U_H = neuron_data[neuron_data.sender.isin(hidden_id)]
 
-            apical_error_now = np.mean(apical_error[-20:])
+            apical_error = np.linalg.norm(np.stack(U_H.groupby("time_ms")["V_m.a_lat"].apply(np.array).values), axis=1)
+            apical_errors.extend(apical_error)
+            ax1.plot(utils.rolling_avg(apical_errors, size=150))
+
+            apical_error_now = np.mean(apical_error)
             ax1_2 = ax1.secondary_yaxis("right")
             ax1_2.set_yticks([apical_error_now])
 
             # Synaptic weights
-            WHY = net.conns["hy"]["w"]
-            WHI = net.conns["hi"]["w"]
-            WYH = net.conns["yh"]["w"]
-            WIH = net.conns["ih"]["w"]
+            # notice that all weights are scaled up again to ensure that derived metrics are comparible between simulations
+            WHY = net.get_weight_array(out, hidden) * net.weight_scale
+            WHI = net.get_weight_array(interneurons, hidden) * net.weight_scale
+            WYH = net.get_weight_array(hidden, out) * net.weight_scale
+            WIH = net.get_weight_array(hidden, interneurons) * net.weight_scale
 
             fb_error = mse(WHY.flatten(), -WHI.flatten())
             fb_errors.append(fb_error)

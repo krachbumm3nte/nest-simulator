@@ -131,16 +131,17 @@ def zeros(shape):
     return np.zeros(shape, dtype=np.float32)
 
 
-def store_synaptic_weights(net: Network, dirname):
-    if len(net.sim["dims"]) != 3:
+def store_synaptic_weights(network: Network, dirname, filename = "weights.json"):
+    if len(network.dims) != 3:
         raise ValueError("I'm too lazy to generalize this!")
 
-    weights = net.get_weight_dict()
+    weights = network.get_weight_dict()
 
     for k,v in weights.items():
-        weights[k] = v.tolist()
+        if type(weights[k]) == np.ndarray:
+            weights[k] = v.tolist()
 
-    with open(os.path.join(dirname, "weights.json"), "w") as f:
+    with open(os.path.join(dirname, filename), "w") as f:
         json.dump(weights, f)
 
 
