@@ -171,6 +171,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_()
   pyr_params.lambda_curr = 0.0;
   pyr_params.C_m = 1.0; // pF
   pyr_params.use_phi = true;
+  pyr_params.latent_equilibrium = false;
 
 
   // soma parameters
@@ -211,6 +212,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_( const Parameters_& p )
   pyr_params.tau_m = p.pyr_params.tau_m;
   pyr_params.C_m = p.pyr_params.C_m;
   pyr_params.use_phi = p.pyr_params.use_phi;
+  pyr_params.latent_equilibrium = p.pyr_params.latent_equilibrium;
 
   // copy C-arrays
 
@@ -243,7 +245,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::operator=( const Parameters_& p )
   pyr_params.lambda_curr = p.pyr_params.lambda_curr;
   pyr_params.C_m = p.pyr_params.C_m;
   pyr_params.use_phi = p.pyr_params.use_phi;
-
+  pyr_params.latent_equilibrium = p.pyr_params.latent_equilibrium;
   for ( size_t n = 0; n < NCOMP; ++n )
   {
     pyr_params.g_conn[ n ] = p.pyr_params.g_conn[ n ];
@@ -368,6 +370,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::set( const DictionaryDatum& d )
   updateValue< double >( d, Name( names::target ), pyr_params.curr_target_id );
   updateValue< double >( d, Name( names::lambda ), pyr_params.lambda_curr );
   updateValue< bool >( d, Name( names::use_phi ), pyr_params.use_phi );
+  updateValue< bool >( d, Name( names::latent_equilibrium ), pyr_params.latent_equilibrium );
 
 
   // extract from sub-dictionaries
@@ -571,7 +574,7 @@ nest::pp_cond_exp_mc_pyr::pre_run_hook()
 void
 nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const long to )
 {
-
+  typedef nest::pp_cond_exp_mc_pyr::State_ S;
   assert( to >= 0 and ( delay ) from < kernel().connection_manager.get_min_delay() );
   assert( from < to );
 
@@ -579,21 +582,22 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
   {
 
 
-    // add incoming spikes to all compartmens
+    // add incoming spikes and injected currents to all compartmens
     for ( size_t n = 0; n < NCOMP; ++n )
     {
-      S_.y_[ State_::idx( n, State_::I ) ] += B_.spikes_[ n ].get_value( lag );
+      S_.y_[ S::idx( n, S::I ) ] += B_.spikes_[ n ].get_value( lag );
       B_.I_stim_[ n ] = B_.currents_[ n ].get_value( lag );
     }
-    // membrane potential of soma
-    const double V = S_.y_[ State_::idx( P_.pyr_params.SOMA, State_::V_M ) ];
+
+    // Somatic membrane potential
+    const double V = S_.y_[ S::idx( SOMA, S::V_M ) ];
 
     // leak current of soma
     // TODO: I am misappropriating g_som here, because I am too lazy to create another neuron parameter.
     // The gist of it is, that all neuron types have effective leakage conductance of (g_l + g_D + g_A),
     // yet in- and output neurons have an apical conductance of zero. Thus we need to store this sum separately.
     // as it serves no other purpose, the somatic conductance is used here (temporarily?)
-    const double I_L = P_.pyr_params.g_conn[ pyr_params->SOMA ] * V;
+    const double I_L = P_.pyr_params.g_conn[ SOMA ] * V;
 
     // coupling from dendrites to soma all summed up
     double I_conn_d_s = 0.0;
@@ -601,40 +605,49 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
     // compute dynamics for each dendritic compartment
     // computations written quite explicitly for clarity, assume compile
     // will optimized most stuff away ...
-    for ( size_t n = 1; n < P_.pyr_params.NCOMP; ++n )
+    for ( size_t n = 1; n < NCOMP; ++n )
     {
-      if ( P_.pyr_params.g_conn[ n ] == 0 )
+      if ( pyr_params->g_conn[ n ] == 0 )
       {
         continue;
       }
       // membrane potential of dendrite
-      const double V_dnd = S_.y_[ State_::idx( n, State_::V_M ) ];
+      const double V_dnd = S_.y_[ S::idx( n, S::V_M ) ];
 
       // coupling current from dendrite to soma
-      I_conn_d_s += P_.pyr_params.g_conn[ n ] * V_dnd;
+      I_conn_d_s += pyr_params->g_conn[ n ] * V_dnd;
 
       // dendritic current due to input
-      const double I_dend = S_.y_[ State_::idx( n, State_::I ) ];
+      const double I_dend = S_.y_[ S::idx( n, S::I ) ];
 
-      const double I_L_dend = P_.pyr_params.g_L[ n ] * V_dnd;
+      const double I_L_dend = pyr_params->g_L[ n ] * V_dnd;
 
+      S_.y_[ S::idx( n, S::delta_V_M ) ] = -I_L_dend + I_dend;
       // derivative membrane potential
-      S_.y_[ State_::idx( n, State_::V_M ) ] = V_dnd - I_L_dend + I_dend;
+      S_.y_[ S::idx( n, S::V_M ) ] += S_.y_[ S::idx( n, S::delta_V_M ) ];
 
       // derivative dendritic current
-      S_.y_[ State_::idx( n, State_::I ) ] = 0; // I_dend - I_dend / P_.pyr_params.tau_m;
+      S_.y_[ S::idx( n, S::I ) ] = 0; // I_dend - I_dend / pyr_params->tau_m;
     }
 
-    // derivative membrane potential
-    // soma
-    S_.y_[ State_::idx( P_.pyr_params.SOMA, State_::V_M ) ] =
-      V + 0.1 * ( -I_L + I_conn_d_s + B_.I_stim_[ P_.pyr_params.SOMA ] + P_.I_e[ P_.pyr_params.SOMA ] );
+    S_.y_[ S::idx( SOMA, S::delta_V_M ) ] = -I_L + I_conn_d_s + B_.I_stim_[ SOMA ] + P_.I_e[ SOMA ];
+    S_.y_[ S::idx( SOMA, S::V_M ) ] += B_.step_ * S_.y_[ S::idx( SOMA, S::delta_V_M ) ];
+
 
     // excitatory conductance soma
-    S_.y_[ State_::idx( P_.pyr_params.SOMA, State_::I ) ] =
-      0; //-S_.y_[ State_::idx( P_.pyr_params.SOMA, State_::I ) ] / P_.pyr_params.tau_m;
-         // std::cout << "soma curr " << y[ S::idx( N::SOMA, S::I)] << "\n";
+    S_.y_[ S::idx( SOMA, S::I ) ] = 0;
+    //-S_.y_[ S::idx( pyr_params->SOMA, S::I ) ] / pyr_params->tau_m;
 
+
+    double V_som = S_.y_[ S::idx( SOMA, S::V_M ) ];
+    double V_a = S_.y_[ S::idx( APICAL_LAT, S::V_M ) ];
+    double V_b = S_.y_[ S::idx( BASAL, S::V_M ) ];
+    if ( pyr_params->latent_equilibrium )
+    {
+      V_som += S_.y_[ S::idx( SOMA, S::delta_V_M ) ] / pyr_params->g_conn[ SOMA ];
+      V_a += S_.y_[ S::idx( APICAL_LAT, S::delta_V_M ) ] / pyr_params->g_conn[ SOMA ];
+      V_b += S_.y_[ S::idx( BASAL, S::delta_V_M ) ] / pyr_params->g_conn[ SOMA ];
+    }
 
 
     // Declaration outside if statement because we need it later
@@ -645,7 +658,7 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       // Neuron not refractory
 
       // There is no reset of the membrane potential after a spike
-      double rate = P_.pyr_params.phi( S_.y_[ State_::V_M ] );
+      double rate = pyr_params->phi( V_som );
 
       if ( rate > 0.0 )
       {
@@ -689,18 +702,12 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       --S_.r_;
     }
 
-    // Store dendritic membrane potential for Urbanczik-Senn plasticity
-    if ( P_.pyr_params.g_conn[ BASAL ] > 0 or P_.pyr_params.g_conn[ APICAL_LAT ] > 0 )
-    {
-      write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ),
-        S_.y_[ S_.idx( BASAL, State_::V_M ) ],
-        S_.y_[ S_.idx( SOMA, State_::V_M ) ],
-        BASAL );
 
-      write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ),
-        S_.y_[ S_.idx( APICAL_LAT, State_::V_M ) ],
-        S_.y_[ S_.idx( SOMA, State_::V_M ) ],
-        APICAL_LAT );
+    // Store dendritic membrane potential for Urbanczik-Senn plasticity
+    if ( pyr_params->g_conn[ BASAL ] > 0 or pyr_params->g_conn[ APICAL_LAT ] > 0 )
+    {
+      write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ), V_b, V_som, BASAL );
+      write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ), V_a, V_som, APICAL_LAT );
     }
 
     // log state data
@@ -709,16 +716,16 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
 
     // send current event to target
 
-    if ( P_.pyr_params.curr_target_id != 0 )
+    if ( pyr_params->curr_target_id != 0 )
     {
       CurrentEvent ce;
-      ce.set_current( S_.y_[ S_.idx( SOMA, State_::V_M ) ] );
+      ce.set_current( V_som );
       ce.set_receiver( *pyr_params->curr_target );
       ce.set_sender_node_id( this->get_node_id() );
       ce.set_rport( 0 ); // TODO: make this flexible to target not only the soma!
       ce.set_sender( *this );
       ce.set_stamp( Time::step( origin.get_steps() + lag + 1 ) );
-      ce.set_weight( P_.pyr_params.lambda_curr );
+      ce.set_weight( pyr_params->lambda_curr );
       ce();
     }
   }

@@ -293,6 +293,7 @@ extern const Name kernel;
 extern const Name label;
 extern const Name lambda;
 extern const Name lambda_0;
+extern const Name latent_equilibrium;
 extern const Name len_kernel;
 extern const Name linear;
 extern const Name linear_summation;

@@ -269,6 +269,7 @@ const Name kernel( "kernel" );
 const Name label( "label" );
 const Name lambda( "lambda" );
 const Name lambda_0( "lambda_0" );
+const Name latent_equilibrium( "latent_equilibrium" );
 const Name len_kernel( "len_kernel" );
 const Name linear( "linear" );
 const Name linear_summation( "linear_summation" );

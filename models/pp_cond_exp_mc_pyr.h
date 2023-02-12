@@ -100,6 +100,7 @@ private:
   Node* curr_target;
   double lambda_curr;
   bool use_phi;
+  bool latent_equilibrium;
 
 public:
   // The Urbanczik parameters need to be public within this class as they are passed to the GSL solver
@@ -407,6 +408,7 @@ public:
     {
       V_M = 0,
       I,
+      delta_V_M,
       STATE_VEC_COMPS
     };
 
@@ -554,11 +556,10 @@ public:
 inline double
 pp_cond_exp_mc_pyr_parameters::phi( double u )
 {
-  //  return phi_max / ( 1.0 + gamma * exp( beta * ( theta - u ) ) );
   if ( use_phi )
   {
     return gamma * log( 1 + exp( beta * ( u - theta ) ) );
-    return 1 / ( 1.0 + exp( -u ) );
+    //return 1 / ( 1.0 + exp( -u ) );
   }
   else
   {
