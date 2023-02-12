@@ -24,12 +24,14 @@ if __name__ == "__main__":
     sim_params["record_interval"] = 0.1
     sim_params["recording_backend"] = "memory"
     sim_params["datadir"] = datadir
+    sim_params["use_mm"] = True
 
     # increase learning rates to absurd levels to make plasticity visible
     for syn_name in ["hx", "yh", "hy", "ih", "hi"]:
         syn_params[syn_name]["eta"] = 0.5
 
     plot_all_runs = True
+    test_results = []
 
     for use_spiking_neurons in [False, True]:
         spiking_str = 'spiking' if use_spiking_neurons else 'rate'
@@ -50,6 +52,7 @@ if __name__ == "__main__":
                 continue
             else:
                 test_passed = instance.evaluate()
+                test_results.append(test_passed)
                 if test_passed:
                     print("\tOK!")
                 else:
@@ -67,3 +70,5 @@ if __name__ == "__main__":
             for file in sorted(os.listdir(datadir)):
                 f = os.path.join(datadir,file)
                 os.remove(f)
+    print(f"\n\nAll runs completed.")
+    print(f"{sum(test_results)}/{len(test_results)} tests passed.")

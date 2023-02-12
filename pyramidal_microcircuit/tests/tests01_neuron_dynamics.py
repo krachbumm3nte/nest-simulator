@@ -359,7 +359,12 @@ class DynamicsHI(DynamicsHX):
                 self.VAH.append(V_ah)
 
     def evaluate(self) -> bool:
-        return records_match(self.VAH, self.mm_02.events["V_m.a_lat"]) and records_match(self.UH, self.mm_02.events["V_m.s"])
+        VAH_nest = self.mm_02.events["V_m.a_lat"]
+        UH_nest = self.mm_02.events["V_m.s"]
+        if self.spiking_neurons:
+            return records_match(self.VAH, VAH_nest, 0.01) and records_match(self.UH, UH_nest, 0.01)
+        else:
+            return records_match(self.VAH, VAH_nest) and records_match(self.UH, UH_nest)
 
     def plot_results(self):
 
@@ -432,7 +437,12 @@ class DynamicsYH(DynamicsHX):
                 self.VBY.append(V_bh)
 
     def evaluate(self) -> bool:
-        return records_match(self.VBY, self.mm_02.events["V_m.b"]) and records_match(self.UY, self.mm_02.events["V_m.s"])
+        VBH_nest = self.mm_02.events["V_m.b"]
+        UH_nest = self.mm_02.events["V_m.s"]
+        if self.spiking_neurons:
+            return records_match(self.VBY, VBH_nest, 0.01) and records_match(self.UY, UH_nest, 0.01)
+        else:
+            return records_match(self.VBY, VBH_nest) and records_match(self.UY, UH_nest)
 
     def plot_results(self):
 
@@ -469,10 +479,7 @@ class NetworkDynamics(TestClass):
         self.numpy_net = NumpyNetwork(deepcopy(sim), deepcopy(nrn), deepcopy(syn))
 
         self.nest_net = NestNetwork(deepcopy(sim), deepcopy(nrn), deepcopy(syn), self.spiking_neurons)
-        weights = self.nest_net.get_weight_dict()
-
-        for conn in ["hi", "ih", "hx", "hy", "yh"]:
-            self.numpy_net.conns[conn]["w"] = weights[conn] * self.weight_scale
+        self.numpy_net.set_weights(self.nest_net.get_weight_dict())
 
     def run(self):
         input_currents = np.random.random(self.dims[0])

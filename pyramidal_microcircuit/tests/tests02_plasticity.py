@@ -404,10 +404,7 @@ class NetworkPlasticity(TestClass):
         self.numpy_net = NumpyNetwork(deepcopy(sim), deepcopy(nrn), deepcopy(syn))
 
         self.nest_net = NestNetwork(deepcopy(sim), deepcopy(nrn), deepcopy(syn), self.spiking_neurons)
-        weights = self.nest_net.get_weight_dict()
-
-        for conn in ["hi", "ih", "hx", "hy", "yh"]:
-            self.numpy_net.conns[conn]["w"] = weights[conn] * self.weight_scale
+        self.numpy_net.set_weights(self.nest_net.get_weight_dict())
 
     def run(self):
         input_currents = np.random.random(self.dims[0])
@@ -481,12 +478,9 @@ class NetworkBatchTraining(TestClass):
         super().__init__(nrn, sim, syn, spiking_neurons, record_weights=True, **kwargs)
 
         self.numpy_net = NumpyNetwork(deepcopy(sim), deepcopy(nrn), deepcopy(syn))
-
         self.nest_net = NestNetwork(deepcopy(sim), deepcopy(nrn), deepcopy(syn), self.spiking_neurons)
-        weights = self.nest_net.get_weight_dict()
+        self.numpy_net.set_weights(self.nest_net.get_weight_dict())
 
-        for conn in ["hi", "ih", "hx", "hy", "yh"]:
-            self.numpy_net.conns[conn]["w"] = weights[conn] * self.weight_scale
 
     def run(self):
         self.sim_time = 100
@@ -561,7 +555,7 @@ class NetworkBatchTraining(TestClass):
 
             weights_nest = eval(f"self.{name}_nest")
             weights_numpy = self.numpy_net.conns[name]["record"]
-            axes[1][i].set_title(name)
+            axes[0][i].set_title(name)
             for sender in range(weights_nest.shape[2]):
                 for target in range(weights_nest.shape[1]):
                     col = cmap(sender)
