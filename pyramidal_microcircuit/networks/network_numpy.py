@@ -64,7 +64,6 @@ class NumpyNetwork(Network):
         self.r_h = self.phi(self.U_h)
         self.r_i = self.phi(self.U_i)
         self.r_y = self.phi(self.U_y)
-        self.conn_names = ["hx", "yh", "ih", "hi", "hy"]
 
         conn_setup = {
             "hx": {"in": self.dims[0], "out": self.dims[1], "init_scale": syns["w_init_hx"]},
@@ -113,26 +112,28 @@ class NumpyNetwork(Network):
             self.set_input(x_train)
             for i in range(int(self.sim_time/self.delta_t)):
                 self.simulate(lambda: y_train)
+            self.reset()
 
-    def test_bars(self, n_samples = 5):
+    def test_bars(self, n_samples = 8):
         acc = []
         loss_mse = []
-        for i in range(n_samples):
-            x_test, y_actual = self.generate_bar_data(i)
+        for sample_idx in range(n_samples):
+            x_test, y_actual = self.generate_bar_data()
             self.set_input(x_test)
             for i in range(int(self.sim_time/self.delta_t)):
                 self.simulate(lambda: np.zeros(self.dims[-1]), False, False)
             y_pred = self.U_y
-            # y_pred = lambda_out * self.conns["yh"]["w"] @ self.phi(lambda_bh * self.conns["hx"]["w"] @ x_test)
 
             loss_mse.append(mse(y_actual, y_pred))
             acc.append(np.argmax(y_actual)== np.argmax(y_pred))
+            self.reset()
+
         self.test_acc.append(np.mean(acc))
         self.test_loss.append(np.mean(loss_mse))
 
 
     def simulate(self, train_function, enable_recording=True, plasticity=True):
-        store_state = self.iteration % int(self.sim["record_interval"]/delta_t) == 0 and enable_recording
+        store_state = self.iteration % self.sim["record_interval"] == 0 and enable_recording
 
         delta_u_x = -self.U_x + self.I_x
         delta_u_h = -leakage * self.U_h + g_d * self.V_bh + g_a * self.V_ah
@@ -190,7 +191,6 @@ class NumpyNetwork(Network):
                 self.V_bi_record = np.concatenate((self.V_bi_record, np.expand_dims(self.V_bi, 0)), axis=0)
                 self.U_y_record = np.concatenate((self.U_y_record, np.expand_dims(self.U_y, 0)), axis=0)
                 self.V_by_record = np.concatenate((self.V_by_record, np.expand_dims(self.V_by, 0)), axis=0)
-
                 self.train_loss.append(mse(self.y, self.U_y))
             self.iteration += 1
 
@@ -207,3 +207,22 @@ class NumpyNetwork(Network):
         for k, v in self.conns.items():
             weights[k] = v["w"]
         return weights
+
+    def reset(self):
+        self.U_x.fill(0)
+        self.U_h.fill(0)
+        self.V_bh.fill(0)
+        self.V_ah.fill(0)
+        self.U_i.fill(0)
+        self.V_bi.fill(0)
+        self.U_y.fill(0)
+        self.V_by.fill(0)
+        self.y.fill(0)
+        for name in self.conns:
+            self.conns[name]["t_w"].fill(0)
+            self.conns[name]["dt_w"].fill(0)
+            
+
+    def set_weights(self, weights):
+        for name in self.conn_names:
+            self.conns[name]["w"] = weights[name]

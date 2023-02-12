@@ -13,8 +13,9 @@ class Network:
         self.dims = sim["dims"]
         self.sim_time = sim["SIM_TIME"]
         self.delta_t = sim["delta_t"]
-        self.iteration = 0
         self.sigma_noise = sim["sigma"]
+        self.record_interval = sim["record_interval"]
+        self.iteration = 0
 
         self.gamma = nrn["gamma"]
         self.beta = nrn["beta"]
@@ -35,6 +36,8 @@ class Network:
         self.train_loss = []
         self.test_loss = []
         self.test_acc = []
+        self.conn_names = ["hx", "yh", "ih", "hi", "hy"]
+
 
     def gen_weights(self, n_in, n_out, wmin=None, wmax=None):
         if not wmin:
@@ -43,6 +46,9 @@ class Network:
             wmax = 0.1
         return np.random.uniform(wmin, wmax, (n_out, n_in))
 
+    @abstractmethod
+    def set_weights(self, weights):
+        pass
     
     @abstractmethod
     def train(self, input_currents, T):
@@ -76,6 +82,9 @@ class Network:
 
     def phi_inverse(self, x):
         return (1 / self.beta) * (self.beta * self.theta + np.log(np.exp(x/self.gamma) - 1))
+
+    def reset(self):
+        pass
 
     def generate_bar_data(self, config=None, lo=0.1, hi=1):
         if not config:
@@ -132,6 +141,7 @@ class Network:
 
     def train_epoch_bars(self, n_samples=3):
         data_indices = list(range(8)) * n_samples
+        np.random.shuffle(data_indices)
 
         x_batch = np.zeros((len(data_indices), self.dims[0]))
         y_batch = np.zeros((len(data_indices), self.dims[-1]))
