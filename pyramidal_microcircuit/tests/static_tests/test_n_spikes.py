@@ -8,7 +8,7 @@ import utils  # nopep8
 from params import *  # nopep8
 
 
-root, imgdir, datadir = utils.setup_simulation(
+root, imgdir, datadir = utils.setup_directories(
         "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/tests/runs")
 utils.setup_nest(sim_params, datadir)
 utils.setup_models(True, neuron_params, sim_params, syn_params)

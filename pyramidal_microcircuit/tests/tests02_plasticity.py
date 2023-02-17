@@ -56,7 +56,7 @@ class PlasticityYH(DynamicsYH):
                 self.VBY.append(V_by)
 
     def evaluate(self) -> bool:
-        weight_df = utils.read_data(self.wr.global_id, self.sim["datadir"]).drop_duplicates("time_ms")
+        weight_df = utils.read_mm(self.wr.global_id, self.sim["datadir"]).drop_duplicates("time_ms")
         if self.spiking_neurons:
             weight_df["weights"] *= self.weight_scale
         weight_df = weight_df.set_index("time_ms")
@@ -139,7 +139,7 @@ class PlasticityHX(DynamicsHX):
                 self.VBH.append(V_bh)
 
     def evaluate(self) -> bool:
-        weight_df = utils.read_data(self.wr.global_id, self.sim["datadir"]).drop_duplicates("time_ms")
+        weight_df = utils.read_mm(self.wr.global_id, self.sim["datadir"]).drop_duplicates("time_ms")
         if self.spiking_neurons:
             weight_df["weights"] *= self.weight_scale
         weight_df = weight_df.set_index("time_ms")
@@ -257,7 +257,7 @@ class PlasticityHXMulti(PlasticityHX):
                 self.VBH.append(V_bh)
 
     def evaluate(self) -> bool:
-        events = utils.read_data(self.wr.global_id, self.sim["datadir"])
+        events = utils.read_mm(self.wr.global_id, self.sim["datadir"])
         if self.spiking_neurons:
             events["weights"] *= self.weight_scale
         weight_df = events[events.sender == self.neuron_01.global_id].drop_duplicates("time_ms")
@@ -359,7 +359,7 @@ class PlasticityHI(DynamicsHI):
                 self.VBH.append(V_ah)
 
     def evaluate(self) -> bool:
-        weight_df = utils.read_data(self.wr.global_id, self.sim["datadir"]).drop_duplicates("time_ms")
+        weight_df = utils.read_mm(self.wr.global_id, self.sim["datadir"]).drop_duplicates("time_ms")
         if self.spiking_neurons:
             weight_df["weights"] *= self.weight_scale
         weight_df = weight_df.set_index("time_ms")
@@ -423,7 +423,7 @@ class NetworkPlasticity(TestClass):
             self.numpy_net.simulate(lambda: target_currents)
 
     def evaluate(self) -> bool:
-        weight_df = utils.read_data(self.wr.global_id, self.sim["datadir"])
+        weight_df = utils.read_mm(self.wr.global_id, self.sim["datadir"])
         weight_df["weights"] *= self.weight_scale
         weight_df = weight_df.groupby(["sender", "targets"])
 
@@ -508,7 +508,7 @@ class NetworkBatchTraining(TestClass):
                 self.numpy_net.simulate(lambda: y_batch[i])
 
     def evaluate(self) -> bool:
-        weight_df = utils.read_data(self.wr.global_id, self.sim["datadir"])
+        weight_df = utils.read_mm(self.wr.global_id, self.sim["datadir"])
         weight_df["weights"] *= self.weight_scale
         weight_df = weight_df.groupby(["sender", "targets"])
         

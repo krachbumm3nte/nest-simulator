@@ -484,14 +484,14 @@ class NetworkDynamics(TestClass):
     def run(self):
         input_currents = np.random.random(self.dims[0])
         target_currents = np.random.random(self.dims[2])
+        self.sim_time = 100
 
         self.nest_net.set_input(input_currents)
         self.nest_net.set_target(target_currents)
+        self.nest_net.simulate(self.sim_time)
+
 
         self.numpy_net.set_input(input_currents)
-
-        self.sim_time = 100
-        self.nest_net.simulate(self.sim_time)
         for i in range(int(self.sim_time/self.delta_t)):
             self.numpy_net.simulate(lambda: target_currents)
 

@@ -17,7 +17,7 @@ if __name__ == "__main__":
     else:
         classes = [FilteredInputCurrent, CurrentConnection, TargetCurrent, DynamicsHX, DynamicsHXMulti, DynamicsHI, DynamicsYH, NetworkDynamics, PlasticityHX, PlasticityHXMulti, PlasticityHI, PlasticityYH, NetworkPlasticity, NetworkBatchTraining]
 
-    root, imgdir, datadir = utils.setup_simulation(
+    root, imgdir, datadir = utils.setup_directories(
         "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/tests/runs")
 
     # classes = [NetworkBatchTraining]
