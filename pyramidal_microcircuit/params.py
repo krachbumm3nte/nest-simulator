@@ -9,21 +9,20 @@ sigma = 0.3  # standard deviation for membrane potential noise
 sim_params = {
     "delta_t": delta_t,
     "threads": 10,
-    "record_interval": 300,  # interval for storing membrane potentials in ms
-    "self_predicting_ff": True,  # initialize feedforward weights to self-predicting state
-    "self_predicting_fb": True,  # initialize feedback weights to self-predicting state
+    "record_interval": 1.0,  # interval for storing membrane potentials in ms
+    "init_self_pred": True,  # initialize feedback weights to self-predicting state
     "plasticity": True,  # enable synaptic plasticity
-    "SIM_TIME": 100,  # simulation time per input pattern in ms
+    "SIM_TIME": 5,  # simulation time per input pattern in ms
     "n_runs": 10000,  # number of training iterations
     "noise": False,  # apply noise to membrane potentials
     "sigma": sigma,
     "noise_factor": np.sqrt(delta_t) * sigma,  # constant noise factor for numpy simulations
     "dims": [9, 30, 3],  # network dimensions, i.e. neurons per layer
     "teacher": True,  # If True, teaching current is injected into output layer
-    "dims_teacher": [9, 10, 3], # teacher network dimensions.
-    "k_yh": 10, # hidden to output teacher weight scaling factor
-    "k_hx": 1, # input to hidden teacher weight scaling factor
-    "use_mm": False, # If true, record activity of nest neurons using multimeters
+    "dims_teacher": [9, 10, 3],  # teacher network dimensions.
+    "k_yh": 10,  # hidden to output teacher weight scaling factor
+    "k_hx": 1,  # input to hidden teacher weight scaling factor
+    "use_mm": False,  # If true, record activity of nest neurons using multimeters
     "recording_backend": "ascii",  # Backend for NEST multimeter recordings
 }
 
@@ -32,12 +31,10 @@ sim_params = {
 g_l = 0.03  # somatic leakage conductance
 g_a = 0.06  # apical compartment coupling conductance
 g_d = 0.1  # basal compartment coupling conductance
-g_s = 0.06
-g_si = 0.06
+g_som = 0.06
 lambda_ah = g_a / (g_d + g_a + g_l)  # Useful constant for scaling learning rates
-lambda_bh = g_d / (g_d + g_a + g_l)  # Useful constant for scaling learning rates
-
-lambda_out = g_d / (g_d + g_l)
+lambda_bh = g_som / (g_d + g_som + g_l)  # Useful constant for scaling learning rates
+lambda_out = g_som / (g_d + g_som + g_l)
 g_l_eff = g_l + g_d + g_a
 
 
@@ -51,13 +48,12 @@ theta = 0
 # theta = 3
 
 neuron_params = {
-    "tau_x": 0.1,  # input filtering time constant
+    "tau_x": 0.15,  # input filtering time constant
     "g_l": g_l,
     "g_lk_dnd": delta_t,  # dendritic leakage conductance
     "g_a": g_a,
     "g_d": g_d,
-    "g_si": g_si,  # interneuron nudging conductance
-    "g_s": g_s,  # output neuron nudging conductance
+    "g_som": g_som,  # output neuron nudging conductance
     "lambda_out": lambda_out,
     "lambda_ah": lambda_ah,
     "lambda_bh": lambda_bh,
@@ -65,14 +61,15 @@ neuron_params = {
     'beta': beta,
     'theta': theta,
     "g_l_eff": g_l_eff,
-    "weight_scale": 250
+    "weight_scale": 250,
+    "latent_equilibrium": True
 }
 
 
 comp_defaults = {
     'V_m': 0.0,  # Membrane potential
     'g_L': neuron_params["g_lk_dnd"],
-    'g': neuron_params["g_s"]
+    'g': neuron_params["g_som"],
 }
 
 
@@ -82,7 +79,7 @@ pyr_params = {
     'apical_lat': deepcopy(comp_defaults),
     'tau_m': 1,  # Membrane time constant
     'C_m': 1.0,  # Membrane capacitance
-    'lambda': neuron_params["g_si"],  # Interneuron nudging conductance
+    'lambda': neuron_params["g_som"],  # Interneuron nudging conductance
     'gamma': gamma,
     'beta': beta,
     'theta': theta,
@@ -112,7 +109,7 @@ input_params["soma"]["g"] = 1/neuron_params["tau_x"]
 input_params["basal"]["g"] = 0
 input_params["apical_lat"]["g"] = 0
 input_params["use_phi"] = False
-input_params['tau_m'] = 1/neuron_params["tau_x"]
+# input_params['tau_m'] = 1/neuron_params["tau_x"]
 
 
 neuron_params["pyr"] = pyr_params
@@ -120,21 +117,14 @@ neuron_params["input"] = input_params
 neuron_params["intn"] = intn_params
 
 
-
-
-
-
-
-
-
-
+Wmin, Wmax = -4, 4
 # Dicts derived from this can be passed directly to nest.Connect() as synapse parameters
-tau_delta = 1
+tau_delta = 0.1
 syn_params = {
     'synapse_model': None,  # Synapse model (for NEST simulations only)
     'tau_Delta': tau_delta,  # Synaptic time constant
-    'Wmin': -4,  # minimum weight
-    'Wmax': 4,  # maximum weight
+    'Wmin': Wmin,  # minimum weight
+    'Wmax': Wmax,  # maximum weight
     'delay': sim_params['delta_t'],  # synaptic delay
     'tau_Delta': tau_delta,
     'w_init_hx': 1,
@@ -142,54 +132,9 @@ syn_params = {
     'w_init_ih': 1,
     'w_init_hy': 1,
     'w_init_yh': 1,
-}
-
-
-# connection specific learning rates
-if sim_params["plasticity"]:
-    # from the mathematica script
-    # eta_yh = 0.01
-    # eta_hx = eta_yh / lambda_ah
-    # eta_ih = 0.01 / lambda_ah
-    # eta_hi = 5 * eta_ih
-    
-    # from Sacramento 2018, Fig S1
-    # eta_yh = 0
-    # eta_ih = 0.0002375 
-    # eta_hi = 0.0005
-    # eta_hx = 0
-
-    # from Sacramento 2018, Fig 2
-    # eta_yh = 0.0005
-    # eta_ih = 0.0011875  
-    # eta_hi = 0.0005
-    # eta_hx = 0.0011875
-
-    # from Sacramento 2018, Fig 2
-    # eta_yh = 0.05
-    # eta_ih = 0.11875  
-    # eta_hi = 0.05
-    # eta_hx = 0.11875
-
-    # from Haider 2021, Fig 3, T_pres = 100 * tau_eff
-    eta_ih = 0.0002 
-    eta_yh = 0.0001
-    eta_hi = 0.00
-    eta_hx = 0.0005
-else:
-    eta_yh = 0
-    eta_hx = 0
-    eta_hi = 0
-    eta_ih = 0
-eta_hy = 0
-
-for syn_name, eta in zip(["hx", "yh", "hy", "ih", "hi"], [eta_hx, eta_yh, eta_hy, eta_ih, eta_hi]):
-    syn_params[syn_name] = {
-        'tau_Delta': syn_params["tau_Delta"],
-        'Wmin': -10,  # minimum weight
-        'Wmax': 10,  # maximum weight
-        'eta': eta,
-        'delay': 0.1
+    'eta': {
+        'up': [0.1, 0.02],
+        'pi': [0, 0],
+        'ip': [0.04, 0]
     }
-
-
+}

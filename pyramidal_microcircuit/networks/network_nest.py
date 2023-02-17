@@ -22,22 +22,22 @@ class NestNetwork(Network):
             self.nrn["input"]["gamma"] = self.weight_scale
             self.nrn["pyr"]["gamma"] = self.weight_scale * nrn["pyr"]["gamma"]
             self.nrn["intn"]["gamma"] = self.weight_scale * nrn["intn"]["gamma"]
-            self.syns['w_init_hx'] /= self.weight_scale
-            self.syns['w_init_hi'] /= self.weight_scale
-            self.syns['w_init_ih'] /= self.weight_scale
-            self.syns['w_init_hy'] /= self.weight_scale
-            self.syns['w_init_yh'] /= self.weight_scale
+            self.syn['w_init_hx'] /= self.weight_scale
+            self.syn['w_init_hi'] /= self.weight_scale
+            self.syn['w_init_ih'] /= self.weight_scale
+            self.syn['w_init_hy'] /= self.weight_scale
+            self.syn['w_init_yh'] /= self.weight_scale
             for syn_name in ["hx", "yh", "hy", "ih"]:
-                if "eta" in syn[syn_name]:
-                    syn[syn_name]["Wmin"] /= self.weight_scale 
-                    syn[syn_name]["Wmax"] /= self.weight_scale 
-                    syn[syn_name]["eta"] /= self.weight_scale**3 * self.syns["tau_Delta"]
+                if "eta" in self.syn[syn_name]:
+                    self.syn[syn_name]["Wmin"] /= self.weight_scale 
+                    self.syn[syn_name]["Wmax"] /= self.weight_scale 
+                    self.syn[syn_name]["eta"] /= self.weight_scale**3 * self.syn["tau_Delta"]
             if "eta" in syn["hi"]:
-                syn["hi"]["Wmin"] /= self.weight_scale 
-                syn["hi"]["Wmax"] /= self.weight_scale 
-                syn["hi"]["eta"] /= self.weight_scale**2 * self.syns["tau_Delta"]
+                self.syn["hi"]["Wmin"] /= self.weight_scale 
+                self.syn["hi"]["Wmax"] /= self.weight_scale 
+                self.syn["hi"]["eta"] /= self.weight_scale**2 * self.syn["tau_Delta"]
 
-        self.setup_populations(deepcopy(self.syns), self.nrn)
+        self.setup_populations(deepcopy(self.syn), self.nrn)
 
     def setup_populations(self, syns, nrn):
 
@@ -161,7 +161,7 @@ class NestNetwork(Network):
         # for i, sg in enumerate(self.sgx):
         #     sg.set(amplitude_values=x_batch[:, i]/self.nrn["tau_x"], amplitude_times=times)
         # for i, sg in enumerate(self.sgy):
-        #     sg.set(amplitude_values=y_batch[:, i]*self.nrn["g_s"], amplitude_times=times)
+        #     sg.set(amplitude_values=y_batch[:, i]*self.nrn["g_som"], amplitude_times=times)
 
         # self.simulate(self.sim_time*l_epoch)
 
@@ -203,7 +203,7 @@ class NestNetwork(Network):
         loss_mse = []
 
         # grab all connections with plastic synapses and set learning rate to 0
-        nest.GetConnections(synapse_model=self.syns["synapse_model"]).set({"eta": 0})
+        nest.GetConnections(synapse_model=self.syn["synapse_model"]).set({"eta": 0})
 
         for i in range(n_samples):
             x_test, y_actual = self.generate_bar_data(i)
@@ -223,12 +223,12 @@ class NestNetwork(Network):
         self.test_loss.append(np.mean(loss_mse))
 
         # set learning rates to their original values
-        nest.GetConnections(self.pyr_pops[0], self.pyr_pops[1]).set({"eta": self.syns["hx"]["eta"]})
-        nest.GetConnections(self.pyr_pops[1], self.intn_pops[0]).set({"eta": self.syns["ih"]["eta"]})
+        nest.GetConnections(self.pyr_pops[0], self.pyr_pops[1]).set({"eta": self.syn["hx"]["eta"]})
+        nest.GetConnections(self.pyr_pops[1], self.intn_pops[0]).set({"eta": self.syn["ih"]["eta"]})
         hi = nest.GetConnections(self.intn_pops[0], self.pyr_pops[1])
         if "eta" in hi.get():
-            hi.set({"eta": self.syns["hi"]["eta"]})
-        nest.GetConnections(self.pyr_pops[1], self.pyr_pops[2]).set({"eta": self.syns["yh"]["eta"]})
+            hi.set({"eta": self.syn["hi"]["eta"]})
+        nest.GetConnections(self.pyr_pops[1], self.pyr_pops[2]).set({"eta": self.syn["yh"]["eta"]})
 
     def set_target(self, target_currents):
         """Inject a constant current into all neurons in the output layer.
@@ -241,7 +241,7 @@ class NestNetwork(Network):
         """
         self.target_curr = target_currents
         for i in range(self.dims[-1]):
-            self.pyr_pops[-1][i].set({"soma": {"I_e": target_currents[i] * self.nrn["g_s"]}})
+            self.pyr_pops[-1][i].set({"soma": {"I_e": target_currents[i] * self.nrn["g_som"]}})
 
     def get_weight_array(self, source, target):
         weights = pd.DataFrame.from_dict(nest.GetConnections(source=source, target=target).get())

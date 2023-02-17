@@ -13,16 +13,15 @@ import sys
 import argparse
 
 parser = argparse.ArgumentParser()
-
 parser.add_argument("--network",
                     type=str, choices=["numpy", "rnest", "snest"],
-                    default=["snest"],
+                    default="numpy",
                     help="""Type of network to train. Choice between exact mathematical simulation ('numpy') and NEST simulations with rate- or spiking neurons ('rnest', 'snest')""")
 parser.add_argument("--le",
                     action="store_true",
                     help="""Use latent equilibrium in activation and plasticity."""
                     )
-parser.add_argument("--continue",
+parser.add_argument("--cont",
                     type=str,
                     help="""continue training from a previous simulation""")
 parser.add_argument("--weights",
@@ -30,10 +29,24 @@ parser.add_argument("--weights",
                     help="Start simulations from a given set of weights to ensure comparable results.")
 args = parser.parse_args()
 
-# TODO: process le arg
-# TODO: implement continuing
-#
-root_dir, imgdir, datadir = utils.setup_simulation()
+neuron_params["latent_equilibrium"] = args.le
+
+if args.cont:
+    root_dir = args.cont  
+    imgdir = os.path.join(root_dir, "plots")
+    datadir = os.path.join(root_dir, "data")
+    args.weights = os.path.join(root_dir, "weights.json")
+    with open(os.path.join(root_dir, "params.json"), "r") as f:
+        all_params = json.load(f)
+        sim_params = all_params["simulation"]
+        neuron_params = all_params["neurons"]
+        syn_params = all_params["synapses"]
+    with open(os.path.join(root_dir, "progress.json"), "r") as f:
+        progress = json.load(f)
+else:
+    root_dir, imgdir, datadir = utils.setup_directories()
+
+
 spiking = args.network == "snest"
 sim_params["spiking"] = spiking
 sim_params["network_type"] = args.network
@@ -45,7 +58,7 @@ if args.network == "numpy":
 else:
     net = NestNetwork(sim_params, neuron_params, syn_params, spiking)
 
-# args.weights = "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/runs/successfull_spike_training/weights.json"
+    
 if args.weights:
     with open(args.weights) as f:
         weight_dict = json.load(f)
@@ -59,15 +72,25 @@ cmap_2 = plt.cm.get_cmap('hsv', dims[2]+1)
 plot_interval = 50
 
 T = []
-ff_error = []
-fb_error = []
-intn_errors = [[] for i in range(dims[-1])]
 
+if args.cont:
+    net.test_acc = progress["test_acc"]
+    net.test_loss = progress["test_loss"]
+    net.train_loss = progress["train_loss"]
+    net.V_ah_record = np.array(progress["V_ah_record"])
+    net.U_y_record = np.array(progress["U_y_record"])
+    net.U_i_record = np.array(progress["U_i_record"])
+    ff_error = progress["ff_error"]
+    fb_error = progress["fb_error"]
+else:
+    ff_error = []
+    fb_error = []
 
-# dump simulation parameters and initial weights to .json files
-with open(os.path.join(root_dir, "params.json"), "w") as f:
-    json.dump({"simulation": sim_params, "neurons": neuron_params, "synapses": syn_params}, f)
-utils.store_synaptic_weights(net, root_dir, "init_weights.json")
+if not args.cont:
+    # dump simulation parameters and initial weights to .json files
+    with open(os.path.join(root_dir, "params.json"), "w") as f:
+        json.dump({"simulation": sim_params, "neurons": neuron_params, "synapses": syn_params}, f)
+    utils.store_synaptic_weights(net, root_dir, "init_weights.json")
 
 print("setup complete, running simulations...")
 
@@ -107,10 +130,10 @@ try:
             # Synaptic weights
             # notice that all weights are scaled up again to ensure that derived metrics are comparible between simulations
             weights = net.get_weight_dict()
-            WHY = weights["hy"]
-            WHI = weights["hi"]
-            WYH = weights["yh"]
-            WIH = weights["ih"]
+            WYH = weights[-1]["up"]
+            WHI = weights[-2]["pi"]
+            WHY = weights[-2]["down"]
+            WIH = weights[-2]["ip"]
 
             fb_error_now = mse(WHY.flatten(), -WHI.flatten())
             fb_error.append(fb_error_now)
@@ -124,14 +147,14 @@ try:
             for i in range(dims[2]):
                 col = cmap_2(i)
                 for j in range(dims[1]):
-                    ax4.plot(j, -WHY[j, i], ".", color=col, label=f"to {t}")
-                    ax4.plot(j, WHI[j, i], "x", color=col, label=f"from {t}")
+                    ax4.plot(j, -WHY[j, i], ".", color=col, label=f"to {i}")
+                    ax4.plot(j, WHI[j, i], "x", color=col, label=f"from {i}")
 
             for i in range(dims[1]):
                 for j in range(dims[2]):
                     col = cmap_2(j)
-                    ax5.plot(i, WYH[j, i], ".", color=col, label=f"to {t}")
-                    ax5.plot(i, WIH[j, i], "x", color=col, label=f"from {t}")
+                    ax5.plot(i, WYH[j, i], ".", color=col, label=f"to {i}")
+                    ax5.plot(i, WIH[j, i], "x", color=col, label=f"from {i}")
 
             ax6.plot(utils.rolling_avg(net.test_acc, 2))
             ax7.plot(utils.rolling_avg(net.test_loss, 2))
@@ -173,7 +196,9 @@ finally:
         "train_loss": net.train_loss,
         "ff_error": ff_error,
         "fb_error": fb_error,
-        "apical_error": apical_error.tolist()
+        "V_ah_record": net.V_ah_record.tolist(),
+        "U_y_record": net.U_y_record.tolist(),
+        "U_i_record": net.U_i_record.tolist()
     }
     with open(os.path.join(root_dir, "progress.json"), "w") as f:
         json.dump(progress, f)

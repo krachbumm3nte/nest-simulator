@@ -46,7 +46,7 @@ class LatentEquilibriumNetwork(Network):
         self.V_by_record = np.zeros((1, self.dims[2]))
         self.output_loss = []
 
-        self.setup_populations(self.syns, self.nrn)
+        self.setup_populations(self.syn, self.nrn)
 
         self.iteration = 0
 

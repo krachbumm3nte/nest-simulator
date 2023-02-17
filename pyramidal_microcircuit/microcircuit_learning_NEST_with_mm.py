@@ -10,7 +10,7 @@ import utils
 import os
 import json
 
-root_dir, imgdir, datadir = utils.setup_simulation()
+root_dir, imgdir, datadir = utils.setup_directories()
 utils.setup_nest(sim_params, datadir)
 
 spiking = True
@@ -69,7 +69,7 @@ try:
             plt.rcParams['savefig.dpi'] = 300
 
             # plot somatic voltages of hidden interneurons and output pyramidal neurons
-            neuron_data = utils.read_data(net.mm.global_id, datadir, it_min=run-plot_interval+1)
+            neuron_data = utils.read_mm(net.mm.global_id, datadir, it_min=run-plot_interval+1)
 
             U_I = neuron_data[neuron_data.sender.isin(intn_id)].groupby("sender")["V_m.s"]
             U_Y = neuron_data[neuron_data.sender.isin(out_id)].groupby("sender")["V_m.s"]

@@ -8,14 +8,17 @@ class Network:
     def __init__(self, sim, nrn, syns) -> None:
         self.sim = sim  # simulation parameters
         self.nrn = nrn  # neuron parameters
-        self.syns = syns  # synapse parameters
+        self.syn = syns  # synapse parameters
 
         self.dims = sim["dims"]
         self.sim_time = sim["SIM_TIME"]
-        self.delta_t = sim["delta_t"]
+        self.dt = sim["delta_t"]
+        self.le = nrn["latent_equilibrium"]
         self.sigma_noise = sim["sigma"]
         self.record_interval = sim["record_interval"]
         self.iteration = 0
+        self.tau_x = nrn["tau_x"]
+
 
         self.gamma = nrn["gamma"]
         self.beta = nrn["beta"]
@@ -125,8 +128,8 @@ class Network:
                                             [lo, hi, lo],
                                             [hi, lo, lo]]), 2
 
-        target_currents = np.zeros(3)
-        target_currents[idx] = 1
+        target_currents = np.ones(3) * lo
+        target_currents[idx] = hi
 
         return input_currents.flatten(), target_currents
 
