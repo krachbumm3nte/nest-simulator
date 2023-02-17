@@ -585,7 +585,7 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
     // add incoming spikes and injected currents to all compartmens
     for ( size_t n = 0; n < NCOMP; ++n )
     {
-      S_.y_[ S::idx( n, S::I ) ] += B_.spikes_[ n ].get_value( lag );
+      S_.y_[ S::idx( n, S::I ) ] += B_.spikes_[ n ].get_value( lag ) / pyr_params->tau_m;
       B_.I_stim_[ n ] = B_.currents_[ n ].get_value( lag );
     }
 
@@ -627,26 +627,27 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       S_.y_[ S::idx( n, S::V_M ) ] += S_.y_[ S::idx( n, S::delta_V_M ) ];
 
       // derivative dendritic current
-      S_.y_[ S::idx( n, S::I ) ] = 0; // I_dend - I_dend / pyr_params->tau_m;
+      S_.y_[ S::idx( n, S::I ) ] -= I_dend / pyr_params->tau_m;
     }
 
     S_.y_[ S::idx( SOMA, S::delta_V_M ) ] = -I_L + I_conn_d_s + B_.I_stim_[ SOMA ] + P_.I_e[ SOMA ];
+    double V_som = S_.y_[ S::idx( SOMA, S::V_M ) ] + S_.y_[ S::idx( SOMA, S::delta_V_M ) ] / pyr_params->g_conn[ SOMA ];
     S_.y_[ S::idx( SOMA, S::V_M ) ] += B_.step_ * S_.y_[ S::idx( SOMA, S::delta_V_M ) ];
 
 
     // excitatory conductance soma
-    S_.y_[ S::idx( SOMA, S::I ) ] = 0;
-    //-S_.y_[ S::idx( pyr_params->SOMA, S::I ) ] / pyr_params->tau_m;
+    //TODO: we currently do not allow spikes at the soma. maybe change that?
+    S_.y_[ S::idx( SOMA, S::I ) ] -= S_.y_[ S::idx( SOMA, S::I ) ] / pyr_params->tau_m;
 
 
-    double V_som = S_.y_[ S::idx( SOMA, S::V_M ) ];
     double V_a = S_.y_[ S::idx( APICAL_LAT, S::V_M ) ];
     double V_b = S_.y_[ S::idx( BASAL, S::V_M ) ];
-    if ( pyr_params->latent_equilibrium )
+    if (!pyr_params->latent_equilibrium )
     {
-      V_som += S_.y_[ S::idx( SOMA, S::delta_V_M ) ] / pyr_params->g_conn[ SOMA ];
-      V_a += S_.y_[ S::idx( APICAL_LAT, S::delta_V_M ) ] / pyr_params->g_conn[ SOMA ];
-      V_b += S_.y_[ S::idx( BASAL, S::delta_V_M ) ] / pyr_params->g_conn[ SOMA ];
+      V_som = S_.y_[ S::idx( SOMA, S::V_M ) ];
+
+      // V_a += S_.y_[ S::idx( APICAL_LAT, S::delta_V_M ) ] / pyr_params->g_conn[ SOMA ];
+      // V_b += S_.y_[ S::idx( BASAL, S::delta_V_M ) ] / pyr_params->g_conn[ SOMA ];
     }
 
 

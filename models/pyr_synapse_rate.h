@@ -194,15 +194,6 @@ private:
   double Wmax_;
 };
 
-template < typename targetidentifierT >
-inline double
-pyr_synapse_rate< targetidentifierT >::phi( double x )
-{
-  return 1 / ( 1 + exp( -x ) );
-  // return log( 1 + exp( x ) );
-}
-
-
 /**
  * Send an event to the receiver of this connection.
  * \param e The event to send
