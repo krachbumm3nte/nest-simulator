@@ -10,6 +10,8 @@ class Network:
         self.nrn = nrn  # neuron parameters
         self.syn = syns  # synapse parameters
 
+        self.layers = []
+
         self.dims = sim["dims"]
         self.sim_time = sim["SIM_TIME"]
         self.dt = sim["delta_t"]
@@ -18,7 +20,6 @@ class Network:
         self.record_interval = sim["record_interval"]
         self.iteration = 0
         self.tau_x = nrn["tau_x"]
-
 
         self.gamma = nrn["gamma"]
         self.beta = nrn["beta"]
@@ -41,7 +42,6 @@ class Network:
         self.test_acc = []
         self.conn_names = ["hx", "yh", "ih", "hi", "hy"]
 
-
     def gen_weights(self, n_in, n_out, wmin=None, wmax=None):
         if not wmin:
             wmin = -0.1
@@ -52,7 +52,7 @@ class Network:
     @abstractmethod
     def set_weights(self, weights):
         pass
-    
+
     @abstractmethod
     def train(self, input_currents, T):
         pass
@@ -89,7 +89,7 @@ class Network:
     def reset(self):
         pass
 
-    def generate_bar_data(self, config=None, lo=0.1, hi=1):
+    def generate_bar_data(self, config=None, lo=0., hi=1., lo_out=0.1):
         if not config:
             config = np.random.randint(0, 8)
         elif not 0 <= config < 8:
@@ -128,7 +128,7 @@ class Network:
                                             [lo, hi, lo],
                                             [hi, lo, lo]]), 2
 
-        target_currents = np.ones(3) * lo
+        target_currents = np.ones(3) * lo_out
         target_currents[idx] = hi
 
         return input_currents.flatten(), target_currents
@@ -153,7 +153,6 @@ class Network:
             x_batch[i] = x
             y_batch[i] = y
         self.train_epoch(x_batch, y_batch)
-
 
     def train_epoch_teacher(self, batchsize):
         x_batch = np.zeros((batchsize, self.dims[0]))

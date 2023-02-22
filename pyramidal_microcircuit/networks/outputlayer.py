@@ -3,6 +3,7 @@ import numpy as np
 from .layer import AbstractLayer
 dtype = np.float32
 
+
 class OutputLayer(AbstractLayer):
 
     def __init__(self, nrn, sim, syn, eta) -> None:     
@@ -17,20 +18,29 @@ class OutputLayer(AbstractLayer):
         self.W_up = self.gen_weights(self.N_in, self.N_out, -1, 1)
         self.Delta_up = np.zeros((self.N_out, self.N_in), dtype=dtype)
 
-
-
     def update(self, r_in, u_next, plasticity, noise_on=False):
-        self.u_pyr["basal"][:] = self.W_up @ r_in  # [:] to enforce rhs to be copied to lhs        
-        
-        u_p = self.u_pyr["soma"]
+        self.u_pyr["basal"][:] = self.W_up @ r_in  # [:] to enforce rhs to be copied to lhs
 
-        self.u_pyr["udot"][:] = -(self.gl + self.gb + self.ga) * u_p + self.gb * self.u_pyr["basal"] + self.g_som * u_next
+        if u_next.any() > 0:
+            self.u_pyr["steadystate"] = (self.gb * self.u_pyr["basal"] + self.gsom * u_next) / (
+                self.gl + self.gb + self.gsom)
+        else:
+            self.u_pyr["steadystate"] = (self.gb * self.u_pyr["basal"]) / (
+                self.gl + self.gb)
+
+        # compute changes
+
+        # if self.le:
+        #    self.u_pyr["udot"] = (self.gl + self.gb + self.gsom) * (self.u_pyr["steadystate"] - self.u_pyr["soma"])
+        #    self.du_pyr = self.u_pyr["udot"] * self.dt
+        # else:
+        self.u_pyr["udot"] = (self.gl + self.gb + self.gsom) * (self.u_pyr["steadystate"] - self.u_pyr["soma"])
         self.du_pyr = self.u_pyr["udot"] * self.dt
-        
+
         if plasticity:
             gtot = self.gl + self.gb
             if self.le:
-                u_new_pyr = self.u_pyr["soma"] + self.u_pyr["udot"] / gtot
+                u_new_pyr = self.u_pyr["soma"] + self.u_pyr["udot"] / (self.gl + self.gb + self.gsom)
             else:
                 u_new_pyr = self.u_pyr["soma"] + self.du_pyr
 
@@ -39,7 +49,7 @@ class OutputLayer(AbstractLayer):
 
     def apply(self, plasticity):
         if self.le:
-            tau_pyr = 1. / (self.gl + self.gb + self.g_som)
+            tau_pyr = 1. / (self.gl + self.gb + self.gsom)
             # important: update u_forw before updating u_soma!
             self.u_pyr["forw"][:] = self.u_pyr["soma"] + tau_pyr * self.u_pyr["udot"]
         self.u_pyr["soma"] += self.du_pyr
@@ -48,8 +58,6 @@ class OutputLayer(AbstractLayer):
             self.W_up += self.dt * self.eta["up"] * self.Delta_up
             self.W_up = np.clip(self.W_up, self.Wmin, self.Wmax)
 
-
-    
     def reset(self, reset_weights=False):
         '''
         Reset all potentials and Deltas (weight update matrices) to zero.
