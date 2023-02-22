@@ -15,20 +15,21 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         classes = [eval(arg) for arg in sys.argv[1:]]
     else:
-        classes = [FilteredInputCurrent, CurrentConnection, TargetCurrent, DynamicsHX, DynamicsHXMulti, DynamicsHI, DynamicsYH, NetworkDynamics, PlasticityHX, PlasticityHXMulti, PlasticityHI, PlasticityYH, NetworkPlasticity, NetworkBatchTraining]
+        classes = [FilteredInputCurrent, CurrentConnection, TargetCurrent, DynamicsHX, DynamicsHXMulti, DynamicsHI,
+                   DynamicsYH, NetworkDynamics, PlasticityHX, PlasticityHXMulti, PlasticityYH, NetworkPlasticity, NetworkBatchTraining]
 
     root, imgdir, datadir = utils.setup_directories(
         "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/tests/runs")
 
-    # classes = [NetworkBatchTraining]
+    # classes = [DynamicsHI]
     sim_params["record_interval"] = 0.1
     sim_params["recording_backend"] = "memory"
     sim_params["datadir"] = datadir
     sim_params["use_mm"] = True
 
     # increase learning rates to absurd levels to make plasticity visible
-    for syn_name in ["hx", "yh", "hy", "ih", "hi"]:
-        syn_params[syn_name]["eta"] = 0.5
+    for syn_name in ["ip", "pi", "up"]:
+        syn_params["eta"][syn_name] = [10 * lr for lr in syn_params["eta"][syn_name]]
 
     plot_all_runs = True
     test_results = []
@@ -68,7 +69,7 @@ if __name__ == "__main__":
 
             # remove simulation data from the previous run
             for file in sorted(os.listdir(datadir)):
-                f = os.path.join(datadir,file)
+                f = os.path.join(datadir, file)
                 os.remove(f)
     print(f"\n\nAll runs completed.")
     print(f"{sum(test_results)}/{len(test_results)} tests passed.")

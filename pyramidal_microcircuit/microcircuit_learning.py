@@ -31,8 +31,9 @@ args = parser.parse_args()
 
 neuron_params["latent_equilibrium"] = args.le
 
+args.le = True
 if args.cont:
-    root_dir = args.cont  
+    root_dir = args.cont
     imgdir = os.path.join(root_dir, "plots")
     datadir = os.path.join(root_dir, "data")
     args.weights = os.path.join(root_dir, "weights.json")
@@ -54,11 +55,11 @@ sim_params["network_type"] = args.network
 utils.setup_nest(sim_params, datadir)
 utils.setup_models(spiking, neuron_params, sim_params, syn_params, False)
 if args.network == "numpy":
-    net =  NumpyNetwork(sim_params, neuron_params, syn_params)
+    net = NumpyNetwork(sim_params, neuron_params, syn_params)
 else:
     net = NestNetwork(sim_params, neuron_params, syn_params, spiking)
 
-    
+
 if args.weights:
     with open(args.weights) as f:
         weight_dict = json.load(f)
@@ -111,7 +112,7 @@ try:
 
             intn_error = np.square(net.U_y_record - net.U_i_record)
 
-            mean_error = utils.rolling_avg(np.sum(intn_error, axis=1), size=200)
+            mean_error = utils.rolling_avg(np.mean(intn_error, axis=1), size=200)
             abs_voltage = np.mean(np.concatenate([net.U_y_record[-5:], net.U_i_record[-5:]]))
             ax0.plot(mean_error, color="black")
 
@@ -158,7 +159,7 @@ try:
 
             ax6.plot(utils.rolling_avg(net.test_acc, 2))
             ax7.plot(utils.rolling_avg(net.test_loss, 2))
-            
+
             ax0.set_title("interneuron - pyramidal error")
             ax1.set_title("apical error")
             ax2.set_title("Feedback error")

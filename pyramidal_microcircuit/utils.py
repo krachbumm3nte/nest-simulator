@@ -59,7 +59,7 @@ def store_synaptic_weights(network: Network, dirname, filename="weights.json"):
     weights = network.get_weight_dict()
 
     for layer in weights:
-        for k,v in layer.items():
+        for k, v in layer.items():
             if type(layer[k]) == np.ndarray:
                 layer[k] = v.tolist()
 
@@ -82,6 +82,8 @@ def setup_models(spiking, nrn, sim, syn, record_weights=False):
         nrn["input"]["latent_equilibrium"] = True
 
     neuron_model = 'pp_cond_exp_mc_pyr' if spiking else 'rate_neuron_pyr'
+    if not spiking:
+        nrn["weight_scale"] = 1
     nrn["model"] = neuron_model
     syn_model = 'pyr_synapse' if spiking else 'pyr_synapse_rate'
     static_syn_model = 'static_synapse'
@@ -101,44 +103,47 @@ def setup_models(spiking, nrn, sim, syn, record_weights=False):
     }
 
     syn_plastic = {
+        "synapse_model": syn_model,
         'tau_Delta': syn["tau_Delta"],
         'Wmin': syn["Wmin"],  # minimum weight
         'Wmax': syn["Wmax"],  # maximum weight
         'delay': sim["delta_t"]
     }
 
-    configs = []
+    connections = []
     pyr_comps = nest.GetDefaults(neuron_model)["receptor_types"]
     basal_dendrite = pyr_comps['basal']
     apical_dendrite = pyr_comps['apical_lat']
-    for i in range(len(sim["dims"])-2):
-        l_config = {}
+    for layer in range(len(sim["dims"])-2):
+        connections_l = {}
 
         for type in ["up", "pi", "ip"]:
-            eta = syn["eta"][type][i]
+            eta = syn["eta"][type][layer]
 
             if eta != 0:
-                l_config[type] = deepcopy(syn_plastic)
-                l_config[type]["eta"] = eta
+                connections_l[type] = deepcopy(syn_plastic)
+                connections_l[type]["eta"] = eta
             else:
-                l_config[type] = deepcopy(syn_static)
+                connections_l[type] = deepcopy(syn_static)
 
-        l_config["down"] = deepcopy(syn_static)
-        
+        connections_l["down"] = deepcopy(syn_static)
 
-        l_config["up"]['receptor_type'] = basal_dendrite
-        l_config["ip"]['receptor_type'] = basal_dendrite
-        l_config["pi"]['receptor_type'] = apical_dendrite
-        l_config["down"]['receptor_type'] = apical_dendrite
-        configs.append(l_config)
-    
+        connections_l["up"]['receptor_type'] = basal_dendrite
+        connections_l["ip"]['receptor_type'] = basal_dendrite
+        connections_l["pi"]['receptor_type'] = apical_dendrite
+        connections_l["down"]['receptor_type'] = apical_dendrite
+        connections.append(connections_l)
+
     config_out = {}
     if syn["eta"]["up"][-1] > 0:
         config_out["up"] = deepcopy(syn_plastic)
+        config_out["up"]["eta"] = syn["eta"]["up"][-1]
     else:
         config_out["up"] = deepcopy(syn_static)
     config_out["up"]['receptor_type'] = basal_dendrite
+    connections.append(config_out)
 
+    syn["conns"] = connections
     return wr
 
 
@@ -180,3 +185,9 @@ def read_wr(grouped_df, source, target, sim_time, delta_t):
             weight_array[:, j, i] = group.weights.values
 
     return weight_array
+
+
+def set_nest_weights(sources, targets, weight_array, scaling_factor):
+    for i, source in enumerate(sources):
+        for j, target in enumerate(targets):
+            nest.GetConnections(source, target).set({"weight": weight_array[j][i] * scaling_factor})

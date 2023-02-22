@@ -30,7 +30,7 @@ class TestClass(ABC):
         self.g_a = nrn["g_a"]
         self.g_d = nrn["g_d"]
         self.g_l = nrn["g_l"]
-        self.g_si = nrn["g_si"]
+        self.g_som = nrn["g_som"]
         self.gamma = nrn["gamma"]
         self.beta = nrn["beta"]
         self.theta = nrn["theta"]
@@ -54,11 +54,30 @@ class TestClass(ABC):
     def plot_results(self):
         pass
 
-    def phi(self, x):
-        return self.gamma * np.log(1 + np.exp(self.beta * (x - self.theta)))
+    def phi(self, x, thresh=15):
+        if not hasattr(x, "__len__"):
+            if x > thresh:
+                return x
+            if x < -thresh:
+                x = 0
+            return self.gamma * np.log(1 + np.exp(self.beta * (x - self.theta)))
+        res = x.copy()
+        ind = np.abs(x) < thresh
+        res[x < -thresh] = 0
+        res[ind] = self.gamma * np.log(1 + np.exp(self.beta * (x[ind] - self.theta)))
+        return res
 
     def phi_inverse(self, x):
         return (1 / self.beta) * (self.beta * self.theta + np.log(np.exp(x/self.gamma) - 1))
+
+    def disable_plasticity(self):
+        for i, layer in enumerate(self.syn["conns"]):
+            for conn_type in ["up", "down", "pi", "ip"]:
+                if conn_type in layer:
+                    if "eta" in layer[conn_type]:
+                        layer[conn_type]["eta"] = 0
+                if conn_type in self.syn["eta"]:
+                    self.syn["eta"][i] = 0
 
 
 def read_multimeter(mm, key):
@@ -69,7 +88,8 @@ def records_match(record_nest, record_numpy, error_threshold=0.005):
     size_diff = len(record_nest) - len(record_numpy)
 
     if abs(size_diff) >= 0.1 * len(record_nest):
-        raise ValueError("Difference between arrays is too large, cannot compute MSE!")
+        raise ValueError(
+            f"Arrays have vastly different shapes ({record_nest.shape}, {record_numpy.shape}), cannot compute MSE!")
 
     if size_diff > 0:
         record_nest = record_nest[:len(record_numpy)]

@@ -9,7 +9,7 @@ sigma = 0.3  # standard deviation for membrane potential noise
 sim_params = {
     "delta_t": delta_t,
     "threads": 10,
-    "record_interval": 1.0,  # interval for storing membrane potentials in ms
+    "record_interval": 1,  # interval for storing membrane potentials in ms
     "init_self_pred": True,  # initialize feedback weights to self-predicting state
     "plasticity": True,  # enable synaptic plasticity
     "SIM_TIME": 5,  # simulation time per input pattern in ms
@@ -48,7 +48,7 @@ theta = 0
 # theta = 3
 
 neuron_params = {
-    "tau_x": 0.15,  # input filtering time constant
+    "tau_x": 0.1,  # input filtering time constant
     "g_l": g_l,
     "g_lk_dnd": delta_t,  # dendritic leakage conductance
     "g_a": g_a,
@@ -62,7 +62,7 @@ neuron_params = {
     'theta': theta,
     "g_l_eff": g_l_eff,
     "weight_scale": 250,
-    "latent_equilibrium": True
+    "latent_equilibrium": False
 }
 
 
@@ -109,7 +109,6 @@ input_params["soma"]["g"] = 1/neuron_params["tau_x"]
 input_params["basal"]["g"] = 0
 input_params["apical_lat"]["g"] = 0
 input_params["use_phi"] = False
-# input_params['tau_m'] = 1/neuron_params["tau_x"]
 
 
 neuron_params["pyr"] = pyr_params
@@ -127,14 +126,9 @@ syn_params = {
     'Wmax': Wmax,  # maximum weight
     'delay': sim_params['delta_t'],  # synaptic delay
     'tau_Delta': tau_delta,
-    'w_init_hx': 1,
-    'w_init_hi': 1,
-    'w_init_ih': 1,
-    'w_init_hy': 1,
-    'w_init_yh': 1,
     'eta': {
-        'up': [0.1, 0.02],
+        'ip': [0.04, 0],
         'pi': [0, 0],
-        'ip': [0.04, 0]
+        'up': [0.1, 0.02],
     }
 }

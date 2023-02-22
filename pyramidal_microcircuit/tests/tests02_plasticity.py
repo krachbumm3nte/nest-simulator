@@ -189,17 +189,17 @@ class PlasticityHXMulti(PlasticityHX):
 
         self.weight2 = -0.5
         if spiking_neurons:
-            syn["hx"]["weight"] = self.weight2 / self.weight_scale
-            syn["hx"]["eta"] = self.eta/(self.weight_scale**2 * self.syn["tau_Delta"])
+            syn["conns"][0]["up"]["weight"] = self.weight2 / self.weight_scale
+            syn["conns"][0]["up"]["eta"] = self.eta/(self.weight_scale**2 * syn["tau_Delta"])
         else:
-            syn["hx"]["weight"] = self.weight2
-            syn["hx"]["eta"] = self.eta
+            syn["conns"][0]["up"]["weight"] = self.weight2
+            syn["conns"][0]["up"]["eta"] = self.eta
 
         self.neuron_03 = nest.Create(self.neuron_model, 1, nrn["input"])
         self.mm_03 = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
         nest.Connect(self.mm_03, self.neuron_03)
 
-        nest.Connect(self.neuron_03, self.neuron_02, syn_spec=syn["hx"])
+        nest.Connect(self.neuron_03, self.neuron_02, syn_spec=syn["conns"][0]["up"])
 
     def run(self):
         r_h = 0
@@ -310,7 +310,7 @@ class PlasticityHXMulti(PlasticityHX):
         ax5.legend()
 
 
-class PlasticityHI(DynamicsHI):
+class PlasticityIH(DynamicsHI):
     def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
         super().__init__(nrn, sim, syn, spiking_neurons, record_weights=True, **kwargs)
         self.eta = 0.04
@@ -395,10 +395,6 @@ class NetworkPlasticity(TestClass):
         sim["teacher"] = False
         sim["noise"] = False
         sim["dims"] = [4, 3, 2]
-        syn["hx"]["eta"] = 0.4
-        syn["yh"]["eta"] = 0.4
-        syn["ih"]["eta"] = 0.4
-        syn["hi"]["eta"] = 0.2
         super().__init__(nrn, sim, syn, spiking_neurons, record_weights=True, **kwargs)
 
         self.numpy_net = NumpyNetwork(deepcopy(sim), deepcopy(nrn), deepcopy(syn))
@@ -426,23 +422,22 @@ class NetworkPlasticity(TestClass):
         weight_df = utils.read_mm(self.wr.global_id, self.sim["datadir"])
         weight_df["weights"] *= self.weight_scale
         weight_df = weight_df.groupby(["sender", "targets"])
+        self.up_0 = utils.read_wr(
+            weight_df, self.nest_net.input_neurons, self.nest_net.layers[0].pyr, self.sim_time, self.delta_t)
+        self.pi_0 = utils.read_wr(
+            weight_df, self.nest_net.layers[0].intn, self.nest_net.layers[0].pyr, self.sim_time, self.delta_t)
+        self.ip_0 = utils.read_wr(
+            weight_df, self.nest_net.layers[0].pyr, self.nest_net.layers[0].intn,  self.sim_time, self.delta_t)
+        self.down_0 = utils.read_wr(
+            weight_df, self.nest_net.layers[1].pyr, self.nest_net.layers[0].pyr, self.sim_time, self.delta_t)
+        self.up_1 = utils.read_wr(
+            weight_df, self.nest_net.layers[0].pyr, self.nest_net.layers[1].pyr, self.sim_time, self.delta_t)
 
-        self.hx_nest = utils.read_wr(
-            weight_df, self.nest_net.pyr_pops[0], self.nest_net.pyr_pops[1], self.sim_time, self.delta_t)
-        self.hi_nest = utils.read_wr(
-            weight_df, self.nest_net.intn_pops[0], self.nest_net.pyr_pops[1], self.sim_time, self.delta_t)
-        self.ih_nest = utils.read_wr(
-            weight_df, self.nest_net.pyr_pops[1], self.nest_net.intn_pops[0],  self.sim_time, self.delta_t)
-        self.hy_nest = utils.read_wr(
-            weight_df, self.nest_net.pyr_pops[2], self.nest_net.pyr_pops[1], self.sim_time, self.delta_t)
-        self.yh_nest = utils.read_wr(
-            weight_df, self.nest_net.pyr_pops[1], self.nest_net.pyr_pops[2], self.sim_time, self.delta_t)
-
-        return records_match(self.hx_nest.flatten(), self.numpy_net.conns["hx"]["record"].flatten()) \
-            and records_match(self.hi_nest.flatten(), self.numpy_net.conns["hi"]["record"].flatten()) \
-            and records_match(self.ih_nest.flatten(), self.numpy_net.conns["ih"]["record"].flatten()) \
-            and records_match(self.yh_nest.flatten(), self.numpy_net.conns["yh"]["record"].flatten()) \
-            and records_match(self.hy_nest.flatten(), self.numpy_net.conns["hy"]["record"].flatten())
+        return records_match(self.up_0.flatten(), self.numpy_net.weight_record[0]["up"].flatten()) \
+            and records_match(self.pi_0.flatten(), self.numpy_net.weight_record[0]["pi"].flatten()) \
+            and records_match(self.ip_0.flatten(), self.numpy_net.weight_record[0]["ip"].flatten()) \
+            and records_match(self.up_1.flatten(), self.numpy_net.weight_record[-1]["up"].flatten()) \
+            and records_match(self.down_0.flatten(), self.numpy_net.weight_record[0]["down"].flatten())
 
     def plot_results(self):
 
@@ -450,10 +445,10 @@ class NetworkPlasticity(TestClass):
         cmap = plt.cm.get_cmap('hsv', max(self.dims)+1)
         linestyles = ["solid", "dotted", "dashdot", "dashed"]
 
-        for i, name in enumerate(["hx", "yh", "ih", "hi", "hy"]):
+        for i, (name, layer) in enumerate(zip(["up", "down", "ip", "pi", "up"], [0, 0, 0, 0, 1])):
 
-            weights_nest = eval(f"self.{name}_nest")
-            weights_numpy = self.numpy_net.conns[name]["record"]
+            weights_nest = eval(f"self.{name}_{layer}")
+            weights_numpy = self.numpy_net.weight_record[layer][name]
             axes[0][i].set_title(name)
             for sender in range(weights_nest.shape[2]):
                 for target in range(weights_nest.shape[1]):
@@ -470,17 +465,12 @@ class NetworkBatchTraining(TestClass):
     def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
         sim["teacher"] = False
         sim["noise"] = False
-        sim["dims"] = [9, 4, 3]
-        syn["hx"]["eta"] = 0.4
-        syn["yh"]["eta"] = 0.4
-        syn["ih"]["eta"] = 0.4
-        syn["hi"]["eta"] = 0.2
+        sim["dims"] = [9, 3, 3]
         super().__init__(nrn, sim, syn, spiking_neurons, record_weights=True, **kwargs)
 
         self.numpy_net = NumpyNetwork(deepcopy(sim), deepcopy(nrn), deepcopy(syn))
         self.nest_net = NestNetwork(deepcopy(sim), deepcopy(nrn), deepcopy(syn), self.spiking_neurons)
         self.numpy_net.set_weights(self.nest_net.get_weight_dict())
-
 
     def run(self):
         self.sim_time = 100
@@ -498,8 +488,8 @@ class NetworkBatchTraining(TestClass):
         for i, sg in enumerate(self.nest_net.sgx):
             sg.set(amplitude_values=x_batch[:, i]/self.nrn["tau_x"], amplitude_times=times)
         for i, sg in enumerate(self.nest_net.sgy):
-            sg.set(amplitude_values=y_batch[:, i]*self.nrn["g_s"], amplitude_times=times)
-        
+            sg.set(amplitude_values=y_batch[:, i]*self.nrn["g_som"], amplitude_times=times)
+
         self.nest_net.simulate(self.sim_time*self.batchsize)
 
         for i in range(self.batchsize):
@@ -511,39 +501,37 @@ class NetworkBatchTraining(TestClass):
         weight_df = utils.read_mm(self.wr.global_id, self.sim["datadir"])
         weight_df["weights"] *= self.weight_scale
         weight_df = weight_df.groupby(["sender", "targets"])
-        
-        records = pd.DataFrame.from_dict(self.nest_net.mm.events)
 
-        self.nest_UH = records[records["senders"].isin(self.nest_net.pyr_pops[1].global_id)].sort_values(
+        records = pd.DataFrame.from_dict(self.nest_net.mm.events)
+        self.nest_UH = records[records["senders"].isin(self.nest_net.layers[0].pyr.global_id)].sort_values(
             ["senders", "times"])["V_m.s"].values.reshape((self.dims[1], -1)).swapaxes(0, 1)
-        self.nest_VAH = records[records["senders"].isin(self.nest_net.pyr_pops[1].global_id)].sort_values(
+        self.nest_VAH = records[records["senders"].isin(self.nest_net.layers[0].pyr.global_id)].sort_values(
             ["senders", "times"])["V_m.a_lat"].values.reshape((self.dims[1], -1)).swapaxes(0, 1)
-        self.nest_VBH = records[records["senders"].isin(self.nest_net.pyr_pops[1].global_id)].sort_values(
+        self.nest_VBH = records[records["senders"].isin(self.nest_net.layers[0].pyr.global_id)].sort_values(
             ["senders", "times"])["V_m.b"].values.reshape((self.dims[1], -1)).swapaxes(0, 1)
-        self.nest_UI = records[records["senders"].isin(self.nest_net.intn_pops[0].global_id)].sort_values(
+        self.nest_UI = records[records["senders"].isin(self.nest_net.layers[0].intn.global_id)].sort_values(
             ["senders", "times"])["V_m.s"].values.reshape((self.dims[-1], -1)).swapaxes(0, 1)
-        self.nest_UY = records[records["senders"].isin(self.nest_net.pyr_pops[-1].global_id)].sort_values(
+        self.nest_UY = records[records["senders"].isin(self.nest_net.layers[-1].pyr.global_id)].sort_values(
             ["senders", "times"])["V_m.s"].values.reshape((self.dims[-1], -1)).swapaxes(0, 1)
-        self.nest_UX = records[records["senders"].isin(self.nest_net.pyr_pops[0].global_id)].sort_values(
+        self.nest_UX = records[records["senders"].isin(self.nest_net.input_neurons.global_id)].sort_values(
             ["senders", "times"])["V_m.s"].values.reshape((self.dims[0], -1)).swapaxes(0, 1)
 
+        self.up_0 = utils.read_wr(
+            weight_df, self.nest_net.input_neurons, self.nest_net.layers[0].pyr, self.sim_time*self.batchsize, self.delta_t)
+        self.pi_0 = utils.read_wr(
+            weight_df, self.nest_net.layers[0].intn, self.nest_net.layers[0].pyr, self.sim_time*self.batchsize, self.delta_t)
+        self.ip_0 = utils.read_wr(
+            weight_df, self.nest_net.layers[0].pyr, self.nest_net.layers[0].intn,  self.sim_time*self.batchsize, self.delta_t)
+        self.down_0 = utils.read_wr(
+            weight_df, self.nest_net.layers[1].pyr, self.nest_net.layers[0].pyr, self.sim_time*self.batchsize, self.delta_t)
+        self.up_1 = utils.read_wr(
+            weight_df, self.nest_net.layers[0].pyr, self.nest_net.layers[1].pyr, self.sim_time*self.batchsize, self.delta_t)
 
-        self.hx_nest = utils.read_wr(
-            weight_df, self.nest_net.pyr_pops[0], self.nest_net.pyr_pops[1], self.sim_time*self.batchsize, self.delta_t)
-        self.hi_nest = utils.read_wr(
-            weight_df, self.nest_net.intn_pops[0], self.nest_net.pyr_pops[1], self.sim_time*self.batchsize, self.delta_t)
-        self.ih_nest = utils.read_wr(
-            weight_df, self.nest_net.pyr_pops[1], self.nest_net.intn_pops[0],  self.sim_time*self.batchsize, self.delta_t)
-        self.hy_nest = utils.read_wr(
-            weight_df, self.nest_net.pyr_pops[2], self.nest_net.pyr_pops[1], self.sim_time*self.batchsize, self.delta_t)
-        self.yh_nest = utils.read_wr(
-            weight_df, self.nest_net.pyr_pops[1], self.nest_net.pyr_pops[2], self.sim_time*self.batchsize, self.delta_t)
-
-        return records_match(self.hx_nest.flatten(), self.numpy_net.conns["hx"]["record"].flatten()) \
-            and records_match(self.hi_nest.flatten(), self.numpy_net.conns["hi"]["record"].flatten()) \
-            and records_match(self.ih_nest.flatten(), self.numpy_net.conns["ih"]["record"].flatten()) \
-            and records_match(self.yh_nest.flatten(), self.numpy_net.conns["yh"]["record"].flatten()) \
-            and records_match(self.hy_nest.flatten(), self.numpy_net.conns["hy"]["record"].flatten())
+        return records_match(self.up_0.flatten(), self.numpy_net.weight_record[0]["up"].flatten()) \
+            and records_match(self.pi_0.flatten(), self.numpy_net.weight_record[0]["pi"].flatten()) \
+            and records_match(self.ip_0.flatten(), self.numpy_net.weight_record[0]["ip"].flatten()) \
+            and records_match(self.up_1.flatten(), self.numpy_net.weight_record[-1]["up"].flatten()) \
+            and records_match(self.down_0.flatten(), self.numpy_net.weight_record[0]["down"].flatten())
 
     def plot_results(self):
 
@@ -551,18 +539,17 @@ class NetworkBatchTraining(TestClass):
         cmap = plt.cm.get_cmap('hsv', max(self.dims)+1)
         linestyles = ["solid", "dotted", "dashdot", "dashed"]
 
-        for i, name in enumerate(["hx", "yh", "ih", "hi", "hy"]):
+        for i, (name, layer) in enumerate(zip(["up", "down", "ip", "pi", "up"], [0, 0, 0, 0, 1])):
 
-            weights_nest = eval(f"self.{name}_nest")
-            weights_numpy = self.numpy_net.conns[name]["record"]
+            weights_nest = eval(f"self.{name}_{layer}")
+            weights_numpy = self.numpy_net.weight_record[layer][name]
             axes[0][i].set_title(name)
             for sender in range(weights_nest.shape[2]):
                 for target in range(weights_nest.shape[1]):
                     col = cmap(sender)
-                    style = linestyles[target%4]
+                    style = linestyles[target]
                     axes[0][i].plot(weights_nest[:, target, sender], linestyle=style, color=col)
                     axes[1][i].plot(weights_numpy[:, target, sender], linestyle=style, color=col)
-
 
         for i in range(self.dims[0]):
             axes[2][0].plot(self.nest_UX[:, i], color=cmap(i))

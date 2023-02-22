@@ -64,15 +64,15 @@ class TargetCurrent(FilteredInputCurrent):
     def run(self):
         delta_u = 0
         uy = 0
-        self.step_generator.set(amplitude_values=np.array(self.stim_amps)*self.g_si,
+        self.step_generator.set(amplitude_values=np.array(self.stim_amps)*self.g_som,
                                 amplitude_times=np.cumsum(self.sim_times).astype(float) - 50 + self.delta_t)
         for T, amp in zip(self.sim_times, self.stim_amps):
             for i in range(int(T/self.delta_t)):
-                delta_u = -(self.g_l + self.g_d + self.g_a) * uy + amp * self.g_si
+                delta_u = -(self.g_l + self.g_d + self.g_a) * uy + amp * self.g_som
                 uy = uy + (self.delta_t) * delta_u
                 self.y.append(uy)
 
-            self.neuron_01.set({"soma": {"I_e": amp*self.g_si}})
+            self.neuron_01.set({"soma": {"I_e": amp*self.g_som}})
             nest.Simulate(T)
 
     def evaluate(self) -> bool:
@@ -121,7 +121,7 @@ class CurrentConnection(TestClass):
                 delta_u_y = -U_y + amp
                 U_y = U_y + (self.delta_t/self.tau_x) * delta_u_y
 
-                delta_u_i = -self.g_l_eff * U_i + self.g_si * U_y
+                delta_u_i = -self.g_l_eff * U_i + self.g_som * U_y
                 U_i = U_i + self.delta_t * delta_u_i
                 self.UI.append(U_i)
                 self.UY.append(U_y)
@@ -155,11 +155,13 @@ class DynamicsHX(TestClass):
         super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
 
         self.weight = 1
-        syn["hx"].update({"weight": self.weight, "eta": 0})
+
+        conn_hx = syn["conns"][0]["up"]
+        conn_hx.update({"weight": self.weight, "eta": 0})
 
         if spiking_neurons:
             nrn["input"]["gamma"] = self.weight_scale
-            syn["hx"].update({"weight": self.weight/self.weight_scale})
+            conn_hx.update({"weight": self.weight/self.weight_scale})
 
         self.neuron_01 = nest.Create(self.neuron_model, 1, nrn["input"])
         self.mm_01 = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
@@ -168,8 +170,7 @@ class DynamicsHX(TestClass):
         self.neuron_02 = nest.Create(self.neuron_model, 1, nrn["pyr"])
         self.mm_02 = nest.Create("multimeter", 1, {'record_from': ["V_m.s", "V_m.b", "V_m.a_lat"]})
         nest.Connect(self.mm_02, self.neuron_02)
-
-        nest.Connect(self.neuron_01, self.neuron_02, syn_spec=syn["hx"])
+        nest.Connect(self.neuron_01, self.neuron_02, syn_spec=conn_hx)
 
         self.n_runs = 3
         self.sim_times = [100 for i in range(self.n_runs)]
@@ -237,16 +238,15 @@ class DynamicsHXMulti(DynamicsHX):
         super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
 
         self.weight_2 = -0.5
+        conn_hx = syn["conns"][0]["up"]
         if spiking_neurons:
-            syn["hx"]["weight"] = self.weight_2 / self.weight_scale
-        else:
-            syn["hx"]["weight"] = self.weight_2
+            conn_hx["weight"] = self.weight_2 / self.weight_scale
 
         self.neuron_03 = nest.Create(self.neuron_model, 1, nrn["input"])
         self.mm_03 = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
         nest.Connect(self.mm_03, self.neuron_03)
 
-        nest.Connect(self.neuron_03, self.neuron_02, syn_spec=syn["hx"])
+        nest.Connect(self.neuron_03, self.neuron_02, syn_spec=conn_hx)
 
     def run(self):
         U_x = 0
@@ -318,8 +318,10 @@ class DynamicsHI(DynamicsHX):
 
         super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
 
-        synapse = syn["hi"]
-        synapse.update({"weight": self.weight, "eta": 0})
+        synapse = syn["conns"][0]["pi"]
+        synapse.update({"weight": self.weight})
+        if "eta" in synapse:
+            synapse["eta"] = 0
 
         if spiking_neurons:
             nrn["intn"]["gamma"] = self.gamma * self.weight_scale
@@ -328,7 +330,7 @@ class DynamicsHI(DynamicsHX):
         self.neuron_01.set(nrn["intn"])
         self.neuron_02.set(nrn["pyr"])
         nest.Disconnect(self.neuron_01, self.neuron_02, conn_spec='all_to_all',
-                        syn_spec={'synapse_model': syn["hx"]["synapse_model"]})
+                        syn_spec={'synapse_model': syn["conns"][0]["up"]["synapse_model"]})
 
         nest.Connect(self.neuron_01, self.neuron_02, syn_spec=synapse)
 
@@ -398,7 +400,7 @@ class DynamicsYH(DynamicsHX):
 
         super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
 
-        synapse = syn["yh"]
+        synapse = syn["conns"][-1]["up"]
         synapse.update({"weight": self.weight, "eta": 0})
 
         if spiking_neurons:
@@ -408,7 +410,7 @@ class DynamicsYH(DynamicsHX):
         self.neuron_01.set(nrn["pyr"])
         self.neuron_02.set(nrn["intn"])
         nest.Disconnect(self.neuron_01, self.neuron_02, conn_spec='all_to_all',
-                        syn_spec={'synapse_model': syn["hx"]["synapse_model"]})
+                        syn_spec={'synapse_model': syn["conns"][0]["up"]["synapse_model"]})
 
         nest.Connect(self.neuron_01, self.neuron_02, syn_spec=synapse)
 
@@ -469,48 +471,44 @@ class DynamicsYH(DynamicsHX):
 class NetworkDynamics(TestClass):
 
     def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
-        for syn_name in ["hx", "yh", "hy", "hi", "ih"]:
-            if "eta" in syn[syn_name]:
-                syn[syn_name]["eta"] = 0
         sim["teacher"] = False
         sim["noise"] = False
         sim["dims"] = [4, 3, 2]
         super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
-        self.numpy_net = NumpyNetwork(deepcopy(sim), deepcopy(nrn), deepcopy(syn))
-
-        self.nest_net = NestNetwork(deepcopy(sim), deepcopy(nrn), deepcopy(syn), self.spiking_neurons)
+        self.disable_plasticity()
+        self.numpy_net = NumpyNetwork(deepcopy(self.sim), deepcopy(self.nrn), deepcopy(self.syn))
+        self.nest_net = NestNetwork(deepcopy(self.sim), deepcopy(self.nrn), deepcopy(self.syn), self.spiking_neurons)
         self.numpy_net.set_weights(self.nest_net.get_weight_dict())
+
+        self.starting_weights = self.nest_net.get_weight_dict()
 
     def run(self):
         input_currents = np.random.random(self.dims[0])
-        target_currents = np.random.random(self.dims[2])
-        self.sim_time = 100
+        target_currents = np.random.random(self.dims[-1])
+        self.sim_time = 50
 
         self.nest_net.set_input(input_currents)
         self.nest_net.set_target(target_currents)
         self.nest_net.simulate(self.sim_time)
 
-
         self.numpy_net.set_input(input_currents)
         for i in range(int(self.sim_time/self.delta_t)):
-            self.numpy_net.simulate(lambda: target_currents)
+            self.numpy_net.simulate(lambda: target_currents, plasticity=False)
 
     def evaluate(self) -> bool:
         records = pd.DataFrame.from_dict(self.nest_net.mm.events)
-
-        self.nest_UH = records[records["senders"].isin(self.nest_net.pyr_pops[1].global_id)].sort_values(
+        self.nest_UH = records[records["senders"].isin(self.nest_net.layers[0].pyr.global_id)].sort_values(
             ["senders", "times"])["V_m.s"].values.reshape((self.dims[1], -1)).swapaxes(0, 1)
-        self.nest_VAH = records[records["senders"].isin(self.nest_net.pyr_pops[1].global_id)].sort_values(
+        self.nest_VAH = records[records["senders"].isin(self.nest_net.layers[0].pyr.global_id)].sort_values(
             ["senders", "times"])["V_m.a_lat"].values.reshape((self.dims[1], -1)).swapaxes(0, 1)
-        self.nest_VBH = records[records["senders"].isin(self.nest_net.pyr_pops[1].global_id)].sort_values(
+        self.nest_VBH = records[records["senders"].isin(self.nest_net.layers[0].pyr.global_id)].sort_values(
             ["senders", "times"])["V_m.b"].values.reshape((self.dims[1], -1)).swapaxes(0, 1)
-        self.nest_UI = records[records["senders"].isin(self.nest_net.intn_pops[0].global_id)].sort_values(
+        self.nest_UI = records[records["senders"].isin(self.nest_net.layers[0].intn.global_id)].sort_values(
             ["senders", "times"])["V_m.s"].values.reshape((self.dims[-1], -1)).swapaxes(0, 1)
-        self.nest_UY = records[records["senders"].isin(self.nest_net.pyr_pops[-1].global_id)].sort_values(
+        self.nest_UY = records[records["senders"].isin(self.nest_net.layers[-1].pyr.global_id)].sort_values(
             ["senders", "times"])["V_m.s"].values.reshape((self.dims[-1], -1)).swapaxes(0, 1)
-        self.nest_UX = records[records["senders"].isin(self.nest_net.pyr_pops[0].global_id)].sort_values(
+        self.nest_UX = records[records["senders"].isin(self.nest_net.input_neurons.global_id)].sort_values(
             ["senders", "times"])["V_m.s"].values.reshape((self.dims[0], -1)).swapaxes(0, 1)
-
         return records_match(self.nest_UH, np.asarray(self.numpy_net.U_h_record)) and \
             records_match(self.nest_VAH, np.asarray(self.numpy_net.V_ah_record)) and \
             records_match(self.nest_UI, np.asarray(self.numpy_net.U_i_record)) and \
