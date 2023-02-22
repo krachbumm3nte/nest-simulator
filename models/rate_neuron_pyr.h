@@ -549,23 +549,25 @@ public:
   static RecordablesMap< rate_neuron_pyr > recordablesMap_;
 };
 
-
 // Inline functions of rate_neuron_pyr_parameters
 inline double
 rate_neuron_pyr_parameters::phi( double u )
 {
-  //  return phi_max / ( 1.0 + gamma * exp( beta * ( theta - u ) ) );
+  const double phi_thresh = 15;
   if ( use_phi )
   {
+    if (u < -phi_thresh) {
+      u = 0;
+    }
+    else if (u > phi_thresh) {
+      return u * gamma;
+    }
     return gamma * log( 1 + exp( beta * ( u - theta ) ) );
-    return 1 / ( 1.0 + exp( -u ) );
   }
   else
   {
-    return u;
+    return u * gamma; 
   }
-  // return log( 1 + exp( u ) );
-  //  TODO: which is the correct activation function for this?
 }
 
 // Inline functions of rate_neuron_pyr

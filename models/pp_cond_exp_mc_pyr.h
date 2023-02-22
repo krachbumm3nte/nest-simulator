@@ -553,20 +553,25 @@ public:
 
 
 // Inline functions of pp_cond_exp_mc_pyr_parameters
+
 inline double
 pp_cond_exp_mc_pyr_parameters::phi( double u )
 {
+  const double phi_thresh = 15;
   if ( use_phi )
   {
+    if (u < -phi_thresh) {
+      u = 0;
+    }
+    else if (u > phi_thresh) {
+      return u * gamma;
+    }
     return gamma * log( 1 + exp( beta * ( u - theta ) ) );
-    //return 1 / ( 1.0 + exp( -u ) );
   }
   else
   {
-    return gamma * u; 
+    return u * gamma; 
   }
-  // return log( 1 + exp( u ) );
-  //  TODO: which is the correct activation function for this?
 }
 
 // Inline functions of pp_cond_exp_mc_pyr
