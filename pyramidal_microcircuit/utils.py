@@ -25,7 +25,7 @@ def setup_directories(root="/home/johannes/Desktop/nest-simulator/pyramidal_micr
 
 
 def setup_nest(sim_params, datadir=os.getcwd()):
-    nest.set_verbosity("M_ERROR")
+    nest.set_verbosity("M_WARNING")
     nest.resolution = sim_params["delta_t"]
     nest.SetKernelStatus({"local_num_threads": sim_params["threads"]})
     nest.SetDefaults("multimeter", {'interval': sim_params["record_interval"]})
@@ -69,6 +69,7 @@ def store_synaptic_weights(network: Network, dirname, filename="weights.json"):
 
 def setup_models(spiking, nrn, sim, syn, record_weights=False):
     if not spiking:
+        nrn["weight_scale"] = 1
         nrn["pyr"]["basal"]["g_L"] = 1
         nrn["pyr"]["apical_lat"]["g_L"] = 1
         nrn["intn"]["basal"]["g_L"] = 1
@@ -82,20 +83,19 @@ def setup_models(spiking, nrn, sim, syn, record_weights=False):
         nrn["input"]["latent_equilibrium"] = True
 
     neuron_model = 'pp_cond_exp_mc_pyr' if spiking else 'rate_neuron_pyr'
-    if not spiking:
-        nrn["weight_scale"] = 1
     nrn["model"] = neuron_model
     syn_model = 'pyr_synapse' if spiking else 'pyr_synapse_rate'
-    static_syn_model = 'static_synapse'
+    syn["synapse_model"] = syn_model
+    static_syn_model = 'static_synapse' if spiking else 'rate_connection_delayed'
+
     wr = None
     if record_weights:
         wr = nest.Create("weight_recorder", params={'record_to': "ascii", "precision": 12})
+        # wr = nest.Create("weight_recorder")
         nest.CopyModel(syn_model, 'record_syn', {"weight_recorder": wr})
         syn_model = 'record_syn'
         nest.CopyModel(static_syn_model, 'static_record_syn', {"weight_recorder": wr})
         static_syn_model = 'static_record_syn'
-
-    syn["synapse_model"] = syn_model
 
     syn_static = {
         "synapse_model": static_syn_model,
@@ -134,14 +134,14 @@ def setup_models(spiking, nrn, sim, syn, record_weights=False):
         connections_l["down"]['receptor_type'] = apical_dendrite
         connections.append(connections_l)
 
-    config_out = {}
+    connection_out = {}
     if syn["eta"]["up"][-1] > 0:
-        config_out["up"] = deepcopy(syn_plastic)
-        config_out["up"]["eta"] = syn["eta"]["up"][-1]
+        connection_out["up"] = deepcopy(syn_plastic)
+        connection_out["up"]["eta"] = syn["eta"]["up"][-1]
     else:
-        config_out["up"] = deepcopy(syn_static)
-    config_out["up"]['receptor_type'] = basal_dendrite
-    connections.append(config_out)
+        connection_out["up"] = deepcopy(syn_static)
+    connection_out["up"]['receptor_type'] = basal_dendrite
+    connections.append(connection_out)
 
     syn["conns"] = connections
     return wr

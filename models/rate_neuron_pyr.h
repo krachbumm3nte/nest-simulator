@@ -77,7 +77,7 @@ SeeAlso: rate_neuron_pyr
 class rate_neuron_pyr_parameters
 {
   friend class rate_neuron_pyr;
-  friend class PyrArchivingNode < rate_neuron_pyr_parameters>;
+  friend class PyrArchivingNode< rate_neuron_pyr_parameters >;
 
 private:
   //! Compartments, NCOMP is number
@@ -100,6 +100,7 @@ private:
   Node* curr_target;
   double lambda_curr;
   bool use_phi;
+  bool latent_equilibrium;
 
 public:
   // The Urbanczik parameters need to be public within this class as they are passed to the GSL solver
@@ -250,7 +251,7 @@ urbanczik_synapse
 
 EndUserDocs */
 
-class rate_neuron_pyr : public PyrArchivingNode < rate_neuron_pyr_parameters>
+class rate_neuron_pyr : public PyrArchivingNode< rate_neuron_pyr_parameters >
 {
 
   // Boilerplate function declarations --------------------------------
@@ -267,17 +268,21 @@ public:
    */
   using Node::handle;
   using Node::handles_test_event;
+  using Node::sends_secondary_event;
 
-  port send_test_event( Node&, rport, synindex, bool );
+  port send_test_event( Node&, rport, synindex, bool ) override;
 
-  void handle( SpikeEvent& );
+  void handle( DelayedRateConnectionEvent& ) override;
   void handle( CurrentEvent& );
   void handle( DataLoggingRequest& );
 
-  port handles_test_event( SpikeEvent&, rport );
+  port handles_test_event( DelayedRateConnectionEvent&, rport ) override;
   port handles_test_event( CurrentEvent&, rport );
   port handles_test_event( DataLoggingRequest&, rport );
-
+  void
+  sends_secondary_event( DelayedRateConnectionEvent& ) override
+  {
+  }
   void get_status( DictionaryDatum& ) const;
   void set_status( const DictionaryDatum& );
 
@@ -406,6 +411,7 @@ public:
     enum StateVecElems_
     {
       V_M = 0,
+      V_forw,
       I,
       STATE_VEC_COMPS
     };
@@ -443,14 +449,15 @@ public:
   double
   get_V_m( int comp )
   {
-    double v = S_.y_[ S_.idx( comp, State_::V_M ) ];
-    // std::cout << "vcomp: " << this->get_node_id() << ", " << comp << ", " << v << std::endl;
-    if ( std::isnan( v ) )
+    if ( comp != 0 or !P_.pyr_params.latent_equilibrium )
     {
-      std::cout << "pyramidal neuron compartment " << comp << " voltage is NaN!" << std::endl;
-      throw KernelException( "pyramidal neuron compartment  voltage is NaN!" );
+      return S_.y_[ S_.idx( comp, State_::V_M ) ];
     }
-    return v;
+    else
+    {
+      //std::cout << "transmitting forw: " << S_.y_[ S_.idx( comp, State_::V_forw ) ] << std::endl;
+      return S_.y_[ S_.idx( comp, State_::V_forw ) ];
+    }
   }
 
 private:
@@ -556,17 +563,19 @@ rate_neuron_pyr_parameters::phi( double u )
   const double phi_thresh = 15;
   if ( use_phi )
   {
-    if (u < -phi_thresh) {
+    if ( u < -phi_thresh )
+    {
       u = 0;
     }
-    else if (u > phi_thresh) {
+    else if ( u > phi_thresh )
+    {
       return u * gamma;
     }
     return gamma * log( 1 + exp( beta * ( u - theta ) ) );
   }
   else
   {
-    return u * gamma; 
+    return u * gamma;
   }
 }
 
@@ -574,13 +583,13 @@ rate_neuron_pyr_parameters::phi( double u )
 inline port
 rate_neuron_pyr::send_test_event( Node& target, rport receptor_type, synindex, bool )
 {
-  SpikeEvent e;
+  DelayedRateConnectionEvent e;
   e.set_sender( *this );
   return target.handles_test_event( e, receptor_type );
 }
 
 inline port
-rate_neuron_pyr::handles_test_event( SpikeEvent&, rport receptor_type )
+rate_neuron_pyr::handles_test_event( DelayedRateConnectionEvent&, rport receptor_type )
 {
   if ( receptor_type < MIN_SPIKE_RECEPTOR || receptor_type >= SUP_SPIKE_RECEPTOR )
   {
@@ -590,7 +599,7 @@ rate_neuron_pyr::handles_test_event( SpikeEvent&, rport receptor_type )
     }
     else
     {
-      throw IncompatibleReceptorType( receptor_type, get_name(), "SpikeEvent" );
+      throw IncompatibleReceptorType( receptor_type, get_name(), "DelayedRateConnectionEvent" );
     }
   }
   return receptor_type - MIN_SPIKE_RECEPTOR;

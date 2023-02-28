@@ -110,12 +110,26 @@ class pyr_synapse_rate : public Connection< targetidentifierT >
 public:
   typedef CommonSynapseProperties CommonPropertiesType;
   typedef Connection< targetidentifierT > ConnectionBase;
+  typedef DelayedRateConnectionEvent EventType;
 
   /**
    * Default Constructor.
    * Sets default values for all parameters. Needed by GenericConnectorModel.
    */
-  pyr_synapse_rate();
+  pyr_synapse_rate()
+    : ConnectionBase()
+    , weight_( 1.0 )
+    , tilde_w( 0 )
+    , init_weight_( 0.0 )
+    , tau_Delta_( 100.0 )
+    , eta_( 0.07 )
+    , Wmin_( -1.0 )
+    , Wmax_( 1.0 )
+    , r_in( 0.0 )
+    , u_target( 0.0 )
+    , v_dend_target( 0.0 )
+  {
+  }
 
 
   /**
@@ -144,43 +158,114 @@ public:
    */
   void set_status( const DictionaryDatum& d, ConnectorModel& cm );
 
-  /**
-   * Send an event to the receiver of this connection.
-   * \param e The event to send
-   * \param cp common properties of all synapses (empty).
-   */
-  void send( Event& e, thread t, const CommonSynapseProperties& cp );
-
 
   double phi( double x );
 
-  class ConnTestDummyNode : public ConnTestDummyNodeBase
-  {
-  public:
-    // Ensure proper overriding of overloaded virtual functions.
-    // Return values from functions are ignored.
-    using ConnTestDummyNodeBase::handles_test_event;
-    port
-    handles_test_event( SpikeEvent&, rport ) override
-    {
-      return invalid_port;
-    }
-  };
+  // class ConnTestDummyNode : public ConnTestDummyNodeBase
+  // {
+  // public:
+  //   // Ensure proper overriding of overloaded virtual functions.
+  //   // Return values from functions are ignored.
+  //   using ConnTestDummyNodeBase::handles_test_event;
+  //   port
+  //   handles_test_event( DelayedRateConnectionEvent&, rport ) override
+  //   {
+  //     std::cout << "synapse handles" << std::endl;
+  //     return 0;
+  //   }
+  // };
 
   void
   check_connection( Node& s, Node& t, rport receptor_type, const CommonPropertiesType& )
   {
-    ConnTestDummyNode dummy_target;
+    EventType ge;
+    s.sends_secondary_event( ge );
+    ge.set_sender( s );
 
-    ConnectionBase::check_connection_( dummy_target, s, t, receptor_type );
-
+    Connection< targetidentifierT >::target_.set_rport( t.handles_test_event( ge, receptor_type ) );
+    Connection< targetidentifierT >::target_.set_target( &t );
     t.register_stdp_connection( -1 - get_delay(), get_delay() );
+
   }
 
   void
   set_weight( double w )
   {
     weight_ = w;
+  }
+
+
+  /**
+   * Send an event to the receiver of this connection.
+   * \param e The event to send
+   * \param t The thread on which this connection is stored.
+   * \param cp Common properties object, containing the stdp parameters.
+   */
+  void
+  send( Event& e, thread t, const CommonSynapseProperties& )
+  {
+    Node* target = get_target( t );
+    nest::rate_neuron_pyr* target_pyr = static_cast< nest::rate_neuron_pyr* >( target );
+    
+    Event* e2 = e.clone();
+    nest::DelayedRateConnectionEvent& del_event = static_cast< nest::DelayedRateConnectionEvent& >( *e2 );
+    int rport = get_rport();
+    double delta_tilde_w;
+    double dend_error = 0;
+    double V_W_star = 0;
+
+    u_target = target->get_V_m( 0 );
+    //std::cout << "u_tgt: " << u_target << ", w: " << weight_ << std::endl;
+    if ( rport == 1 )
+    {
+      double const g_L = target->get_g_L( 0 );
+      double g_D = target->get_g( 1 );
+      double g_A = target->get_g( 2 );
+      V_W_star = ( g_D * v_dend_target ) / ( g_L + g_D + g_A );
+      dend_error = ( target_pyr->P_.pyr_params.phi( u_target ) - target_pyr->P_.pyr_params.phi( V_W_star ) );
+    }
+    else if ( rport == 2 )
+    {
+      dend_error = -v_dend_target;
+    }
+    else if ( rport == 3 )
+    {
+      // TODO: this is unverified as of yet, but would enable learning of feedback pyr-pyr weights
+      double V_W_star = weight_ * r_in;
+      dend_error = ( target_pyr->P_.pyr_params.phi( u_target ) - target_pyr->P_.pyr_params.phi( V_W_star ) );
+      rport -= 1; // send all top-down signals to the apical compartment by changing rport
+      if ( eta_ > 0 )
+      {
+        std::cout << "plastic top-down synapse!" << std::endl;
+      }
+    }
+    delta_tilde_w = -tilde_w + dend_error * r_in;
+    // TODO: generalize 0.1 to delta_t
+    tilde_w = tilde_w + 0.1 * ( delta_tilde_w / tau_Delta_ );
+    weight_ = weight_ + 0.1 * eta_ * tilde_w;
+
+
+    if ( weight_ > Wmax_ )
+    {
+      weight_ = Wmax_;
+    }
+    else if ( weight_ < Wmin_ )
+    {
+      weight_ = Wmin_;
+    }
+    std::vector< unsigned int >::iterator it = del_event.begin();
+    r_in = del_event.get_coeffvalue( it );
+    v_dend_target = target->get_V_m( rport );
+    const size_t buffer_size = kernel().connection_manager.get_min_delay();
+
+    std::vector< double > rate_vec( buffer_size, 0.0 );
+    rate_vec[ 0 ] = r_in;
+    del_event.set_coeffarray( rate_vec );
+    del_event.set_receiver( *target );
+    del_event.set_delay_steps( get_delay_steps() );
+    del_event.set_weight( weight_ );
+    del_event.set_rport( rport );
+    del_event();
   }
 
 private:
@@ -192,104 +277,11 @@ private:
   double eta_;
   double Wmin_;
   double Wmax_;
+  double r_in;
+  double u_target;
+  double v_dend_target;
 };
 
-/**
- * Send an event to the receiver of this connection.
- * \param e The event to send
- * \param t The thread on which this connection is stored.
- * \param cp Common properties object, containing the stdp parameters.
- */
-template < typename targetidentifierT >
-inline void
-pyr_synapse_rate< targetidentifierT >::send( Event& e, thread t, const CommonSynapseProperties& )
-{
-
-  Node* target = get_target( t );
-  nest::rate_neuron_pyr* target_pyr = static_cast<nest::rate_neuron_pyr*>(target);
-
-  Node* sender = kernel().node_manager.get_node_or_proxy( e.retrieve_sender_node_id_from_source_table() );
-  nest::rate_neuron_pyr* sender_pyr = static_cast<nest::rate_neuron_pyr*>(sender);
-  double U_sender = sender_pyr->get_V_m( 0 );
-  int rport = get_rport();
-  double V_dend = target->get_V_m( rport );
-  double delta_tilde_w;
-  double rate_sender = sender_pyr->P_.pyr_params.phi( U_sender );
-  double dend_error = 0;
-  double V_W_star = 0;
-
-  if ( rport == 1 )
-  {
-    double U_target = target->get_V_m( 0 );
-    double const g_L = target->get_g_L( 0 );
-    double g_D = target->get_g( 1 );
-    double g_A = target->get_g( 2 );
-    V_W_star =  ( g_D * V_dend ) / ( g_L + g_D + g_A );
-    dend_error = ( target_pyr->P_.pyr_params.phi( U_target ) - target_pyr->P_.pyr_params.phi( V_W_star ));
-    // if ( sender->get_node_id() == 3 and target->get_node_id() == 5 )
-    // {
-    //   std::cout << "vars: " << U_target << "," << V_dend << ", " << U_sender << std::endl;
-    // }
-  }
-  else if ( rport == 2)
-  {
-    dend_error = -V_dend;
-  }
-  else if (rport == 3) 
-  {
-    //TODO: this is unverified as of yet, but would enable learning of feedback pyr-pyr weights
-    double U_target = target->get_V_m( 0 );
-    double V_W_star = weight_ * target_pyr->P_.pyr_params.phi(U_sender);
-    dend_error = (target_pyr->P_.pyr_params.phi( U_target ) - target_pyr->P_.pyr_params.phi( V_W_star ));
-    rport -= 1; // send all top-down signals to the apical compartment by changing rport
-    if (eta_ > 0) {
-      std::cout << "plastic top-down synapse!" << std::endl;
-    }
-  }
-  delta_tilde_w = -tilde_w + dend_error * rate_sender;
-  // std::cout << "a: " << rport << ", " << tilde_w << ", " << V_dend << ", " << delta_tilde_w << std::endl;
-  //  TODO: generalize delta_t
-  tilde_w = tilde_w + 0.1 * ( delta_tilde_w / tau_Delta_ );
-
-  weight_ = weight_ + 0.1 * eta_ * tilde_w;
-
-
-  if ( weight_ > Wmax_ )
-  {
-    weight_ = Wmax_;
-  }
-  else if ( weight_ < Wmin_ )
-  {
-    weight_ = Wmin_;
-  }
-
-
-  // std::cout << "syn: " << rate_sender << ", " << weight_ << ", " << tilde_w << ", " << delta_tilde_w << ", " <<
-  // dend_error << ", " << V_W_star << std::endl;
-  //if ( sender->get_node_id() == 3 and target->get_node_id() == 5 )
-  //{
-  //  std::cout << "syn: " << weight_ << ", " << tilde_w << ", " << delta_tilde_w << std::endl;
-  //}
-  e.set_receiver( *target );
-  e.set_weight( weight_ );
-  e.set_rport( rport );
-  e();
-
-}
-
-
-template < typename targetidentifierT >
-pyr_synapse_rate< targetidentifierT >::pyr_synapse_rate()
-  : ConnectionBase()
-  , weight_( 1.0 )
-  , tilde_w( 0 )
-  , init_weight_( 0.0 )
-  , tau_Delta_( 100.0 )
-  , eta_( 0.07 )
-  , Wmin_( -1.0 )
-  , Wmax_( 1.0 )
-{
-}
 
 template < typename targetidentifierT >
 void
@@ -320,4 +312,4 @@ pyr_synapse_rate< targetidentifierT >::set_status( const DictionaryDatum& d, Con
 
 } // of namespace nest
 
-#endif // of #ifndef URBANCZIK_SYNAPSE_H
+#endif // of #ifndef PYR_SYNAPSE_RATE_H

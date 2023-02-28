@@ -285,7 +285,6 @@ ModelsModule::init( SLIInterpreter* )
   kernel().model_manager.register_node_model< gif_cond_exp_multisynapse >( "gif_cond_exp_multisynapse" );
   kernel().model_manager.register_node_model< gif_pop_psc_exp >( "gif_pop_psc_exp" );
   kernel().model_manager.register_node_model< glif_cond >( "glif_cond" );
-
   kernel().model_manager.register_node_model< aeif_psc_delta_clopath >( "aeif_psc_delta_clopath" );
   kernel().model_manager.register_node_model< aeif_cond_alpha >( "aeif_cond_alpha" );
   kernel().model_manager.register_node_model< aeif_cond_exp >( "aeif_cond_exp" );
@@ -321,7 +320,6 @@ ModelsModule::init( SLIInterpreter* )
   register_connection_model< jonke_synapse >( "jonke_synapse" );
   register_connection_model< pyr_synapse >(
     "pyr_synapse", default_connection_model_flags | RegisterConnectionModelFlags::REQUIRES_URBANCZIK_ARCHIVING );
-  register_connection_model< pyr_synapse_rate >( "pyr_synapse_rate" );
   register_connection_model< quantal_stp_synapse >( "quantal_stp_synapse" );
   register_connection_model< static_synapse >( "static_synapse" );
   register_connection_model< static_synapse_hom_w >( "static_synapse_hom_w" );
@@ -342,6 +340,8 @@ ModelsModule::init( SLIInterpreter* )
   register_connection_model< vogels_sprekeler_synapse >( "vogels_sprekeler_synapse" );
 
   // register secondary connection models
+    register_secondary_connection_model< pyr_synapse_rate >( "pyr_synapse_rate" );
+
   register_secondary_connection_model< GapJunction >(
     "gap_junction", RegisterConnectionModelFlags::REQUIRES_SYMMETRIC | RegisterConnectionModelFlags::SUPPORTS_WFR );
   register_secondary_connection_model< RateConnectionInstantaneous >(
