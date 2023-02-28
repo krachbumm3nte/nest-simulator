@@ -239,8 +239,7 @@ class DynamicsHXMulti(DynamicsHX):
 
         self.weight_2 = -0.5
         conn_hx = syn["conns"][0]["up"]
-        if spiking_neurons:
-            conn_hx["weight"] = self.weight_2 / self.weight_scale
+        conn_hx["weight"] = self.weight_2 / self.weight_scale
 
         self.neuron_03 = nest.Create(self.neuron_model, 1, nrn["input"])
         self.mm_03 = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})

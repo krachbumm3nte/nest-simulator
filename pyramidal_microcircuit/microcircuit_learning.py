@@ -1,7 +1,5 @@
-import nest
 import matplotlib.pyplot as plt
 import numpy as np
-from params import *
 from networks.network_nest import NestNetwork
 from networks.network_numpy import NumpyNetwork
 from sklearn.metrics import mean_squared_error as mse
@@ -28,10 +26,15 @@ parser.add_argument("--weights",
                     type=str,
                     help="Start simulations from a given set of weights to ensure comparable results.")
 args = parser.parse_args()
+print(args.le)
+if args.le:
+    from params_le import *  # nopep8
+else:
+    from params import *  # nopep8
+
 
 neuron_params["latent_equilibrium"] = args.le
 
-args.le = True
 if args.cont:
     root_dir = args.cont
     imgdir = os.path.join(root_dir, "plots")

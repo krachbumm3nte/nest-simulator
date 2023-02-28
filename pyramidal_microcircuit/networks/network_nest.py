@@ -5,6 +5,7 @@ from sklearn.metrics import mean_squared_error as mse
 import pandas as pd
 from copy import deepcopy
 from .layer_NEST import NestLayer, NestOutputLayer
+from time import time
 
 
 class NestNetwork(Network):
@@ -21,18 +22,18 @@ class NestNetwork(Network):
             self.nrn["input"]["gamma"] = self.weight_scale
             self.nrn["pyr"]["gamma"] = self.weight_scale * nrn["pyr"]["gamma"]
             self.nrn["intn"]["gamma"] = self.weight_scale * nrn["intn"]["gamma"]
-            for layer in range(len(self.dims)-2):
-                for syn_name in ["ip", "up", "down"]:
+            for layer in range(len(self.dims)-1):
+                for syn_name in ["ip", "up", "down", "pi"]:
+                    if syn_name not in self.syn["conns"][layer]:
+                        continue
                     synapse = self.syn["conns"][layer][syn_name]
                     if "eta" in synapse:
                         synapse["Wmin"] /= self.weight_scale
                         synapse["Wmax"] /= self.weight_scale
-                        synapse["eta"] /= self.weight_scale**3 * self.syn["tau_Delta"]
-                syn_pi = self.syn["conns"][layer]["pi"]
-                if "eta" in syn_pi:
-                    syn_pi["Wmin"] /= self.weight_scale
-                    syn_pi["Wmax"] /= self.weight_scale
-                    syn_pi["eta"] /= self.weight_scale**2 * self.syn["tau_Delta"]
+                        if syn_name == "pi":
+                            synapse["eta"] /= self.weight_scale**2 * self.syn["tau_Delta"]
+                        else:
+                            synapse["eta"] /= self.weight_scale**3 * self.syn["tau_Delta"]
         self.setup_populations()
 
     def setup_populations(self):
@@ -48,17 +49,19 @@ class NestNetwork(Network):
             eta["up"] = conns_l["up"]["eta"] if "eta" in conns_l["up"] else 0
             eta["pi"] = conns_l["pi"]["eta"] if "eta" in conns_l["pi"] else 0
             eta["ip"] = conns_l["ip"]["eta"] if "eta" in conns_l["ip"] else 0
-            layer = NestLayer(self.nrn, self.sim, self.syn, i, eta, pyr_current, intn_current)
+            layer = NestLayer(deepcopy(self.nrn), deepcopy(self.sim),
+                              deepcopy(self.syn), i, eta, pyr_current, intn_current)
             self.layers.append(layer)
             pyr_current = layer.pyr
             intn_current = layer.intn
 
         conns_l = self.syn["conns"][-1]
         eta["up"] = conns_l["up"]["eta"] if "eta" in conns_l["up"] else 0
-        self.layers.append(NestOutputLayer(self.nrn, self.sim, self.syn, eta, pyr_current, intn_current))
+        self.layers.append(NestOutputLayer(deepcopy(self.nrn), deepcopy(self.sim),
+                                           deepcopy(self.syn), eta, pyr_current, intn_current))
 
         compartments = nest.GetDefaults(self.nrn["model"])["receptor_types"]
-
+        foo = nest.GetConnections(self.layers[0].pyr, self.layers[0].intn)
         if self.sim["noise"]:
             # Inject Gaussian white noise into neuron somata.
             self.noise = nest.Create("noise_generator", 1, {"mean": 0., "std": self.sigma_noise})
@@ -89,6 +92,14 @@ class NestNetwork(Network):
         nest.Connect(self.sgy, self.layers[-1].pyr, conn_spec='one_to_one',
                      syn_spec={"receptor_type": compartments["soma_curr"]})
 
+        # TODO: explain this shite
+        pyr_prev = self.input_neurons
+        for i in range(len(self.layers)-1):
+            layer = self.layers[i]
+            layer.redefine_connections(pyr_prev, self.layers[i+1].pyr)
+            pyr_prev = layer.pyr
+        self.layers[-1].redefine_connections(pyr_prev)
+
         for i in range(len(self.layers) - 1):
             l_current = self.layers[i]
             l_next = self.layers[i + 1]
@@ -96,8 +107,8 @@ class NestNetwork(Network):
             if self.sim["init_self_pred"]:
                 w_down = self.get_weight_array_from_syn(l_current.down)
                 self.set_weights(-w_down, l_current.pi)
-
                 w_up = self.get_weight_array_from_syn(l_next.up)
+
                 self.set_weights(w_up * l_next.gb / (l_next.gl + l_next.ga + l_next.gb) *
                                  (l_current.gl + l_current.gd) / l_current.gd, l_current.ip)
 
@@ -137,14 +148,17 @@ class NestNetwork(Network):
         for i, (x, y) in enumerate(zip(x_batch, y_batch)):
             self.set_input(x)
             self.set_target(y)
+            print("\nnew epoch:")
+            start = time()
             self.simulate(self.sim_time)
-
+            print(time() - start)
+            start = time()
             if i == len(x)-1:
-                U_y = [nrn.get("soma")["V_m"] for nrn in self.pyr_pops[-1]]
+                U_y = [nrn.get("soma")["V_m"] for nrn in self.layers[-1].pyr]
                 if not self.use_mm:
-                    U_h = [nrn.get("soma")["V_m"] for nrn in self.pyr_pops[1]]
-                    V_ah = [nrn.get("apical_lat")["V_m"] for nrn in self.pyr_pops[1]]
-                    U_i = [nrn.get("soma")["V_m"] for nrn in self.intn_pops[0]]
+                    U_h = [nrn.get("soma")["V_m"] for nrn in self.layers[0].pyr]
+                    V_ah = [nrn.get("apical_lat")["V_m"] for nrn in self.layers[0].pyr]
+                    U_i = [nrn.get("soma")["V_m"] for nrn in self.layers[0].intn]
 
                     self.V_ah_record = np.concatenate((self.V_ah_record, np.expand_dims(V_ah, 0)), axis=0)
                     self.U_h_record = np.concatenate((self.U_h_record, np.expand_dims(U_h, 0)), axis=0)
@@ -184,7 +198,7 @@ class NestNetwork(Network):
             #     sg.set(amplitude_values=[0], amplitude_times=[t_now])
             self.set_input(x_test)
             self.simulate(self.sim_time)
-            y_pred = [nrn.get("soma")["V_m"] for nrn in self.pyr_pops[-1]]
+            y_pred = [nrn.get("soma")["V_m"] for nrn in self.layers[-1].pyr]
             loss_mse.append(mse(y_actual, y_pred))
             acc.append(np.argmax(y_actual) == np.argmax(y_pred))
 
@@ -199,11 +213,8 @@ class NestNetwork(Network):
         nest.GetConnections(synapse_model=self.syn["synapse_model"]).set({"eta": 0})
 
     def enable_learning(self):
-        for l in self.layers[:-1]:
-            l.up.set({"eta": l.eta["up"]})
-            l.ip.set({"eta": l.eta["ip"]})
-            l.pi.set({"eta": l.eta["pi"]})
-        self.layers[-1].up.set(self.layers[-1].eta["up"])
+        for l in self.layers:
+            l.enable_learning()
 
     def set_target(self, target_currents):
         """Inject a constant current into all neurons in the output layer.
@@ -222,30 +233,27 @@ class NestNetwork(Network):
         weights = pd.DataFrame.from_dict(nest.GetConnections(source=source, target=target).get())
         return weights.sort_values(["target", "source"]).weight.values.reshape((len(target), len(source)))
 
-    def get_weight_array_from_syn(self, synapse_collection):
+    def get_weight_array_from_syn(self, synapse_collection, normalized=False):
         weights = pd.DataFrame.from_dict(synapse_collection.get())
         n_out = len(set(synapse_collection.targets()))
         n_in = len(set(synapse_collection.sources()))
-        return weights.sort_values(["target", "source"]).weight.values.reshape((n_out, n_in))
+        return weights.sort_values(["target", "source"]).weight.values.reshape((n_out, n_in)) * (self.weight_scale if normalized else 1)
 
     def get_weight_dict(self, normalized=True):
         weights = []
         for n in range(len(self.layers) - 1):
             l = self.layers[n]
-            weights.append({"up": self.get_weight_array_from_syn(l.up),
-                            "pi": self.get_weight_array_from_syn(l.pi),
-                            "ip": self.get_weight_array_from_syn(l.ip),
-                            "down": self.get_weight_array_from_syn(l.down)})
-        weights.append({"up": self.get_weight_array_from_syn(self.layers[-1].up)})
-        if normalized:
-            for layer_dict in weights:
-                for k,v in layer_dict.items():
-                    layer_dict[k] = v * self.weight_scale
+            weights.append({"up": self.get_weight_array_from_syn(l.up, normalized),
+                            "pi": self.get_weight_array_from_syn(l.pi, normalized),
+                            "ip": self.get_weight_array_from_syn(l.ip, normalized),
+                            "down": self.get_weight_array_from_syn(l.down, normalized)})
+        weights.append({"up": self.get_weight_array_from_syn(self.layers[-1].up, normalized)})
         return weights
 
     def reset(self):
-        for pop in self.pyr_pops + self.intn_pops:
-            pop.set({"soma": {"V_m": 0, "I_e": 0}, "basal": {"V_m": 0, "I_e": 0}, "apical_lat": {"V_m": 0, "I_e": 0}})
+        self.input_neurons.set({"soma": {"V_m": 0, "I_e": 0}, "basal": {"V_m": 0, "I_e": 0}, "apical_lat": {"V_m": 0, "I_e": 0}})
+        for l in self.layers:
+            l.reset()
 
     def set_weights(self, weights, synapse_collection):
         for i, source_id in enumerate(sorted(set(synapse_collection.sources()))):

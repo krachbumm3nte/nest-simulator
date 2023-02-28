@@ -12,7 +12,7 @@ sim_params = {
     "record_interval": 1,  # interval for storing membrane potentials in ms
     "init_self_pred": True,  # initialize feedback weights to self-predicting state
     "plasticity": True,  # enable synaptic plasticity
-    "SIM_TIME": 100,  # simulation time per input pattern in ms
+    "SIM_TIME": 5,  # simulation time per input pattern in ms
     "n_runs": 10000,  # number of training iterations
     "noise": False,  # apply noise to membrane potentials
     "sigma": sigma,
@@ -61,8 +61,8 @@ neuron_params = {
     'beta': beta,
     'theta': theta,
     "g_l_eff": g_l_eff,
-    "weight_scale": 250,
-    "latent_equilibrium": False
+    "weight_scale": 2000,
+    "latent_equilibrium": True
 }
 
 
@@ -127,8 +127,8 @@ syn_params = {
     'delay': sim_params['delta_t'],  # synaptic delay
     'tau_Delta': tau_delta,
     'eta': {
-        'ip': [0.002, 0],
+        'ip': [0.04, 0],
         'pi': [0, 0],
-        'up': [0.005, 0.0001],
+        'up': [0.1, 0.02],
     }
 }

@@ -21,7 +21,7 @@ if __name__ == "__main__":
     root, imgdir, datadir = utils.setup_directories(
         "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/tests/runs")
 
-    # classes = [DynamicsHI]
+    # classes = [NetworkPlasticity]
     sim_params["record_interval"] = 0.1
     sim_params["recording_backend"] = "memory"
     sim_params["datadir"] = datadir

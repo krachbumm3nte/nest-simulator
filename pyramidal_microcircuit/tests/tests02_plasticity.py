@@ -48,7 +48,7 @@ class PlasticityYH(DynamicsYH):
                 r_y = self.phi(U_y)
 
                 tilde_w = tilde_w + (self.delta_t/self.tau_delta) * delta_tilde_w
-                self.weight = self.weight + self.eta * self.delta_t * tilde_w
+                self.weight = np.clip(self.weight + self.eta * self.delta_t * tilde_w, -4, 4)
                 self.weight_.append(self.weight)
 
                 self.UH.append(U_h)
@@ -146,7 +146,6 @@ class PlasticityHX(DynamicsHX):
         weight_df = weight_df.reindex(np.arange(0, self.SIM_TIME, self.delta_t))
         weight_df = weight_df.fillna(method="backfill").fillna(method="ffill")
         self.nest_weights = weight_df.weights.values
-
         return records_match(self.nest_weights, self.weight_)
 
     def plot_results(self):
@@ -409,7 +408,7 @@ class NetworkPlasticity(TestClass):
         self.nest_net.set_input(input_currents)
         self.numpy_net.set_input(input_currents)
 
-        self.sim_time = 600
+        self.sim_time = 100
         nest.SetKernelStatus({"data_prefix": f"it{0}_"})
 
         self.nest_net.set_target(target_currents)
@@ -432,7 +431,6 @@ class NetworkPlasticity(TestClass):
             weight_df, self.nest_net.layers[1].pyr, self.nest_net.layers[0].pyr, self.sim_time, self.delta_t)
         self.up_1 = utils.read_wr(
             weight_df, self.nest_net.layers[0].pyr, self.nest_net.layers[1].pyr, self.sim_time, self.delta_t)
-
         return records_match(self.up_0.flatten(), self.numpy_net.weight_record[0]["up"].flatten()) \
             and records_match(self.pi_0.flatten(), self.numpy_net.weight_record[0]["pi"].flatten()) \
             and records_match(self.ip_0.flatten(), self.numpy_net.weight_record[0]["ip"].flatten()) \

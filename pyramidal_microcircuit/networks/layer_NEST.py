@@ -3,6 +3,7 @@ import numpy as np
 from abc import ABC, abstractmethod
 from .layer import AbstractLayer
 import nest
+import time
 dtype = np.float32
 
 
@@ -108,6 +109,17 @@ class NestLayer(AbstractLayer):
 
         # TODO: reset urbanczik History?
 
+    def redefine_connections(self, pyr_prev, pyr_next):
+        self.up = nest.GetConnections(pyr_prev, self.pyr)
+        self.pi = nest.GetConnections(self.intn, self.pyr)
+        self.ip = nest.GetConnections(self.pyr, self.intn)
+        self.down = nest.GetConnections(pyr_next, self.pyr)
+
+    def enable_learning(self):
+        for conn_type in ["up", "pi", "ip"]:
+            if self.eta[conn_type] > 0:
+                eval(f"self.{conn_type}").set({"eta": self.eta[conn_type]})
+
 
 class NestOutputLayer(AbstractLayer):
 
@@ -138,3 +150,10 @@ class NestOutputLayer(AbstractLayer):
         self.pyr.set({"soma": {"V_m": 0, "I_e": 0}, "basal": {"V_m": 0, "I_e": 0}, "apical_lat": {"V_m": 0, "I_e": 0}})
 
         # TODO: reset urbanczik History?
+
+    def redefine_connections(self, pyr_prev):
+        self.up = nest.GetConnections(pyr_prev, self.pyr)
+
+    def enable_learning(self):
+        if self.eta["up"] > 0:
+            self.up.set({"eta": self.eta["up"]})
