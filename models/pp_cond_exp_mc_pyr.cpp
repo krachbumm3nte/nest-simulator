@@ -246,6 +246,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::operator=( const Parameters_& p )
   pyr_params.C_m = p.pyr_params.C_m;
   pyr_params.use_phi = p.pyr_params.use_phi;
   pyr_params.latent_equilibrium = p.pyr_params.latent_equilibrium;
+
   for ( size_t n = 0; n < NCOMP; ++n )
   {
     pyr_params.g_conn[ n ] = p.pyr_params.g_conn[ n ];
@@ -590,14 +591,14 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
     }
 
     // Somatic membrane potential
-    const double V = S_.y_[ S::idx( SOMA, S::V_M ) ];
+    const double V_som_old = S_.y_[ S::idx( SOMA, S::V_M ) ];
 
     // leak current of soma
     // TODO: I am misappropriating g_som here, because I am too lazy to create another neuron parameter.
     // The gist of it is, that all neuron types have effective leakage conductance of (g_l + g_D + g_A),
     // yet in- and output neurons have an apical conductance of zero. Thus we need to store this sum separately.
     // as it serves no other purpose, the somatic conductance is used here (temporarily?)
-    const double I_L = P_.pyr_params.g_conn[ SOMA ] * V;
+    const double I_L = P_.pyr_params.g_conn[ SOMA ] * V_som_old;
 
     // coupling from dendrites to soma all summed up
     double I_conn_d_s = 0.0;
@@ -622,32 +623,27 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
 
       const double I_L_dend = pyr_params->g_L[ n ] * V_dnd;
 
-      S_.y_[ S::idx( n, S::delta_V_M ) ] = -I_L_dend + I_dend;
-      // derivative membrane potential
-      S_.y_[ S::idx( n, S::V_M ) ] += S_.y_[ S::idx( n, S::delta_V_M ) ];
+      S_.y_[ S::idx( n, S::V_M ) ] += -I_L_dend + I_dend;
 
       // derivative dendritic current
       S_.y_[ S::idx( n, S::I ) ] -= I_dend / pyr_params->tau_m;
     }
 
-    S_.y_[ S::idx( SOMA, S::delta_V_M ) ] = -I_L + I_conn_d_s + B_.I_stim_[ SOMA ] + P_.I_e[ SOMA ];
-    double V_som = S_.y_[ S::idx( SOMA, S::V_M ) ] + S_.y_[ S::idx( SOMA, S::delta_V_M ) ] / pyr_params->g_conn[ SOMA ];
-    S_.y_[ S::idx( SOMA, S::V_M ) ] += B_.step_ * S_.y_[ S::idx( SOMA, S::delta_V_M ) ];
+    const double delta_V_som = -I_L + I_conn_d_s + B_.I_stim_[ SOMA ] + P_.I_e[ SOMA ];
+    S_.y_[ S::idx( SOMA, S::V_M ) ] += B_.step_ * delta_V_som;
+    //std::cout << V_som_old << " + " << delta_V_som << " - " << I_L << "(*)" << pyr_params->g_conn[ SOMA ] << " = " << S_.y_[ S::idx( SOMA, S::V_M ) ] << std::endl;
+    S_.y_[ S::idx( SOMA, S::V_forw ) ] = V_som_old + delta_V_som / pyr_params->g_conn[ SOMA ];
 
 
     // excitatory conductance soma
-    //TODO: we currently do not allow spikes at the soma. maybe change that?
+    // TODO: we currently do not allow spikes at the soma. maybe change that?
     S_.y_[ S::idx( SOMA, S::I ) ] -= S_.y_[ S::idx( SOMA, S::I ) ] / pyr_params->tau_m;
 
 
-    double V_a = S_.y_[ S::idx( APICAL_LAT, S::V_M ) ];
-    double V_b = S_.y_[ S::idx( BASAL, S::V_M ) ];
-    if (!pyr_params->latent_equilibrium )
+    double V_som_forward = S_.y_[ S::idx( SOMA, S::V_M ) ];
+    if ( pyr_params->latent_equilibrium )
     {
-      V_som = S_.y_[ S::idx( SOMA, S::V_M ) ];
-
-      // V_a += S_.y_[ S::idx( APICAL_LAT, S::delta_V_M ) ] / pyr_params->g_conn[ SOMA ];
-      // V_b += S_.y_[ S::idx( BASAL, S::delta_V_M ) ] / pyr_params->g_conn[ SOMA ];
+      V_som_forward = S_.y_[ S::idx( SOMA, S::V_forw ) ];
     }
 
 
@@ -659,7 +655,7 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       // Neuron not refractory
 
       // There is no reset of the membrane potential after a spike
-      double rate = pyr_params->phi( V_som );
+      double rate = pyr_params->phi( V_som_forward );
 
       if ( rate > 0.0 )
       {
@@ -707,8 +703,8 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
     // Store dendritic membrane potential for Urbanczik-Senn plasticity
     if ( pyr_params->g_conn[ BASAL ] > 0 or pyr_params->g_conn[ APICAL_LAT ] > 0 )
     {
-      write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ), V_b, V_som, BASAL );
-      write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ), V_a, V_som, APICAL_LAT );
+      write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ), S_.y_[ S::idx( BASAL, S::V_M ) ], V_som_forward, BASAL );
+      write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ),  S_.y_[ S::idx( APICAL_LAT, S::V_M ) ], V_som_forward, APICAL_LAT );
     }
 
     // log state data
@@ -720,7 +716,7 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
     if ( pyr_params->curr_target_id != 0 )
     {
       CurrentEvent ce;
-      ce.set_current( V_som );
+      ce.set_current( S_.y_[ S_.idx( SOMA, State_::V_M ) ] );
       ce.set_receiver( *pyr_params->curr_target );
       ce.set_sender_node_id( this->get_node_id() );
       ce.set_rport( 0 ); // TODO: make this flexible to target not only the soma!

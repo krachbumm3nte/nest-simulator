@@ -407,8 +407,8 @@ public:
     enum StateVecElems_
     {
       V_M = 0,
+      V_forw,
       I,
-      delta_V_M,
       STATE_VEC_COMPS
     };
 
@@ -560,17 +560,19 @@ pp_cond_exp_mc_pyr_parameters::phi( double u )
   const double phi_thresh = 15;
   if ( use_phi )
   {
-    if (u < -phi_thresh) {
+    if ( u < -phi_thresh )
+    {
       u = 0;
     }
-    else if (u > phi_thresh) {
+    else if ( u > phi_thresh )
+    {
       return u * gamma;
     }
     return gamma * log( 1 + exp( beta * ( u - theta ) ) );
   }
   else
   {
-    return u * gamma; 
+    return u * gamma;
   }
 }
 
