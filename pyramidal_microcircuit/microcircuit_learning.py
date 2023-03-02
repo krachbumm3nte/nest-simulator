@@ -1,3 +1,4 @@
+import nest
 import matplotlib.pyplot as plt
 import numpy as np
 from networks.network_nest import NestNetwork
@@ -61,6 +62,8 @@ if args.network == "numpy":
     net = NumpyNetwork(sim_params, neuron_params, syn_params)
 else:
     net = NestNetwork(sim_params, neuron_params, syn_params, spiking)
+    print(nest.GetConnections())
+    print(nest.GetNodes())
 
 
 if args.weights:
