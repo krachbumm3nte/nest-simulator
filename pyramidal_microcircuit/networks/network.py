@@ -89,7 +89,22 @@ class Network:
     def reset(self):
         pass
 
-    def generate_bar_data(self, config=None, lo=0., hi=1., lo_out=0.1):
+    def generate_bar_data(self, config=None, lo=0.1, hi=1):
+        """generates a pair of input-output pairings for the "bar" dataset (as described in Haider et al. (2021))
+
+        @note Setting low to 0 makes my simulation terribly inefficient. At this stage, I do not know why that is.
+
+        Keyword Arguments:
+            config -- type of bar to generate: horizontal (0-2), vertical (3-5), diagonal (6,7). If unspecified, a random configuration is returned (default: {None})
+            lo -- fill value for low signal (default: {0.1})
+            hi -- fill value for high signal (default: {1})
+
+        Raises:
+            ValueError: if a config outside the specified range is given
+
+        Returns:
+            input currents (np.array(3,3)), output currents (np.array(3)) 
+        """
         if not config:
             config = np.random.randint(0, 8)
         elif not 0 <= config < 8:
@@ -128,8 +143,8 @@ class Network:
                                             [lo, hi, lo],
                                             [hi, lo, lo]]), 2
 
-        target_currents = np.ones(3) * lo_out
-        target_currents[idx] = hi
+        target_currents = np.zeros(3)
+        target_currents[idx] = 1
 
         return input_currents.flatten(), target_currents
 
