@@ -8,8 +8,8 @@ sigma = 0.3  # standard deviation for membrane potential noise
 
 sim_params = {
     "delta_t": delta_t,
-    "threads": 7,
-    "record_interval": 1,  # interval for storing membrane potentials in ms
+    "threads": 9,
+    "record_interval": 575,  # interval for storing membrane potentials in ms
     "init_self_pred": True,  # initialize feedback weights to self-predicting state
     "plasticity": True,  # enable synaptic plasticity
     "SIM_TIME": 100,  # simulation time per input pattern in ms

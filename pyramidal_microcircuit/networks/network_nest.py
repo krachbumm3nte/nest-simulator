@@ -152,7 +152,6 @@ class NestNetwork(Network):
             start = time()
             self.simulate(self.sim_time)
             print(time() - start)
-            start = time()
             if i == len(x)-1:
                 U_y = [nrn.get("soma")["V_m"] for nrn in self.layers[-1].pyr]
                 if not self.use_mm:
