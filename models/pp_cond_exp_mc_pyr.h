@@ -553,11 +553,11 @@ public:
 
 
 // Inline functions of pp_cond_exp_mc_pyr_parameters
+const double phi_thresh = 15;
 
 inline double
 pp_cond_exp_mc_pyr_parameters::phi( double u )
 {
-  const double phi_thresh = 15;
   if ( use_phi )
   {
     if ( u < -phi_thresh )
