@@ -480,6 +480,7 @@ private:
      */
     std::vector< RingBuffer > spikes_;
     std::vector< RingBuffer > currents_;
+    std::vector< double > r_som;
 
     /** GSL ODE stuff */
     gsl_odeiv_step* s_;    //!< stepping function

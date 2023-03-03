@@ -25,7 +25,7 @@ def setup_directories(root="/home/johannes/Desktop/nest-simulator/pyramidal_micr
 
 
 def setup_nest(sim_params, datadir=os.getcwd()):
-    nest.set_verbosity("M_WARNING")
+    nest.set_verbosity("M_ERROR")
     nest.resolution = sim_params["delta_t"]
     nest.SetKernelStatus({"local_num_threads": sim_params["threads"]})
     nest.SetDefaults("multimeter", {'interval': sim_params["record_interval"]})
@@ -105,8 +105,8 @@ def setup_models(spiking, nrn, sim, syn, record_weights=False):
     syn_plastic = {
         "synapse_model": syn_model,
         'tau_Delta': syn["tau_Delta"],
-        'Wmin': syn["Wmin"],  # minimum weight
-        'Wmax': syn["Wmax"],  # maximum weight
+        'Wmin': syn["Wmin"] / (nrn["weight_scale"] if spiking else 1),  # minimum weight
+        'Wmax': syn["Wmax"] / (nrn["weight_scale"] if spiking else 1),  # maximum weight
         'delay': sim["delta_t"]
     }
 

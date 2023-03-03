@@ -25,10 +25,7 @@ class NumpyNetwork(Network):
         self.r_in = np.zeros(self.dims[0])
         self.setup_populations()
 
-        self.weight_record = self.copy_weights()
-        for i, weight_dict in enumerate(self.weight_record):
-            for key, weights in weight_dict.items():
-                self.weight_record[i][key] = np.expand_dims(weights, axis=0)
+        self.setup_records()
         self.iteration = 0
 
     def setup_populations(self):
@@ -51,6 +48,12 @@ class NumpyNetwork(Network):
                 l_next = self.layers[i + 1]
                 l.W_pi = -l.W_down.copy()
                 l.W_ip = l_next.W_up.copy() * l_next.gb / (l_next.gl + l_next.ga + l_next.gb) * (l.gl + l.gd) / l.gd
+
+    def setup_records(self):
+        self.weight_record = self.copy_weights()
+        for i, weight_dict in enumerate(self.weight_record):
+            for key, weights in weight_dict.items():
+                self.weight_record[i][key] = np.expand_dims(weights, axis=0)
 
     def train_teacher(self, T):
         input_currents = np.random.random(self.dims[0])
@@ -187,3 +190,4 @@ class NumpyNetwork(Network):
             self.layers[i].W_ip = w["ip"].copy()
 
         self.layers[-1].W_up = weights[-1]["up"].copy()
+        self.setup_records()

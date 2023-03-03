@@ -148,10 +148,7 @@ class NestNetwork(Network):
         for i, (x, y) in enumerate(zip(x_batch, y_batch)):
             self.set_input(x)
             self.set_target(y)
-            print("\nnew epoch:")
-            start = time()
             self.simulate(self.sim_time)
-            print(time() - start)
             if i == len(x)-1:
                 U_y = [nrn.get("soma")["V_m"] for nrn in self.layers[-1].pyr]
                 if not self.use_mm:

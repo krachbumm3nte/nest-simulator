@@ -253,14 +253,16 @@ public:
     {
       weight_ = Wmin_;
     }
-    std::vector< unsigned int >::iterator it = del_event.begin();
+    it = del_event.begin();
+    //std::cout << r_in << std::endl;
     r_in = del_event.get_coeffvalue( it );
+    it--;
     v_dend_target = target->get_V_m( rport );
-    const size_t buffer_size = kernel().connection_manager.get_min_delay();
+    //const size_t buffer_size = kernel().connection_manager.get_min_delay();
 
-    std::vector< double > rate_vec( buffer_size, 0.0 );
-    rate_vec[ 0 ] = r_in;
-    del_event.set_coeffarray( rate_vec );
+    //std::vector< double > rate_vec( buffer_size, 0.0 );
+    //rate_vec[ 0 ] = r_in;
+    //del_event.set_coeffarray( rate_vec );
     del_event.set_receiver( *target );
     del_event.set_delay_steps( get_delay_steps() );
     del_event.set_weight( weight_ );
@@ -280,6 +282,7 @@ private:
   double r_in;
   double u_target;
   double v_dend_target;
+  std::vector< unsigned int >::iterator it;
 };
 
 
