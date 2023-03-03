@@ -27,14 +27,19 @@ class PlasticityYH(DynamicsYH):
         self.UH = []
         self.UY = []
         self.VBY = []
-        self.weight_ = []
+        self.weights_numpy = []
+        
+        self.conn = nest.GetConnections(self.neuron_01, self.neuron_02)
+        self.weights_nest = [self.conn.weight]
 
         for i, (T, amp) in enumerate(zip(self.sim_times, self.stim_amps)):
 
             self.neuron_01.set({"soma": {"I_e": amp}})
-            nest.SetKernelStatus({"data_prefix": f"it{str(i).zfill(8)}_"})
-            nest.Simulate(T)
+            
             for i in range(int(T/self.delta_t)):
+                nest.Simulate(self.delta_t)
+                self.weights_nest.append(self.conn.weight)
+
                 delta_u_x = -self.g_l_eff * U_h + amp
                 delta_u_h = -self.g_l_eff * U_y + V_by * self.g_d
 
@@ -49,22 +54,18 @@ class PlasticityYH(DynamicsYH):
 
                 tilde_w = tilde_w + (self.delta_t/self.tau_delta) * delta_tilde_w
                 self.weight = np.clip(self.weight + self.eta * self.delta_t * tilde_w, -4, 4)
-                self.weight_.append(self.weight)
 
                 self.UH.append(U_h)
                 self.UY.append(U_y)
                 self.VBY.append(V_by)
+                self.weights_numpy.append(self.weight)
+
 
     def evaluate(self) -> bool:
-        weight_df = utils.read_mm(self.wr.global_id, self.sim["datadir"]).drop_duplicates("time_ms")
         if self.spiking_neurons:
-            weight_df["weights"] *= self.weight_scale
-        weight_df = weight_df.set_index("time_ms")
-        weight_df = weight_df.reindex(np.arange(0, self.SIM_TIME, self.delta_t))
-        weight_df = weight_df.fillna(method="backfill").fillna(method="ffill")
-        self.nest_weights = weight_df.weights.values
+            self.weights_nest = [val*self.weight_scale for val in self.weights_nest]
 
-        return records_match(self.nest_weights, self.weight_)
+        return records_match(self.weights_nest, self.weights_numpy, 0.1)
 
     def plot_results(self):
         fig, axes = plt.subplots(1, 4, sharex=True, constrained_layout=True)
@@ -81,8 +82,8 @@ class PlasticityYH(DynamicsYH):
         axes[2].plot(self.UY, label="target")
         axes[2].set_title("UY")
 
-        axes[3].plot(self.nest_weights, label="NEST")
-        axes[3].plot(self.weight_, label="target")
+        axes[3].plot(self.weights_nest, label="NEST")
+        axes[3].plot(self.weights_numpy, label="target")
         axes[3].legend()
         axes[3].set_title("synaptic weight")
 
@@ -93,12 +94,12 @@ class PlasticityHX(DynamicsHX):
         super().__init__(nrn, sim, syn, spiking_neurons, record_weights=True, **kwargs)
         self.eta = 0.04
 
-        conn = nest.GetConnections(self.neuron_01, self.neuron_02)
+        self.conn = nest.GetConnections(self.neuron_01, self.neuron_02)
         if spiking_neurons:
-            conn.eta = self.eta/(self.weight_scale**2 * self.syn["tau_Delta"])
-            conn.weight = self.weight / self.weight_scale
+            self.conn.eta = self.eta/(self.weight_scale**2 * self.syn["tau_Delta"])
+            self.conn.weight = self.weight / self.weight_scale
         else:
-            conn.eta = self.eta
+            self.conn.eta = self.eta
 
     def run(self):
         U_x = 0
@@ -111,15 +112,18 @@ class PlasticityHX(DynamicsHX):
         self.UX = []
         self.UH = []
         self.VBH = []
-        self.weight_ = []
+        self.weights_numpy = []
+        self.weights_nest = []
+
         for i, (T, amp) in enumerate(zip(self.sim_times, self.stim_amps)):
             self.neuron_01.set({"soma": {"I_e": amp/self.tau_x}})
-            #self.neuron_02.set({"soma": {"I_e": -0.5}})
-            nest.SetKernelStatus({"data_prefix": f"it{str(i).zfill(8)}_"})
-            nest.Simulate(T)
+
             for i in range(int(T/self.delta_t)):
+                nest.Simulate(self.delta_t)
+                self.weights_nest.append(self.conn.weight)
+
                 delta_u_x = -U_x + amp
-                delta_u_h = -self.g_l_eff * U_h + V_bh * self.g_d  # - 0.5
+                delta_u_h = -self.g_l_eff * U_h + V_bh * self.g_d
 
                 delta_tilde_w = -tilde_w + (r_h - self.phi(V_bh * self.lambda_bh)) * r_x
 
@@ -132,21 +136,16 @@ class PlasticityHX(DynamicsHX):
 
                 tilde_w = tilde_w + (self.delta_t/self.tau_delta) * delta_tilde_w
                 self.weight = self.weight + self.eta * self.delta_t * tilde_w
-                self.weight_.append(self.weight)
+                self.weights_numpy.append(self.weight)
 
                 self.UX.append(U_x)
                 self.UH.append(U_h)
                 self.VBH.append(V_bh)
 
     def evaluate(self) -> bool:
-        weight_df = utils.read_mm(self.wr.global_id, self.sim["datadir"]).drop_duplicates("time_ms")
         if self.spiking_neurons:
-            weight_df["weights"] *= self.weight_scale
-        weight_df = weight_df.set_index("time_ms")
-        weight_df = weight_df.reindex(np.arange(0, self.SIM_TIME, self.delta_t))
-        weight_df = weight_df.fillna(method="backfill").fillna(method="ffill")
-        self.nest_weights = weight_df.weights.values
-        return records_match(self.nest_weights, self.weight_)
+            self.weights_nest = [val*self.weight_scale for val in self.weights_nest]
+        return records_match(self.weights_nest, self.weights_numpy)
 
     def plot_results(self):
         fig, axes = plt.subplots(1, 4, sharex=True, constrained_layout=True)
@@ -163,8 +162,8 @@ class PlasticityHX(DynamicsHX):
         axes[2].plot(self.UH, label="target")
         axes[2].set_title("UH")
 
-        axes[3].plot(self.nest_weights, label="NEST")
-        axes[3].plot(self.weight_, label="target")
+        axes[3].plot(self.weights_nest, label="NEST")
+        axes[3].plot(self.weights_numpy, label="target")
         axes[3].legend()
         axes[3].set_title("synaptic weight")
 
@@ -178,13 +177,6 @@ class PlasticityHXMulti(PlasticityHX):
     def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
 
         super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
-
-        # conn = nest.GetConnections(self.neuron_01, self.neuron_02)
-        # if spiking_neurons:
-        #     conn.eta =  self.eta/(self.weight_scale**2 * 30)
-        #     conn.weight = self.weight / self.weight_scale
-        # else:
-        #     conn.eta = self.eta
 
         self.weight2 = -0.5
         if spiking_neurons:
@@ -216,15 +208,20 @@ class PlasticityHXMulti(PlasticityHX):
         self.UX2 = []
         self.UH = []
         self.VBH = []
-        self.weight_ = []
-        self.weight_2 = []
+        self.weights_numpy = []
+        self.weights_numpy_2 = []
+        self.conn2 = nest.GetConnections(self.neuron_03, self.neuron_02)
+        self.weights_nest = []
+        self.weights_nest_2 = [self.conn2.weight]
+
         self.stim_amps_2 = np.random.random(self.n_runs)
         for i, (T, amp, amp2) in enumerate(zip(self.sim_times, self.stim_amps, self.stim_amps_2)):
             self.neuron_01.set({"soma": {"I_e": amp/self.tau_x}})
             self.neuron_03.set({"soma": {"I_e": amp2/self.tau_x}})
-            nest.SetKernelStatus({"data_prefix": f"it{str(i).zfill(8)}_"})
-            nest.Simulate(T)
             for i in range(int(T/self.delta_t)):
+                nest.Simulate(self.delta_t)
+                self.weights_nest.append(self.conn.weight)
+                self.weights_nest_2.append(self.conn2.weight)
 
                 delta_u_x = -U_x + amp
                 delta_u_x2 = -U_x2 + amp2
@@ -247,8 +244,8 @@ class PlasticityHXMulti(PlasticityHX):
                 tilde_w2 = tilde_w2 + (self.delta_t/self.tau_delta) * delta_tilde_w2
                 self.weight = self.weight + self.eta * self.delta_t * tilde_w
                 self.weight2 = self.weight2 + self.eta * self.delta_t * tilde_w2
-                self.weight_.append(self.weight)
-                self.weight_2.append(self.weight2)
+                self.weights_numpy.append(self.weight)
+                self.weights_numpy_2.append(self.weight2)
 
                 self.UX.append(U_x)
                 self.UX2.append(U_x2)
@@ -256,22 +253,11 @@ class PlasticityHXMulti(PlasticityHX):
                 self.VBH.append(V_bh)
 
     def evaluate(self) -> bool:
-        events = utils.read_mm(self.wr.global_id, self.sim["datadir"])
         if self.spiking_neurons:
-            events["weights"] *= self.weight_scale
-        weight_df = events[events.sender == self.neuron_01.global_id].drop_duplicates("time_ms")
-        weight_df = weight_df.set_index("time_ms")
-        weight_df = weight_df.reindex(np.arange(0, self.SIM_TIME, self.delta_t))
-        weight_df = weight_df.fillna(method="backfill").fillna(method="ffill")
-        self.nest_weights = weight_df.weights.values
+            self.weights_nest = [val*self.weight_scale for val in self.weights_nest]
+            self.nest_weights_2 = [val*self.weight_scale for val in self.weights_nest_2]
 
-        weight_df2 = events[events.sender == self.neuron_03.global_id].drop_duplicates("time_ms")
-        weight_df2 = weight_df2.set_index("time_ms")
-        weight_df2 = weight_df2.reindex(np.arange(0, self.SIM_TIME, self.delta_t))
-        weight_df2 = weight_df2.fillna(method="backfill").fillna(method="ffill")
-        self.nest_weights2 = weight_df2.weights.values
-
-        return records_match(self.nest_weights, self.weight_)  # and records_match(self.nest_weights2, self.weight_2)
+        return records_match(self.weights_nest, self.weights_numpy) and records_match(self.weights_nest_2, self.weights_numpy_2)
 
     def plot_results(self):
 
@@ -289,11 +275,11 @@ class PlasticityHXMulti(PlasticityHX):
         ax3.plot(*zip(*read_multimeter(self.mm_02, "V_m.b")), label="NEST")
         ax3.plot(self.VBH, label="target")
 
-        ax4.plot(self.nest_weights, label="NEST")
-        ax4.plot(self.weight_, label="target")
+        ax4.plot(self.weights_nest, label="NEST")
+        ax4.plot(self.weights_numpy, label="target")
 
-        ax5.plot(self.nest_weights2, label="NEST")
-        ax5.plot(self.weight_2, label="target")
+        ax5.plot(self.weights_nest_2, label="NEST")
+        ax5.plot(self.weights_numpy_2, label="target")
 
         ax0.set_title("UX1")
         ax1.set_title("UX2")
@@ -314,12 +300,12 @@ class PlasticityIH(DynamicsHI):
         super().__init__(nrn, sim, syn, spiking_neurons, record_weights=True, **kwargs)
         self.eta = 0.04
 
-        conn = nest.GetConnections(self.neuron_01, self.neuron_02)
+        self.conn = nest.GetConnections(self.neuron_01, self.neuron_02)
         if spiking_neurons:
-            conn.eta = self.eta/(self.weight_scale**2 * self.syn["tau_Delta"])
-            conn.weight = self.weight / self.weight_scale
+            self.conn.eta = self.eta/(self.weight_scale**2 * self.syn["tau_Delta"])
+            self.conn.weight = self.weight / self.weight_scale
         else:
-            conn.eta = self.eta
+            self.conn.eta = self.eta
 
     def run(self):
         U_i = 0
@@ -331,14 +317,18 @@ class PlasticityIH(DynamicsHI):
         self.UX = []
         self.UH = []
         self.VBH = []
-        self.weight_ = []
+        self.weights_numpy = []
+
+        self.weights_nest = []
+
 
         for i, (T, amp) in enumerate(zip(self.sim_times, self.stim_amps)):
             self.neuron_01.set({"soma": {"I_e": amp}})
             nest.SetKernelStatus({"data_prefix": f"it{str(i).zfill(8)}_"})
             nest.Simulate(T)
             for i in range(int(T/self.delta_t)):
-
+                nest.Simulate(self.delta_t)
+                self.weights_nest.append(self.conn.weight)
                 delta_tilde_w = -tilde_w - V_ah * r_i
 
                 delta_u_i = -self.g_l_eff * U_i + amp
@@ -351,22 +341,17 @@ class PlasticityIH(DynamicsHI):
 
                 tilde_w = tilde_w + (self.delta_t/self.tau_delta) * delta_tilde_w
                 self.weight = self.weight + self.eta * self.delta_t * tilde_w
-                self.weight_.append(self.weight)
+                self.weights_numpy.append(self.weight)
 
                 self.UX.append(U_i)
                 self.UH.append(U_h)
                 self.VBH.append(V_ah)
 
     def evaluate(self) -> bool:
-        weight_df = utils.read_mm(self.wr.global_id, self.sim["datadir"]).drop_duplicates("time_ms")
         if self.spiking_neurons:
-            weight_df["weights"] *= self.weight_scale
-        weight_df = weight_df.set_index("time_ms")
-        weight_df = weight_df.reindex(np.arange(0, self.SIM_TIME, self.delta_t))
-        weight_df = weight_df.fillna(method="backfill").fillna(method="ffill")
-        self.nest_weights = weight_df.weights.values
+            self.weights_nest = [val*self.weight_scale for val in self.weights_nest]
 
-        return records_match(self.nest_weights, self.weight_)
+        return records_match(self.weights_nest, self.weights_numpy)
 
     def plot_results(self):
         fig, axes = plt.subplots(1, 4, sharex=True, constrained_layout=True)
@@ -383,8 +368,8 @@ class PlasticityIH(DynamicsHI):
         axes[2].plot(self.UH, label="target")
         axes[2].set_title("UH")
 
-        axes[3].plot(self.nest_weights, label="NEST")
-        axes[3].plot(self.weight_, label="target")
+        axes[3].plot(self.weights_nest, label="NEST")
+        axes[3].plot(self.weights_numpy, label="target")
         axes[3].legend()
         axes[3].set_title("synaptic weight")
 
@@ -397,40 +382,41 @@ class NetworkPlasticity(TestClass):
         super().__init__(nrn, sim, syn, spiking_neurons, record_weights=True, **kwargs)
 
         self.numpy_net = NumpyNetwork(deepcopy(sim), deepcopy(nrn), deepcopy(syn))
-
         self.nest_net = NestNetwork(deepcopy(sim), deepcopy(nrn), deepcopy(syn), self.spiking_neurons)
         self.numpy_net.set_weights(self.nest_net.get_weight_dict())
 
     def run(self):
         input_currents = np.random.random(self.dims[0])
-        target_currents = np.random.random(self.dims[2])
+        target_currents = np.random.random(self.dims[-1])
+
+        self.sim_time = 100
+
+        self.up_0 = []
+        self.pi_0 = []
+        self.ip_0 = []
+        self.down_0 = []
+        self.up_1 = []
 
         self.nest_net.set_input(input_currents)
         self.numpy_net.set_input(input_currents)
-
-        self.sim_time = 100
-        nest.SetKernelStatus({"data_prefix": f"it{0}_"})
-
         self.nest_net.set_target(target_currents)
-        self.nest_net.simulate(self.sim_time)
-
         for i in range(int(self.sim_time/self.delta_t)):
             self.numpy_net.simulate(lambda: target_currents)
+            self.nest_net.simulate(self.delta_t)
+            wgts = self.nest_net.get_weight_dict(True)
+            self.up_0.append(wgts[0]["up"])
+            self.up_1.append(wgts[1]["up"])
+            self.pi_0.append(wgts[0]["pi"])
+            self.ip_0.append(wgts[0]["ip"])
+            self.down_0.append(wgts[0]["down"])
+
 
     def evaluate(self) -> bool:
-        weight_df = utils.read_mm(self.wr.global_id, self.sim["datadir"])
-        weight_df["weights"] *= self.weight_scale
-        weight_df = weight_df.groupby(["sender", "targets"])
-        self.up_0 = utils.read_wr(
-            weight_df, self.nest_net.input_neurons, self.nest_net.layers[0].pyr, self.sim_time, self.delta_t)
-        self.pi_0 = utils.read_wr(
-            weight_df, self.nest_net.layers[0].intn, self.nest_net.layers[0].pyr, self.sim_time, self.delta_t)
-        self.ip_0 = utils.read_wr(
-            weight_df, self.nest_net.layers[0].pyr, self.nest_net.layers[0].intn,  self.sim_time, self.delta_t)
-        self.down_0 = utils.read_wr(
-            weight_df, self.nest_net.layers[1].pyr, self.nest_net.layers[0].pyr, self.sim_time, self.delta_t)
-        self.up_1 = utils.read_wr(
-            weight_df, self.nest_net.layers[0].pyr, self.nest_net.layers[1].pyr, self.sim_time, self.delta_t)
+        self.up_0 = np.array(self.up_0)
+        self.pi_0 = np.array(self.pi_0)
+        self.ip_0 = np.array(self.ip_0)
+        self.down_0 = np.array(self.down_0)
+        self.up_1 = np.array(self.up_1)
         return records_match(self.up_0.flatten(), self.numpy_net.weight_record[0]["up"].flatten()) \
             and records_match(self.pi_0.flatten(), self.numpy_net.weight_record[0]["pi"].flatten()) \
             and records_match(self.ip_0.flatten(), self.numpy_net.weight_record[0]["ip"].flatten()) \
@@ -457,123 +443,3 @@ class NetworkPlasticity(TestClass):
 
         axes[0][0].set_ylabel("NEST computed")
         axes[1][0].set_ylabel("Target activation")
-
-
-class NetworkBatchTraining(TestClass):
-    def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
-        sim["teacher"] = False
-        sim["noise"] = False
-        sim["dims"] = [9, 3, 3]
-        super().__init__(nrn, sim, syn, spiking_neurons, record_weights=True, **kwargs)
-
-        self.numpy_net = NumpyNetwork(deepcopy(sim), deepcopy(nrn), deepcopy(syn))
-        self.nest_net = NestNetwork(deepcopy(sim), deepcopy(nrn), deepcopy(syn), self.spiking_neurons)
-        self.numpy_net.set_weights(self.nest_net.get_weight_dict())
-
-    def run(self):
-        self.sim_time = 100
-        self.batchsize = 5
-        x_batch = np.zeros((self.batchsize, self.dims[0]))
-        y_batch = np.zeros((self.batchsize, self.dims[-1]))
-        for i in range(self.batchsize):
-            x, y = self.nest_net.generate_bar_data()
-            x_batch[i] = x
-            y_batch[i] = y
-
-        t_now = nest.GetKernelStatus("biological_time")
-        times = np.arange(t_now + self.sim["delta_t"], t_now + self.sim_time * self.batchsize, self.sim_time)
-
-        for i, sg in enumerate(self.nest_net.sgx):
-            sg.set(amplitude_values=x_batch[:, i]/self.nrn["tau_x"], amplitude_times=times)
-        for i, sg in enumerate(self.nest_net.sgy):
-            sg.set(amplitude_values=y_batch[:, i]*self.nrn["g_som"], amplitude_times=times)
-
-        self.nest_net.simulate(self.sim_time*self.batchsize)
-
-        for i in range(self.batchsize):
-            self.numpy_net.set_input(x_batch[i])
-            for j in range(int(self.sim_time/self.delta_t)):
-                self.numpy_net.simulate(lambda: y_batch[i])
-
-    def evaluate(self) -> bool:
-        weight_df = utils.read_mm(self.wr.global_id, self.sim["datadir"])
-        weight_df["weights"] *= self.weight_scale
-        weight_df = weight_df.groupby(["sender", "targets"])
-
-        records = pd.DataFrame.from_dict(self.nest_net.mm.events)
-        self.nest_UH = records[records["senders"].isin(self.nest_net.layers[0].pyr.global_id)].sort_values(
-            ["senders", "times"])["V_m.s"].values.reshape((self.dims[1], -1)).swapaxes(0, 1)
-        self.nest_VAH = records[records["senders"].isin(self.nest_net.layers[0].pyr.global_id)].sort_values(
-            ["senders", "times"])["V_m.a_lat"].values.reshape((self.dims[1], -1)).swapaxes(0, 1)
-        self.nest_VBH = records[records["senders"].isin(self.nest_net.layers[0].pyr.global_id)].sort_values(
-            ["senders", "times"])["V_m.b"].values.reshape((self.dims[1], -1)).swapaxes(0, 1)
-        self.nest_UI = records[records["senders"].isin(self.nest_net.layers[0].intn.global_id)].sort_values(
-            ["senders", "times"])["V_m.s"].values.reshape((self.dims[-1], -1)).swapaxes(0, 1)
-        self.nest_UY = records[records["senders"].isin(self.nest_net.layers[-1].pyr.global_id)].sort_values(
-            ["senders", "times"])["V_m.s"].values.reshape((self.dims[-1], -1)).swapaxes(0, 1)
-        self.nest_UX = records[records["senders"].isin(self.nest_net.input_neurons.global_id)].sort_values(
-            ["senders", "times"])["V_m.s"].values.reshape((self.dims[0], -1)).swapaxes(0, 1)
-
-        self.up_0 = utils.read_wr(
-            weight_df, self.nest_net.input_neurons, self.nest_net.layers[0].pyr, self.sim_time*self.batchsize, self.delta_t)
-        self.pi_0 = utils.read_wr(
-            weight_df, self.nest_net.layers[0].intn, self.nest_net.layers[0].pyr, self.sim_time*self.batchsize, self.delta_t)
-        self.ip_0 = utils.read_wr(
-            weight_df, self.nest_net.layers[0].pyr, self.nest_net.layers[0].intn,  self.sim_time*self.batchsize, self.delta_t)
-        self.down_0 = utils.read_wr(
-            weight_df, self.nest_net.layers[1].pyr, self.nest_net.layers[0].pyr, self.sim_time*self.batchsize, self.delta_t)
-        self.up_1 = utils.read_wr(
-            weight_df, self.nest_net.layers[0].pyr, self.nest_net.layers[1].pyr, self.sim_time*self.batchsize, self.delta_t)
-
-        return records_match(self.up_0.flatten(), self.numpy_net.weight_record[0]["up"].flatten()) \
-            and records_match(self.pi_0.flatten(), self.numpy_net.weight_record[0]["pi"].flatten()) \
-            and records_match(self.ip_0.flatten(), self.numpy_net.weight_record[0]["ip"].flatten()) \
-            and records_match(self.up_1.flatten(), self.numpy_net.weight_record[-1]["up"].flatten()) \
-            and records_match(self.down_0.flatten(), self.numpy_net.weight_record[0]["down"].flatten())
-
-    def plot_results(self):
-
-        fig, axes = plt.subplots(4, 6, sharex=True, constrained_layout=True)
-        cmap = plt.cm.get_cmap('hsv', max(self.dims)+1)
-        linestyles = ["solid", "dotted", "dashdot", "dashed"]
-
-        for i, (name, layer) in enumerate(zip(["up", "down", "ip", "pi", "up"], [0, 0, 0, 0, 1])):
-
-            weights_nest = eval(f"self.{name}_{layer}")
-            weights_numpy = self.numpy_net.weight_record[layer][name]
-            axes[0][i].set_title(name)
-            for sender in range(weights_nest.shape[2]):
-                for target in range(weights_nest.shape[1]):
-                    col = cmap(sender)
-                    style = linestyles[target]
-                    axes[0][i].plot(weights_nest[:, target, sender], linestyle=style, color=col)
-                    axes[1][i].plot(weights_numpy[:, target, sender], linestyle=style, color=col)
-
-        for i in range(self.dims[0]):
-            axes[2][0].plot(self.nest_UX[:, i], color=cmap(i))
-            axes[3][0].plot(self.numpy_net.U_x_record[:, i], color=cmap(i))
-
-        for i in range(self.dims[1]):
-            axes[2][1].plot(self.nest_VBH[:, i], color=cmap(i))
-            axes[3][1].plot(self.numpy_net.V_bh_record[:, i], color=cmap(i))
-
-            axes[2][2].plot(self.nest_UH[:, i], color=cmap(i))
-            axes[3][2].plot(self.numpy_net.U_h_record[:, i], color=cmap(i))
-
-            axes[2][3].plot(self.nest_VAH[:, i], color=cmap(i))
-            axes[3][3].plot(self.numpy_net.V_ah_record[:, i], color=cmap(i))
-
-        for i in range(self.dims[2]):
-
-            axes[2][4].plot(self.nest_UI[:, i], color=cmap(i))
-            axes[3][4].plot(self.numpy_net.U_i_record[:, i], color=cmap(i))
-
-            axes[2][5].plot(self.nest_UY[:, i], color=cmap(i))
-            axes[3][5].plot(self.numpy_net.U_y_record[:, i], color=cmap(i))
-
-        axes[2][0].set_title("UX")
-        axes[2][1].set_title("VBH")
-        axes[2][2].set_title("UH")
-        axes[2][3].set_title("VAH")
-        axes[2][4].set_title("UI")
-        axes[2][5].set_title("UY")

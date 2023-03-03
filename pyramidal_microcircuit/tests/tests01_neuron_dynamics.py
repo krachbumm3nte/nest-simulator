@@ -407,7 +407,7 @@ class DynamicsYH(DynamicsHX):
             synapse.update({"weight": self.weight/self.weight_scale})
 
         self.neuron_01.set(nrn["pyr"])
-        self.neuron_02.set(nrn["intn"])
+        self.neuron_02.set(nrn["pyr"])
         nest.Disconnect(self.neuron_01, self.neuron_02, conn_spec='all_to_all',
                         syn_spec={'synapse_model': syn["conns"][0]["up"]["synapse_model"]})
 

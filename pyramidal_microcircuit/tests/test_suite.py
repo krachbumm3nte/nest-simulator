@@ -16,7 +16,7 @@ if __name__ == "__main__":
         classes = [eval(arg) for arg in sys.argv[1:]]
     else:
         classes = [FilteredInputCurrent, CurrentConnection, TargetCurrent, DynamicsHX, DynamicsHXMulti, DynamicsHI,
-                   DynamicsYH, NetworkDynamics, PlasticityHX, PlasticityHXMulti, PlasticityYH, NetworkPlasticity, NetworkBatchTraining]
+                   DynamicsYH, NetworkDynamics, PlasticityHX, PlasticityHXMulti, PlasticityYH, NetworkPlasticity]
 
     root, imgdir, datadir = utils.setup_directories(
         "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/tests/runs")

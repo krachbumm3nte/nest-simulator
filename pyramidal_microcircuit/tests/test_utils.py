@@ -19,7 +19,8 @@ class TestClass(ABC):
             record_weights = kwargs["record_weights"]
         else:
             record_weights = False
-        self.wr = utils.setup_models(spiking_neurons, nrn, sim, syn, record_weights)
+        self.wr = utils.setup_models(spiking_neurons, nrn, sim, syn, False)
+        self.record_interval = 2
         self.nrn = nrn
         self.sim = sim
         self.syn = syn
