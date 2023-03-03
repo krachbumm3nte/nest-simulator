@@ -27,7 +27,6 @@ parser.add_argument("--weights",
                     type=str,
                     help="Start simulations from a given set of weights to ensure comparable results.")
 args = parser.parse_args()
-print(args.le)
 if args.le:
     from params_le import *  # nopep8
 else:

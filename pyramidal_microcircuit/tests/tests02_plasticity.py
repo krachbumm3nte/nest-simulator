@@ -386,8 +386,7 @@ class NetworkPlasticity(TestClass):
         self.numpy_net.set_weights(self.nest_net.get_weight_dict())
 
     def run(self):
-        input_currents = np.random.random(self.dims[0])
-        target_currents = np.random.random(self.dims[-1])
+        
 
         self.sim_time = 100
 
@@ -396,19 +395,21 @@ class NetworkPlasticity(TestClass):
         self.ip_0 = []
         self.down_0 = []
         self.up_1 = []
-
-        self.nest_net.set_input(input_currents)
-        self.numpy_net.set_input(input_currents)
-        self.nest_net.set_target(target_currents)
-        for i in range(int(self.sim_time/self.delta_t)):
-            self.numpy_net.simulate(lambda: target_currents)
-            self.nest_net.simulate(self.delta_t)
-            wgts = self.nest_net.get_weight_dict(True)
-            self.up_0.append(wgts[0]["up"])
-            self.up_1.append(wgts[1]["up"])
-            self.pi_0.append(wgts[0]["pi"])
-            self.ip_0.append(wgts[0]["ip"])
-            self.down_0.append(wgts[0]["down"])
+        for i in range(15):
+            input_currents = np.random.random(self.dims[0])
+            target_currents = np.random.random(self.dims[-1])
+            self.nest_net.set_input(input_currents)
+            self.numpy_net.set_input(input_currents)
+            self.nest_net.set_target(target_currents)
+            for i in range(int(self.sim_time/self.delta_t)):
+                self.numpy_net.simulate(lambda: target_currents)
+                self.nest_net.simulate(self.delta_t)
+                wgts = self.nest_net.get_weight_dict(True)
+                self.up_0.append(wgts[0]["up"])
+                self.up_1.append(wgts[1]["up"])
+                self.pi_0.append(wgts[0]["pi"])
+                self.ip_0.append(wgts[0]["ip"])
+                self.down_0.append(wgts[0]["down"])
 
 
     def evaluate(self) -> bool:
@@ -425,7 +426,7 @@ class NetworkPlasticity(TestClass):
 
     def plot_results(self):
 
-        fig, axes = plt.subplots(2, 5, sharex=True, sharey="col", constrained_layout=True)
+        fig, axes = plt.subplots(2, 3, sharex=True, sharey="col", constrained_layout=True)
         cmap = plt.cm.get_cmap('hsv', max(self.dims)+1)
         linestyles = ["solid", "dotted", "dashdot", "dashed"]
 
@@ -433,13 +434,13 @@ class NetworkPlasticity(TestClass):
 
             weights_nest = eval(f"self.{name}_{layer}")
             weights_numpy = self.numpy_net.weight_record[layer][name]
-            axes[0][i].set_title(name)
+            axes[i//3][i%3].set_title(name)
             for sender in range(weights_nest.shape[2]):
                 for target in range(weights_nest.shape[1]):
                     col = cmap(sender)
                     style = linestyles[target]
-                    axes[0][i].plot(weights_nest[:, target, sender], linestyle=style, color=col)
-                    axes[1][i].plot(weights_numpy[:, target, sender], linestyle=style, color=col)
+                    axes[i//3][i%3].plot(weights_nest[:, target, sender], linestyle="solid", color=col)
+                    axes[i//3][i%3].plot(weights_numpy[:, target, sender], linestyle="dashed", color=col, alpha= 0.8)
 
         axes[0][0].set_ylabel("NEST computed")
         axes[1][0].set_ylabel("Target activation")

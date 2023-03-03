@@ -515,36 +515,38 @@ class NetworkDynamics(TestClass):
             records_match(self.nest_UX, np.asarray(self.numpy_net.U_x_record))
 
     def plot_results(self):
-        fig, axes = plt.subplots(2, 6, sharex=True, sharey="col", constrained_layout=True)
+        fig, axes = plt.subplots(2, 3, sharex=True, constrained_layout=True)
         cmap = plt.cm.get_cmap('hsv', max(self.dims)+1)
 
         for i in range(self.dims[0]):
-            axes[0][0].plot(self.nest_UX[:, i], color=cmap(i))
-            axes[1][0].plot(self.numpy_net.U_x_record[:, i], color=cmap(i))
+            axes[0][0].plot(self.numpy_net.U_x_record[:, i], color=cmap(i))
+            axes[0][0].plot(self.nest_UX[:, i], color=cmap(i), linestyle="dashed", alpha=0.7)
 
         for i in range(self.dims[1]):
-            axes[0][1].plot(self.nest_VBH[:, i], color=cmap(i))
-            axes[1][1].plot(self.numpy_net.V_bh_record[:, i], color=cmap(i))
+            axes[0][1].plot(self.numpy_net.V_bh_record[:, i], color=cmap(i))
+            axes[0][1].plot(self.nest_VBH[:, i], color=cmap(i), linestyle="dashed", alpha=0.7)
 
-            axes[0][2].plot(self.nest_UH[:, i], color=cmap(i))
-            axes[1][2].plot(self.numpy_net.U_h_record[:, i], color=cmap(i))
+            axes[0][2].plot(self.numpy_net.U_h_record[:, i], color=cmap(i))
+            axes[0][2].plot(self.nest_UH[:, i], color=cmap(i), linestyle="dashed", alpha=0.7)
 
-            axes[0][3].plot(self.nest_VAH[:, i], color=cmap(i))
-            axes[1][3].plot(self.numpy_net.V_ah_record[:, i], color=cmap(i))
+            axes[1][0].plot(self.numpy_net.V_ah_record[:, i], color=cmap(i))
+            axes[1][0].plot(self.nest_VAH[:, i], color=cmap(i), linestyle="dashed", alpha=0.7)
 
         for i in range(self.dims[2]):
 
-            axes[0][4].plot(self.nest_UI[:, i], color=cmap(i))
-            axes[1][4].plot(self.numpy_net.U_i_record[:, i], color=cmap(i))
+            axes[1][1].plot(self.numpy_net.U_i_record[:, i], color=cmap(i))
+            axes[1][1].plot(self.nest_UI[:, i], color=cmap(i), linestyle="dashed", alpha=0.7)
 
-            axes[0][5].plot(self.nest_UY[:, i], color=cmap(i))
-            axes[1][5].plot(self.numpy_net.U_y_record[:, i], color=cmap(i))
+            axes[1][2].plot(self.numpy_net.U_y_record[:, i], color=cmap(i))
+            axes[1][2].plot(self.nest_UY[:, i], color=cmap(i), linestyle="dashed", alpha=0.7)
 
         axes[0][0].set_title("UX")
         axes[0][1].set_title("VBH")
         axes[0][2].set_title("UH")
-        axes[0][3].set_title("VAH")
-        axes[0][4].set_title("UI")
-        axes[0][5].set_title("UY")
-        axes[0][0].set_ylabel("NEST computed")
-        axes[1][0].set_ylabel("Target activation")
+        axes[1][0].set_title("VAH")
+        axes[1][1].set_title("UI")
+        axes[1][2].set_title("UY")
+
+        fig.suptitle("dashed: NEST computed")
+        # axes[0][0].set_ylabel("NEST computed")
+        # axes[1][0].set_ylabel("Target activation")

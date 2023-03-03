@@ -28,8 +28,6 @@ class NestNetwork(Network):
                         continue
                     synapse = self.syn["conns"][layer][syn_name]
                     if "eta" in synapse:
-                        synapse["Wmin"] /= self.weight_scale
-                        synapse["Wmax"] /= self.weight_scale
                         if syn_name == "pi":
                             synapse["eta"] /= self.weight_scale**2 * self.syn["tau_Delta"]
                         else:
