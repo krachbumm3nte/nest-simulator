@@ -207,8 +207,7 @@ public:
     Node* target = get_target( t );
     nest::rate_neuron_pyr* target_pyr = static_cast< nest::rate_neuron_pyr* >( target );
     
-    Event* e2 = e.clone();
-    nest::DelayedRateConnectionEvent& del_event = static_cast< nest::DelayedRateConnectionEvent& >( *e2 );
+    nest::DelayedRateConnectionEvent& del_event = static_cast< nest::DelayedRateConnectionEvent& >( e );
     int rport = get_rport();
     double delta_tilde_w;
     double dend_error = 0;
