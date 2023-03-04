@@ -1,0 +1,174 @@
+{
+    "simulation": {
+        "delta_t": 0.1,
+        "threads": 10,
+        "record_interval": 300,
+        "self_predicting_ff": true,
+        "self_predicting_fb": true,
+        "plasticity": true,
+        "SIM_TIME": 100,
+        "n_runs": 10000,
+        "noise": false,
+        "sigma": 0.3,
+        "noise_factor": 0.09486832980505137,
+        "dims": [
+            9,
+            30,
+            3
+        ],
+        "teacher": true,
+        "dims_teacher": [
+            9,
+            10,
+            3
+        ],
+        "k_yh": 10,
+        "k_hx": 1,
+        "use_mm": false,
+        "recording_backend": "ascii",
+        "spiking": true,
+        "network_type": "snest"
+    },
+    "neurons": {
+        "tau_x": 0.1,
+        "g_l": 0.03,
+        "g_lk_dnd": 0.1,
+        "g_a": 0.06,
+        "g_d": 0.1,
+        "g_si": 0.06,
+        "g_s": 0.06,
+        "lambda_out": 0.7692307692307693,
+        "lambda_ah": 0.3157894736842105,
+        "lambda_bh": 0.5263157894736842,
+        "gamma": 1,
+        "beta": 1,
+        "theta": 0,
+        "g_l_eff": 0.19,
+        "weight_scale": 250,
+        "pyr": {
+            "soma": {
+                "V_m": 0.0,
+                "g_L": 0.03,
+                "g": 0.19
+            },
+            "basal": {
+                "V_m": 0.0,
+                "g_L": 0.1,
+                "g": 0.1
+            },
+            "apical_lat": {
+                "V_m": 0.0,
+                "g_L": 0.1,
+                "g": 0.06
+            },
+            "tau_m": 1,
+            "C_m": 1.0,
+            "lambda": 0.06,
+            "gamma": 250,
+            "beta": 1,
+            "theta": 0,
+            "use_phi": true,
+            "t_ref": 0.0
+        },
+        "input": {
+            "soma": {
+                "V_m": 0.0,
+                "g_L": 0.03,
+                "g": 10.0
+            },
+            "basal": {
+                "V_m": 0.0,
+                "g_L": 0.1,
+                "g": 0
+            },
+            "apical_lat": {
+                "V_m": 0.0,
+                "g_L": 0.1,
+                "g": 0
+            },
+            "tau_m": 10.0,
+            "C_m": 1.0,
+            "lambda": 0.06,
+            "gamma": 250,
+            "beta": 1,
+            "theta": 0,
+            "use_phi": false,
+            "t_ref": 0.0
+        },
+        "intn": {
+            "soma": {
+                "V_m": 0.0,
+                "g_L": 0.03,
+                "g": 0.19
+            },
+            "basal": {
+                "V_m": 0.0,
+                "g_L": 0.1,
+                "g": 0.1
+            },
+            "apical_lat": {
+                "V_m": 0.0,
+                "g_L": 0.1,
+                "g": 0
+            },
+            "tau_m": 1,
+            "C_m": 1.0,
+            "lambda": 0.06,
+            "gamma": 250,
+            "beta": 1,
+            "theta": 0,
+            "use_phi": true,
+            "t_ref": 0.0
+        },
+        "model": "pp_cond_exp_mc_pyr"
+    },
+    "synapses": {
+        "synapse_model": "pyr_synapse",
+        "tau_Delta": 1,
+        "Wmin": -4,
+        "Wmax": 4,
+        "delay": 0.1,
+        "w_init_hx": 0.004,
+        "w_init_hi": 0.004,
+        "w_init_ih": 0.004,
+        "w_init_hy": 0.004,
+        "w_init_yh": 0.004,
+        "hx": {
+            "tau_Delta": 1,
+            "Wmin": -0.04,
+            "Wmax": 0.04,
+            "eta": 3.2e-11,
+            "delay": 0.1,
+            "synapse_model": "pyr_synapse",
+            "receptor_type": 2
+        },
+        "yh": {
+            "tau_Delta": 1,
+            "Wmin": -0.04,
+            "Wmax": 0.04,
+            "eta": 6.4e-12,
+            "delay": 0.1,
+            "synapse_model": "pyr_synapse",
+            "receptor_type": 2
+        },
+        "hy": {
+            "synapse_model": "static_synapse",
+            "delay": 0.1,
+            "receptor_type": 3
+        },
+        "ih": {
+            "tau_Delta": 1,
+            "Wmin": -0.04,
+            "Wmax": 0.04,
+            "eta": 1.28e-11,
+            "delay": 0.1,
+            "synapse_model": "pyr_synapse",
+            "receptor_type": 2
+        },
+        "hi": {
+            "synapse_model": "static_synapse",
+            "delay": 0.1,
+            "receptor_type": 3
+        }
+    }
+}
