@@ -9,7 +9,7 @@ sigma = 0.3  # standard deviation for membrane potential noise
 sim_params = {
     "delta_t": delta_t,
     "threads": 9,
-    "record_interval": 575,  # interval for storing membrane potentials in ms
+    "record_interval": 5,  # interval for storing membrane potentials in ms
     "init_self_pred": True,  # initialize feedback weights to self-predicting state
     "plasticity": True,  # enable synaptic plasticity
     "SIM_TIME": 100,  # simulation time per input pattern in ms
@@ -22,8 +22,9 @@ sim_params = {
     "dims_teacher": [9, 10, 3],  # teacher network dimensions.
     "k_yh": 10,  # hidden to output teacher weight scaling factor
     "k_hx": 1,  # input to hidden teacher weight scaling factor
-    "use_mm": False,  # If true, record activity of nest neurons using multimeters
-    "recording_backend": "ascii",  # Backend for NEST multimeter recordings
+    "use_mm": True,  # If true, record activity of nest neurons using multimeters
+    "recording_backend": "memory",  # Backend for NEST multimeter recordings
+    "out_lag": 80 # lag in ms before recording output neuron voltage during testing
 }
 
 
@@ -128,8 +129,8 @@ syn_params = {
     'delay': sim_params['delta_t'],  # synaptic delay
     'tau_Delta': tau_delta,
     'eta': {
-        'ip': [0.00002, 0],
+        'ip': [0.002, 0],
         'pi': [0, 0],
-        'up': [0.00005, 0.00001],
+        'up': [0.005, 0.001],
     }
 }

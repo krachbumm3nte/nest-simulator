@@ -73,16 +73,18 @@ class NestNetwork(Network):
         if self.use_mm:
             self.mm = nest.Create('multimeter', 1, {'record_to': self.sim["recording_backend"],
                                                     'interval': self.sim["record_interval"],
-                                                    'record_from': ["V_m.a_lat", "V_m.s", "V_m.b"]})
+                                                    'record_from': ["V_m.a_lat", "V_m.s", "V_m.b"],
+                                                    'stop':0.0 # disables multimeter by default
+                                                    })
             nest.Connect(self.mm, self.input_neurons)
             nest.Connect(self.mm, self.layers[0].pyr)
             nest.Connect(self.mm, self.layers[0].intn)
             nest.Connect(self.mm, self.layers[-1].pyr)
-        else:
-            self.U_y_record = np.zeros((1, self.dims[-1]))
-            self.V_ah_record = np.zeros((1, self.dims[1]))
-            self.U_h_record = np.zeros((1, self.dims[1]))
-            self.U_i_record = np.zeros((1, self.dims[-1]))
+        #TODO: keep both ways of storage?
+        self.U_y_record = np.zeros((1, self.dims[-1]))
+        self.V_ah_record = np.zeros((1, self.dims[1]))
+        self.U_h_record = np.zeros((1, self.dims[1]))
+        self.U_i_record = np.zeros((1, self.dims[-1]))
 
         # step generators for enabling batch training
         self.sgx = nest.Create("step_current_generator", self.dims[0])
@@ -175,8 +177,11 @@ class NestNetwork(Network):
         for sample_idx in range(n_samples):
             x_test, y_actual = self.generate_bar_data(sample_idx)
             self.set_input(x_test)
+            self.mm.set({"start":self.sim["out_lag"] , 'stop':self.sim_time, 'origin':nest.biological_time})
             self.simulate(self.sim_time)
-            y_pred = [nrn.get("soma")["V_m"] for nrn in self.layers[-1].pyr]
+            mm_data = pd.DataFrame.from_dict(self.mm.events)
+            U_Y = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]
+            y_pred = np.mean(U_Y, axis=1)
             loss_mse.append(mse(y_actual, y_pred))
             acc.append(np.argmax(y_actual) == np.argmax(y_pred))
             self.reset()
@@ -238,6 +243,7 @@ class NestNetwork(Network):
                                "V_m": 0, "I_e": 0}, "apical_lat": {"V_m": 0, "I_e": 0}})
         for l in self.layers:
             l.reset()
+        self.mm.n_events = 0
 
     def set_weights(self, weights, synapse_collection):
         # TODO: match numpy variant
