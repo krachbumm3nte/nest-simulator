@@ -94,29 +94,23 @@ else:
 
 if not args.cont:
     # dump simulation parameters and initial weights to .json files
-    nest_params = {
-        "in": net.input_neurons[0].get(),
-        "h": net.layers[0].pyr[0].get(),
-        "i": net.layers[0].intn[0].get(),
-        "y": net.layers[-1].pyr[0].get(),
-    }
     with open(os.path.join(root_dir, "params.json"), "w") as f:
-        json.dump({"simulation": sim_params, "neurons": neuron_params, "synapses": syn_params, "neuons_instantiated": nest_params}, f)
+        json.dump({"simulation": sim_params, "neurons": neuron_params, "synapses": syn_params}, f, indent=4)
     utils.store_synaptic_weights(net, root_dir, "init_weights.json")
 
 print("setup complete, running simulations...")
 
 try:
-    for run in range(sim_params["n_runs"] + 1):
+    for epoch in range(sim_params["n_epochs"] + 1):
         start = time()
         net.train_epoch_bars()
         t = time() - start
         T.append(t)
 
-        if run % plot_interval == 0:
-            net.test_bars()
-            print(f"plotting run {run}")
+        if epoch % plot_interval == 0:
+            print(f"plotting epoch {epoch}")
             start = time()
+            net.test_bars()
             fig, axes = plt.subplots(4, 2, constrained_layout=True)
             [ax0, ax1, ax2, ax3, ax4, ax5, ax6, ax7] = axes.flatten()
             plt.rcParams['savefig.dpi'] = 300
@@ -124,7 +118,6 @@ try:
             intn_error = np.square(net.U_y_record - net.U_i_record)
 
             mean_error = utils.rolling_avg(np.mean(intn_error, axis=1), size=200)
-            abs_voltage = np.mean(np.concatenate([net.U_y_record[-5:], net.U_i_record[-5:]]))
             ax0.plot(mean_error, color="black")
 
             intn_error_now = np.mean(mean_error[-20:])
@@ -142,18 +135,18 @@ try:
             # Synaptic weights
             # notice that all weights are scaled up again to ensure that derived metrics are comparible between simulations
             weights = net.get_weight_dict()
-            WYH = weights[-1]["up"]
             WHI = weights[-2]["pi"]
             WHY = weights[-2]["down"]
             WIH = weights[-2]["ip"]
+            WYH = weights[-1]["up"]
 
             fb_error_now = mse(WHY.flatten(), -WHI.flatten())
-            fb_error.append(fb_error_now)
-            ax2.plot(fb_error, label=f"FB error: {fb_error_now:.3f}")
+            fb_error.append([epoch, fb_error_now])
+            ax2.plot(*zip(*fb_error), label=f"FB error: {fb_error_now:.3f}")
 
             ff_error_now = mse(WYH.flatten(), WIH.flatten())
-            ff_error.append(ff_error_now)
-            ax3.plot(ff_error, label=f"FF error: {ff_error_now:.3f}")
+            ff_error.append([epoch, ff_error_now])
+            ax3.plot(*zip(*ff_error), label=f"FF error: {ff_error_now:.3f}")
 
             # plot weights
             for i in range(dims[2]):
@@ -168,8 +161,8 @@ try:
                     ax5.plot(i, WYH[j, i], ".", color=col, label=f"to {i}")
                     ax5.plot(i, WIH[j, i], "x", color=col, label=f"from {i}")
 
-            ax6.plot(utils.rolling_avg(net.test_acc, 2))
-            ax7.plot(utils.rolling_avg(net.test_loss, 2))
+            ax6.plot(*zip(*net.test_acc))
+            ax7.plot(*zip(*net.test_loss))
 
             ax0.set_title("interneuron - pyramidal error")
             ax1.set_title("apical error")
@@ -187,21 +180,22 @@ try:
             ax6.set_ylim(0, 1)
             ax7.set_ylim(0, 1)
 
-            plt.savefig(os.path.join(imgdir, f"{run}.png"))
+            plt.savefig(os.path.join(imgdir, f"{epoch}.png"))
             plt.close()
 
             plot_duration = time() - start
-            print(f"mean simulation time: {np.mean(T[-50:]):.4f}s. plot time:{plot_duration:.2f}s. \
-    apical error: {apical_error_now:.2f}, train loss: {net.train_loss[-1]:.4f}, test loss: {net.test_loss[-1]:.4f}")
-            print(
-                f"ff error: {ff_error_now:.5f}, fb error: {fb_error_now:.5f}, interneuron error: {intn_error_now:.4f}, absolute somatic voltage: {abs_voltage:.3f}\n")
+            print(f"sim time: {np.mean(T[-50:]):.2f}s. plot time:{plot_duration:.2f}s.")
+            print(f"train loss: {net.train_loss[-1][1]:.4f}, test loss: {net.test_loss[-1][1]:.4f}")
+            print(f"ff error: {ff_error_now:.5f}, fb error: {fb_error_now:.5f}")
+            print(f"apical error: {apical_error_now:.2f}, intn error: {intn_error_now:.4f}\n")
 
-        elif run % 100 == 0:
-            print(f"run {run} completed.")
+        elif epoch % 100 == 0:
+            print(f"epoch {epoch} completed.")
 except KeyboardInterrupt:
-    print("KeyboardInterrupt received - storing synaptic weights...")
+    print("KeyboardInterrupt received - storing progress...")
 finally:
     utils.store_synaptic_weights(net, os.path.dirname(datadir))
+    print("Weights stored to disk.")
     progress = {
         "test_acc": net.test_acc,
         "test_loss": net.test_loss,
@@ -213,5 +207,5 @@ finally:
         "U_i_record": net.U_i_record.tolist()
     }
     with open(os.path.join(root_dir, "progress.json"), "w") as f:
-        json.dump(progress, f)
-    print("weights stored to disk, exiting.")
+        json.dump(progress, f, indent=4)
+    print("progress stored to disk, exiting.")

@@ -1,7 +1,7 @@
 import numpy as np
+from .network import Network
 from sklearn.metrics import mean_squared_error as mse
 from time import time
-from .network import Network
 from copy import deepcopy
 from .layer import Layer
 from .outputlayer import OutputLayer
@@ -24,15 +24,12 @@ class NumpyNetwork(Network):
         self.output_loss = []
         self.r_in = np.zeros(self.dims[0])
         self.setup_populations()
-
         self.setup_records()
         self.iteration = 0
 
     def setup_populations(self):
         eta = {}
-        # construct all layers
-
-        for i in range(len(self.dims) - 2):
+        for i in range(len(self.dims)-2):
             eta["up"] = self.syn["eta"]["up"][i]
             eta["pi"] = self.syn["eta"]["pi"][i]
             eta["ip"] = self.syn["eta"]["ip"][i]
@@ -97,7 +94,7 @@ class NumpyNetwork(Network):
         acc = []
         loss_mse = []
         for sample_idx in range(n_samples):
-            x_test, y_actual = self.generate_bar_data()
+            x_test, y_actual = self.generate_bar_data(sample_idx)
             self.set_input(x_test)
             for i in range(int(self.sim_time/self.dt)):
                 self.simulate(lambda: np.zeros(self.dims[-1]), False, False)
@@ -106,8 +103,8 @@ class NumpyNetwork(Network):
             acc.append(np.argmax(y_actual) == np.argmax(y_pred))
             self.reset()
 
-        self.test_acc.append(np.mean(acc))
-        self.test_loss.append(np.mean(loss_mse))
+        self.test_acc.append([self.epoch, np.mean(acc)])
+        self.test_loss.append([self.epoch, np.mean(loss_mse)])
 
     def target_filtered(self):
         u_old = deepcopy(self.u_target)
@@ -143,7 +140,8 @@ class NumpyNetwork(Network):
     def record_state(self):
         U_y = self.layers[-1].u_pyr["soma"]
         self.U_y_record = np.concatenate((self.U_y_record, np.expand_dims(U_y, 0)), axis=0)
-        self.V_ah_record = np.concatenate((self.V_ah_record, np.expand_dims(self.layers[-2].u_pyr["apical"], 0)), axis=0)
+        self.V_ah_record = np.concatenate(
+            (self.V_ah_record, np.expand_dims(self.layers[-2].u_pyr["apical"], 0)), axis=0)
         self.V_bh_record = np.concatenate((self.V_bh_record, np.expand_dims(self.layers[-2].u_pyr["basal"], 0)), axis=0)
         self.U_i_record = np.concatenate((self.U_i_record, np.expand_dims(self.layers[-2].u_inn["soma"], 0)), axis=0)
         self.U_h_record = np.concatenate((self.U_h_record, np.expand_dims(self.layers[-2].u_pyr["soma"], 0)), axis=0)
@@ -166,16 +164,11 @@ class NumpyNetwork(Network):
     def get_weight_dict(self):
         weights = []
         for l in self.layers[:-1]:
-            weights.append({
-                "up": l.W_up.copy(),
-                "down": l.W_down.copy(),
-                "pi": l.W_pi.copy(),
-                "ip": l.W_ip.copy()
-            })
-
-        weights.append(
-            {"up": self.layers[-1].W_up.copy()}
-        )
+            weights.append({"up": l.W_up.copy(),
+                            "pi": l.W_pi.copy(),
+                            "ip": l.W_ip.copy(),
+                            "down": l.W_down.copy()})
+        weights.append({"up": self.layers[-1].W_up.copy()})
         return weights
 
     def reset(self):

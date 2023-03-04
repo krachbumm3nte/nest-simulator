@@ -2,10 +2,10 @@ import nest
 import numpy as np
 from .network import Network
 from sklearn.metrics import mean_squared_error as mse
+from time import time
 import pandas as pd
 from copy import deepcopy
 from .layer_NEST import NestLayer, NestOutputLayer
-from time import time
 
 
 class NestNetwork(Network):
@@ -33,6 +33,8 @@ class NestNetwork(Network):
                         else:
                             synapse["eta"] /= self.weight_scale**3 * self.syn["tau_Delta"]
         self.setup_populations()
+
+        self.iteration = 0
 
     def setup_populations(self):
 
@@ -114,14 +116,13 @@ class NestNetwork(Network):
         # if self.sim["recording_backend"] == "ascii":
         nest.SetKernelStatus({"data_prefix": f"it{str(self.iteration).zfill(8)}_"})
         nest.Simulate(T)
-
         self.iteration += 1
 
     def set_input(self, input_currents):
         """Inject a constant current into all neurons in the input layer.
 
         @note: Before injection, currents are attenuated by the input time constant
-        in order to match the simulation exactly.
+        in order to match synaptic filtering.
 
         Arguments:
             input_currents -- Iterable of length equal to the input dimension.
@@ -131,17 +132,6 @@ class NestNetwork(Network):
             self.input_neurons[i].set({"soma": {"I_e": input_currents[i] / self.nrn["tau_x"]}})
 
     def train_epoch(self, x_batch, y_batch):
-
-        # l_epoch = len(x_batch)
-
-        # t_now = nest.GetKernelStatus("biological_time")
-        # times = np.arange(t_now + self.sim["delta_t"], t_now + self.sim_time * l_epoch, self.sim_time)
-        # for i, sg in enumerate(self.sgx):
-        #     sg.set(amplitude_values=x_batch[:, i]/self.nrn["tau_x"], amplitude_times=times)
-        # for i, sg in enumerate(self.sgy):
-        #     sg.set(amplitude_values=y_batch[:, i]*self.nrn["g_som"], amplitude_times=times)
-
-        # self.simulate(self.sim_time*l_epoch)
 
         for i, (x, y) in enumerate(zip(x_batch, y_batch)):
             self.set_input(x)
@@ -159,8 +149,7 @@ class NestNetwork(Network):
                     self.U_i_record = np.concatenate((self.U_i_record, np.expand_dims(U_i, 0)), axis=0)
                     self.U_y_record = np.concatenate((self.U_y_record, np.expand_dims(U_y, 0)), axis=0)
 
-                self.train_loss.append(mse(y, U_y))
-            self.reset()
+                self.train_loss.append((self.epoch, mse(y, U_y)))
 
     def test_teacher(self, n_samples=5):
         raise DeprecationWarning
@@ -179,26 +168,20 @@ class NestNetwork(Network):
     def test_bars(self, n_samples=8):
         acc = []
         loss_mse = []
-
-        # grab all connections with plastic synapses and set learning rate to 0
+        # set all learning rates to zero
         self.disable_learning()
 
-        for i in range(n_samples):
-            x_test, y_actual = self.generate_bar_data(i)
-            # t_now = nest.GetKernelStatus("biological_time") + self.delta_t
-            # for i, sg in enumerate(self.sgx):
-            #     sg.set(amplitude_values=[x_test[i]/self.nrn["tau_x"]], amplitude_times=[t_now])
-            # for i, sg in enumerate(self.sgy):
-            #     sg.set(amplitude_values=[0], amplitude_times=[t_now])
+        for sample_idx in range(n_samples):
+            x_test, y_actual = self.generate_bar_data(sample_idx)
             self.set_input(x_test)
             self.simulate(self.sim_time)
             y_pred = [nrn.get("soma")["V_m"] for nrn in self.layers[-1].pyr]
             loss_mse.append(mse(y_actual, y_pred))
             acc.append(np.argmax(y_actual) == np.argmax(y_pred))
-
             self.reset()
-        self.test_acc.append(np.mean(acc))
-        self.test_loss.append(np.mean(loss_mse))
+
+        self.test_acc.append([self.epoch, np.mean(acc)])
+        self.test_loss.append([self.epoch, np.mean(loss_mse)])
 
         # set learning rates to their original values
         self.enable_learning()
@@ -217,26 +200,31 @@ class NestNetwork(Network):
         nudging conductance in order to match the simulation exactly.
 
         Arguments:
-            input_currents -- Iterable of length equal to the output dimension.
+            target_currents -- Iterable of length equal to the output dimension.
         """
         self.target_curr = target_currents
         for i in range(self.dims[-1]):
             self.layers[-1].pyr[i].set({"soma": {"I_e": target_currents[i] * self.nrn["g_som"]}})
 
-    def get_weight_array(self, source, target):
-        weights = pd.DataFrame.from_dict(nest.GetConnections(source=source, target=target).get())
-        return weights.sort_values(["target", "source"]).weight.values.reshape((len(target), len(source)))
+    def get_weight_array(self, source, target, normalized=False):
+        weight_df = pd.DataFrame.from_dict(nest.GetConnections(source=source, target=target).get())
+        weight_array = weight_df.sort_values(["target", "source"]).weight.values.reshape((len(target), len(source)))
+        if normalized:
+            weight_array *= self.weight_scale
+        return weight_array
 
     def get_weight_array_from_syn(self, synapse_collection, normalized=False):
-        weights = pd.DataFrame.from_dict(synapse_collection.get())
+        weight_df = pd.DataFrame.from_dict(synapse_collection.get())
         n_out = len(set(synapse_collection.targets()))
         n_in = len(set(synapse_collection.sources()))
-        return weights.sort_values(["target", "source"]).weight.values.reshape((n_out, n_in)) * (self.weight_scale if normalized else 1)
+        weight_array = weight_df.sort_values(["target", "source"]).weight.values.reshape((n_out, n_in))
+        if normalized:
+            weight_array *= self.weight_scale
+        return weight_array
 
     def get_weight_dict(self, normalized=True):
         weights = []
-        for n in range(len(self.layers) - 1):
-            l = self.layers[n]
+        for l in self.layers[:-1]:
             weights.append({"up": self.get_weight_array_from_syn(l.up, normalized),
                             "pi": self.get_weight_array_from_syn(l.pi, normalized),
                             "ip": self.get_weight_array_from_syn(l.ip, normalized),
@@ -245,11 +233,13 @@ class NestNetwork(Network):
         return weights
 
     def reset(self):
-        self.input_neurons.set({"soma": {"V_m": 0, "I_e": 0}, "basal": {"V_m": 0, "I_e": 0}, "apical_lat": {"V_m": 0, "I_e": 0}})
+        self.input_neurons.set({"soma": {"V_m": 0, "I_e": 0}, "basal": {
+                               "V_m": 0, "I_e": 0}, "apical_lat": {"V_m": 0, "I_e": 0}})
         for l in self.layers:
             l.reset()
 
     def set_weights(self, weights, synapse_collection):
+        # TODO: match numpy variant
         for i, source_id in enumerate(sorted(set(synapse_collection.sources()))):
             for j, target_id in enumerate(sorted(set(synapse_collection.targets()))):
                 source = nest.GetNodes({"global_id": source_id})

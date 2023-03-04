@@ -10,25 +10,27 @@ class Network:
         self.nrn = nrn  # neuron parameters
         self.syn = syns  # synapse parameters
 
-        self.layers = []
 
         self.dims = sim["dims"]
         self.sim_time = sim["SIM_TIME"]
         self.dt = sim["delta_t"]
-        self.le = nrn["latent_equilibrium"]
+        self.teacher = sim["teacher"]
         self.sigma_noise = sim["sigma"]
         self.record_interval = sim["record_interval"]
-        self.iteration = 0
-        self.tau_x = nrn["tau_x"]
+
 
         self.gamma = nrn["gamma"]
         self.beta = nrn["beta"]
         self.theta = nrn["theta"]
+        self.tau_x = nrn["tau_x"]
+        self.le = nrn["latent_equilibrium"]
 
         self.Wmin = syns["Wmin"]
         self.Wmax = syns["Wmax"]
 
-        self.teacher = sim["teacher"]
+        self.iteration = 0 # number of times simulate() has been called. mostly used for storing recordings
+        self.epoch = 0 # number of training epochs passed
+
         if self.teacher:
             self.dims_teacher = sim["dims_teacher"]
             self.whx_trgt = self.gen_weights(self.dims_teacher[0], self.dims_teacher[1], -1, 1)
@@ -37,10 +39,10 @@ class Network:
             self.k_yh = sim["k_yh"]
             self.k_hx = sim["k_hx"]
 
+        self.layers = []
         self.train_loss = []
         self.test_loss = []
         self.test_acc = []
-        self.conn_names = ["hx", "yh", "ih", "hi", "hy"]
 
     def gen_weights(self, n_in, n_out, wmin=None, wmax=None):
         if not wmin:
@@ -168,6 +170,8 @@ class Network:
             x_batch[i] = x
             y_batch[i] = y
         self.train_epoch(x_batch, y_batch)
+        self.reset()
+        self.epoch += 1
 
     def train_epoch_teacher(self, batchsize):
         x_batch = np.zeros((batchsize, self.dims[0]))
@@ -177,4 +181,5 @@ class Network:
             x_batch[i] = x
             y_batch[i] = y
         self.train_epoch(x_batch, y_batch)
-        self.test_teacher()
+        self.reset()
+        self.epoch += 1
