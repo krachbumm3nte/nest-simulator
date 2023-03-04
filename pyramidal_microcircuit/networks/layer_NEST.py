@@ -134,7 +134,7 @@ class NestOutputLayer(AbstractLayer):
         syn_up["weight"] = self.gen_weights(self.N_in, self.N_out)
 
         self.pyr = nest.Create(nrn["model"], self.N_out, nrn["pyr"])
-
+        self.pyr.set({"apical_lat": {"g": 0}})
         self.up = nest.Connect(pyr_prev, self.pyr, syn_spec=syn_up, return_synapsecollection=True)
         for i in range(len(self.pyr)):
             self.pyr[i].target = intn_prev[i].get("global_id")

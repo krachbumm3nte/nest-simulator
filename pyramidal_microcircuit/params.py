@@ -128,8 +128,8 @@ syn_params = {
     'delay': sim_params['delta_t'],  # synaptic delay
     'tau_Delta': tau_delta,
     'eta': {
-        'ip': [0.000002, 0],
+        'ip': [0.00002, 0],
         'pi': [0, 0],
-        'up': [0.000005, 0.000001],
+        'up': [0.00005, 0.00001],
     }
 }
