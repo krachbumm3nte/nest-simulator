@@ -14,17 +14,12 @@ class NumpyNetwork(Network):
 
         self.conns = {}
 
-        self.V_ah_record = np.zeros((1, self.dims[-2]))
-        self.V_bh_record = np.zeros((1, self.dims[-2]))
-        self.U_h_record = np.zeros((1, self.dims[-2]))
-        self.U_i_record = np.zeros((1, self.dims[-1]))
-        self.U_y_record = np.zeros((1, self.dims[-1]))
-        self.U_x_record = np.zeros((1, self.dims[0]))
+
         self.u_target = np.zeros(self.dims[-1])
         self.output_loss = []
         self.r_in = np.zeros(self.dims[0])
         self.setup_populations()
-        self.setup_records()
+        self.reset_records()
         self.iteration = 0
 
     def setup_populations(self):
@@ -46,11 +41,17 @@ class NumpyNetwork(Network):
                 l.W_pi = -l.W_down.copy()
                 l.W_ip = l_next.W_up.copy() * l_next.gb / (l_next.gl + l_next.ga + l_next.gb) * (l.gl + l.gd) / l.gd
 
-    def setup_records(self):
+    def reset_records(self):
         self.weight_record = self.copy_weights()
         for i, weight_dict in enumerate(self.weight_record):
             for key, weights in weight_dict.items():
                 self.weight_record[i][key] = np.expand_dims(weights, axis=0)
+                self.V_ah_record = np.zeros((1, self.dims[-2]))
+        self.V_bh_record = np.zeros((1, self.dims[-2]))
+        self.U_h_record = np.zeros((1, self.dims[-2]))
+        self.U_i_record = np.zeros((1, self.dims[-1]))
+        self.U_y_record = np.zeros((1, self.dims[-1]))
+        self.U_x_record = np.zeros((1, self.dims[0]))
 
     def train_teacher(self, T):
         input_currents = np.random.random(self.dims[0])
@@ -88,6 +89,7 @@ class NumpyNetwork(Network):
             self.target_seq = y_train
             for i in range(int(self.sim_time/self.dt)):
                 self.simulate(self.target_filtered)
+            self.train_loss.append([self.epoch, mse(self.u_target, self.layers[n - 1].u_pyr["soma"])])
             self.reset()
 
     def test_bars(self, n_samples=8):
@@ -97,8 +99,8 @@ class NumpyNetwork(Network):
             x_test, y_actual = self.generate_bar_data(sample_idx)
             self.set_input(x_test)
             for i in range(int(self.sim_time/self.dt)):
-                self.simulate(lambda: np.zeros(self.dims[-1]), False, False)
-            y_pred = self.layers[-1].u_pyr["soma"]
+                self.simulate(lambda: np.zeros(self.dims[-1]), True, False)
+            y_pred = self.U_y_record[int(self.sim["out_lag"]/self.record_interval):]
             loss_mse.append(mse(y_actual, y_pred))
             acc.append(np.argmax(y_actual) == np.argmax(y_pred))
             self.reset()
@@ -111,7 +113,7 @@ class NumpyNetwork(Network):
         self.u_target += self.dt/self.tau_x * (self.target_seq - self.u_target)
         return u_old if self.le else self.u_target
 
-    def simulate(self, train_function, enable_recording=True, plasticity=True):
+    def simulate(self, train_function, enable_recording=False, plasticity=True):
         noise_on = False
         self.r_in = self.r_in + (self.dt/self.tau_x) * (self.I_x - self.r_in)
         if self.le:
@@ -146,7 +148,6 @@ class NumpyNetwork(Network):
         self.U_i_record = np.concatenate((self.U_i_record, np.expand_dims(self.layers[-2].u_inn["soma"], 0)), axis=0)
         self.U_h_record = np.concatenate((self.U_h_record, np.expand_dims(self.layers[-2].u_pyr["soma"], 0)), axis=0)
         self.U_x_record = np.concatenate((self.U_x_record, np.expand_dims(self.r_in, 0)), axis=0)
-        self.train_loss.append(mse(self.u_target, U_y))
 
         for i, weight_dict in enumerate(self.copy_weights()):
             for key, weights in weight_dict.items():
@@ -183,4 +184,4 @@ class NumpyNetwork(Network):
             self.layers[i].W_ip = w["ip"].copy()
 
         self.layers[-1].W_up = weights[-1]["up"].copy()
-        self.setup_records()
+        self.reset_records()

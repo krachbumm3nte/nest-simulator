@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     # increase learning rates to absurd levels to make plasticity visible
     for syn_name in ["ip", "pi", "up"]:
-        syn_params["eta"][syn_name] = [10 * lr for lr in syn_params["eta"][syn_name]]
+        syn_params["eta"][syn_name] = [500 * lr for lr in syn_params["eta"][syn_name]]
 
     plot_all_runs = True
     test_results = []

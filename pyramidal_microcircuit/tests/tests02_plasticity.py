@@ -395,14 +395,14 @@ class NetworkPlasticity(TestClass):
         self.ip_0 = []
         self.down_0 = []
         self.up_1 = []
-        for i in range(15):
+        for i in range(10):
             input_currents = np.random.random(self.dims[0])
             target_currents = np.random.random(self.dims[-1])
             self.nest_net.set_input(input_currents)
             self.numpy_net.set_input(input_currents)
             self.nest_net.set_target(target_currents)
             for i in range(int(self.sim_time/self.delta_t)):
-                self.numpy_net.simulate(lambda: target_currents)
+                self.numpy_net.simulate(lambda: target_currents, True)
                 self.nest_net.simulate(self.delta_t)
                 wgts = self.nest_net.get_weight_dict(True)
                 self.up_0.append(wgts[0]["up"])

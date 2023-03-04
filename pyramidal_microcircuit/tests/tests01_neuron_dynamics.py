@@ -492,7 +492,7 @@ class NetworkDynamics(TestClass):
 
         self.numpy_net.set_input(input_currents)
         for i in range(int(self.sim_time/self.delta_t)):
-            self.numpy_net.simulate(lambda: target_currents, plasticity=False)
+            self.numpy_net.simulate(lambda: target_currents, enable_recording=True, plasticity=False)
 
     def evaluate(self) -> bool:
         records = pd.DataFrame.from_dict(self.nest_net.mm.events)
