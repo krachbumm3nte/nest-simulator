@@ -94,8 +94,14 @@ else:
 
 if not args.cont:
     # dump simulation parameters and initial weights to .json files
+    nest_params = {
+        "in": net.input_neurons[0].get(),
+        "h": net.layers[0].pyr[0].get(),
+        "i": net.layers[0].intn[0].get(),
+        "y": net.layers[-1].pyr[0].get(),
+    }
     with open(os.path.join(root_dir, "params.json"), "w") as f:
-        json.dump({"simulation": sim_params, "neurons": neuron_params, "synapses": syn_params}, f)
+        json.dump({"simulation": sim_params, "neurons": neuron_params, "synapses": syn_params, "neuons_instantiated": nest_params}, f)
     utils.store_synaptic_weights(net, root_dir, "init_weights.json")
 
 print("setup complete, running simulations...")
