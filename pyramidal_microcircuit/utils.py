@@ -132,7 +132,7 @@ def setup_models(spiking, nrn, sim, syn, record_weights=False):
         connections_l["ip"]['receptor_type'] = basal_dendrite
         connections_l["pi"]['receptor_type'] = apical_dendrite
         connections_l["down"]['receptor_type'] = apical_dendrite
-        connections_l["down"]['delay'] = 2*sim["delta_t"]
+        # connections_l["down"]['delay'] = 2*sim["delta_t"]
         connections.append(connections_l)
 
     connection_out = {}

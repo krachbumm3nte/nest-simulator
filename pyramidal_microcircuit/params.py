@@ -33,8 +33,9 @@ g_a = 0.06  # apical compartment coupling conductance
 g_d = 0.1  # basal compartment coupling conductance
 g_som = 0.06
 lambda_ah = g_a / (g_d + g_a + g_l)  # Useful constant for scaling learning rates
-lambda_bh = g_som / (g_d + g_som + g_l)  # Useful constant for scaling learning rates
-lambda_out = g_som / (g_d + g_som + g_l)
+lambda_bh = g_d / (g_d + g_a + g_l)  # Useful constant for scaling learning rates
+
+lambda_out = g_d / (g_d + g_l)
 g_l_eff = g_l + g_d + g_a
 
 
@@ -118,7 +119,7 @@ neuron_params["intn"] = intn_params
 
 Wmin, Wmax = -4, 4
 # Dicts derived from this can be passed directly to nest.Connect() as synapse parameters
-tau_delta = 0.1
+tau_delta = 1
 syn_params = {
     'synapse_model': None,  # Synapse model (for NEST simulations only)
     'tau_Delta': tau_delta,  # Synaptic time constant
@@ -127,8 +128,8 @@ syn_params = {
     'delay': sim_params['delta_t'],  # synaptic delay
     'tau_Delta': tau_delta,
     'eta': {
-        'ip': [0.002, 0],
+        'ip': [0.000002, 0],
         'pi': [0, 0],
-        'up': [0.005, 0.0001],
+        'up': [0.000005, 0.000001],
     }
 }
