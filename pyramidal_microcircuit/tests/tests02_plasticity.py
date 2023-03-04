@@ -28,14 +28,14 @@ class PlasticityYH(DynamicsYH):
         self.UY = []
         self.VBY = []
         self.weights_numpy = []
-        
+
         self.conn = nest.GetConnections(self.neuron_01, self.neuron_02)
         self.weights_nest = [self.conn.weight]
 
         for i, (T, amp) in enumerate(zip(self.sim_times, self.stim_amps)):
 
             self.neuron_01.set({"soma": {"I_e": amp}})
-            
+
             for i in range(int(T/self.delta_t)):
                 nest.Simulate(self.delta_t)
                 self.weights_nest.append(self.conn.weight)
@@ -59,7 +59,6 @@ class PlasticityYH(DynamicsYH):
                 self.UY.append(U_y)
                 self.VBY.append(V_by)
                 self.weights_numpy.append(self.weight)
-
 
     def evaluate(self) -> bool:
         if self.spiking_neurons:
@@ -321,7 +320,6 @@ class PlasticityIH(DynamicsHI):
 
         self.weights_nest = []
 
-
         for i, (T, amp) in enumerate(zip(self.sim_times, self.stim_amps)):
             self.neuron_01.set({"soma": {"I_e": amp}})
             nest.SetKernelStatus({"data_prefix": f"it{str(i).zfill(8)}_"})
@@ -386,7 +384,6 @@ class NetworkPlasticity(TestClass):
         self.numpy_net.set_weights(self.nest_net.get_weight_dict())
 
     def run(self):
-        
 
         self.sim_time = 100
 
@@ -411,7 +408,6 @@ class NetworkPlasticity(TestClass):
                 self.ip_0.append(wgts[0]["ip"])
                 self.down_0.append(wgts[0]["down"])
 
-
     def evaluate(self) -> bool:
         self.up_0 = np.array(self.up_0)
         self.pi_0 = np.array(self.pi_0)
@@ -434,13 +430,13 @@ class NetworkPlasticity(TestClass):
 
             weights_nest = eval(f"self.{name}_{layer}")
             weights_numpy = self.numpy_net.weight_record[layer][name]
-            axes[i//3][i%3].set_title(name)
+            axes[i//3][i % 3].set_title(name)
             for sender in range(weights_nest.shape[2]):
                 for target in range(weights_nest.shape[1]):
                     col = cmap(sender)
                     style = linestyles[target]
-                    axes[i//3][i%3].plot(weights_nest[:, target, sender], linestyle="solid", color=col)
-                    axes[i//3][i%3].plot(weights_numpy[:, target, sender], linestyle="dashed", color=col, alpha= 0.8)
+                    axes[i//3][i % 3].plot(weights_nest[:, target, sender], linestyle="solid", color=col)
+                    axes[i//3][i % 3].plot(weights_numpy[:, target, sender], linestyle="dashed", color=col, alpha=0.8)
 
         axes[0][0].set_ylabel("NEST computed")
         axes[1][0].set_ylabel("Target activation")

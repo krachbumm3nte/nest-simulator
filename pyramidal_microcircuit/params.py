@@ -24,7 +24,7 @@ sim_params = {
     "k_hx": 1,  # input to hidden teacher weight scaling factor
     "use_mm": True,  # If true, record activity of nest neurons using multimeters
     "recording_backend": "memory",  # Backend for NEST multimeter recordings
-    "out_lag": 80 # lag in ms before recording output neuron voltage during testing
+    "out_lag": 80  # lag in ms before recording output neuron voltage during testing
 }
 
 

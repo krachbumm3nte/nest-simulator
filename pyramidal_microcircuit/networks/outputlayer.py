@@ -6,7 +6,7 @@ dtype = np.float32
 
 class OutputLayer(AbstractLayer):
 
-    def __init__(self, nrn, sim, syn, eta) -> None:     
+    def __init__(self, nrn, sim, syn, eta) -> None:
         super().__init__(nrn, sim, syn, eta)
         self.ga = 0
         self.N_in = sim["dims"][-2]

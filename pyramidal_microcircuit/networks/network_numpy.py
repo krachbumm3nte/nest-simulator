@@ -14,7 +14,6 @@ class NumpyNetwork(Network):
 
         self.conns = {}
 
-
         self.u_target = np.zeros(self.dims[-1])
         self.output_loss = []
         self.r_in = np.zeros(self.dims[0])
@@ -89,7 +88,7 @@ class NumpyNetwork(Network):
             self.target_seq = y_train
             for i in range(int(self.sim_time/self.dt)):
                 self.simulate(self.target_filtered)
-            self.train_loss.append([self.epoch, mse(self.u_target, self.layers[n - 1].u_pyr["soma"])])
+            self.train_loss.append([self.epoch, mse(self.u_target, self.layers[- 1].u_pyr["soma"])])
             self.reset()
 
     def test_bars(self, n_samples=8):
@@ -100,7 +99,8 @@ class NumpyNetwork(Network):
             self.set_input(x_test)
             for i in range(int(self.sim_time/self.dt)):
                 self.simulate(lambda: np.zeros(self.dims[-1]), True, False)
-            y_pred = self.U_y_record[int(self.sim["out_lag"]/self.record_interval):]
+            print(self.U_y_record.shape)
+            y_pred = self.U_y_record[int((self.sim["out_lag"]/self.sim_time)*self.record_interval):]
             loss_mse.append(mse(y_actual, y_pred))
             acc.append(np.argmax(y_actual) == np.argmax(y_pred))
             self.reset()

@@ -49,7 +49,7 @@ if args.cont:
         progress = json.load(f)
 else:
     root_dir, imgdir, datadir = utils.setup_directories()
-sim_params["timestamp"] = root_dir.split(os.path.sep)[-1] 
+sim_params["timestamp"] = root_dir.split(os.path.sep)[-1]
 
 
 spiking = args.network == "snest"

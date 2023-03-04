@@ -74,13 +74,13 @@ class NestNetwork(Network):
             self.mm = nest.Create('multimeter', 1, {'record_to': self.sim["recording_backend"],
                                                     'interval': self.sim["record_interval"],
                                                     'record_from': ["V_m.a_lat", "V_m.s", "V_m.b"],
-                                                    'stop':0.0 # disables multimeter by default
+                                                    'stop': 0.0  # disables multimeter by default
                                                     })
             nest.Connect(self.mm, self.input_neurons)
             nest.Connect(self.mm, self.layers[0].pyr)
             nest.Connect(self.mm, self.layers[0].intn)
             nest.Connect(self.mm, self.layers[-1].pyr)
-        #TODO: keep both ways of storage?
+        # TODO: keep both ways of storage?
         self.U_y_record = np.zeros((1, self.dims[-1]))
         self.V_ah_record = np.zeros((1, self.dims[1]))
         self.U_h_record = np.zeros((1, self.dims[1]))
@@ -116,10 +116,11 @@ class NestNetwork(Network):
 
     def simulate(self, T, enable_recording=False):
         if enable_recording:
-            self.mm.set({"start":0 , 'stop':self.sim_time, 'origin':nest.biological_time}) # TODO: record with out_lag aswell?
+            # TODO: record with out_lag aswell?
+            self.mm.set({"start": 0, 'stop': self.sim_time, 'origin': nest.biological_time})
             if self.sim["recording_backend"] == "ascii":
                 nest.SetKernelStatus({"data_prefix": f"it{str(self.iteration).zfill(8)}_"})
-        
+
         nest.Simulate(T)
         self.iteration += 1
 
@@ -180,7 +181,7 @@ class NestNetwork(Network):
         for sample_idx in range(n_samples):
             x_test, y_actual = self.generate_bar_data(sample_idx)
             self.set_input(x_test)
-            self.mm.set({"start":self.sim["out_lag"] , 'stop':self.sim_time, 'origin':nest.biological_time})
+            self.mm.set({"start": self.sim["out_lag"], 'stop': self.sim_time, 'origin': nest.biological_time})
             self.simulate(self.sim_time)
             mm_data = pd.DataFrame.from_dict(self.mm.events)
             U_Y = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]

@@ -10,14 +10,12 @@ class Network:
         self.nrn = nrn  # neuron parameters
         self.syn = syns  # synapse parameters
 
-
         self.dims = sim["dims"]
         self.sim_time = sim["SIM_TIME"]
         self.dt = sim["delta_t"]
         self.teacher = sim["teacher"]
         self.sigma_noise = sim["sigma"]
         self.record_interval = sim["record_interval"]
-
 
         self.gamma = nrn["gamma"]
         self.beta = nrn["beta"]
@@ -28,8 +26,8 @@ class Network:
         self.Wmin = syns["Wmin"]
         self.Wmax = syns["Wmax"]
 
-        self.iteration = 0 # number of times simulate() has been called. mostly used for storing recordings
-        self.epoch = 0 # number of training epochs passed
+        self.iteration = 0  # number of times simulate() has been called. mostly used for storing recordings
+        self.epoch = 0  # number of training epochs passed
 
         if self.teacher:
             self.dims_teacher = sim["dims_teacher"]
