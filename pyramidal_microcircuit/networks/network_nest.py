@@ -114,9 +114,12 @@ class NestNetwork(Network):
                 self.set_weights(w_up * l_next.gb / (l_next.gl + l_next.ga + l_next.gb) *
                                  (l_current.gl + l_current.gd) / l_current.gd, l_current.ip)
 
-    def simulate(self, T):
-        # if self.sim["recording_backend"] == "ascii":
-        nest.SetKernelStatus({"data_prefix": f"it{str(self.iteration).zfill(8)}_"})
+    def simulate(self, T, enable_recording=False):
+        if enable_recording:
+            self.mm.set({"start":0 , 'stop':self.sim_time, 'origin':nest.biological_time}) # TODO: record with out_lag aswell?
+            if self.sim["recording_backend"] == "ascii":
+                nest.SetKernelStatus({"data_prefix": f"it{str(self.iteration).zfill(8)}_"})
+        
         nest.Simulate(T)
         self.iteration += 1
 
