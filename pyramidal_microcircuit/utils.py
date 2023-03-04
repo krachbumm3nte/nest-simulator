@@ -64,7 +64,7 @@ def store_synaptic_weights(network: Network, dirname, filename="weights.json"):
                 layer[k] = v.tolist()
 
     with open(os.path.join(dirname, filename), "w") as f:
-        json.dump(weights, f)
+        json.dump(weights, f, indent=4)
 
 
 def setup_models(spiking, nrn, sim, syn, record_weights=False):

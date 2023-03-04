@@ -13,7 +13,7 @@ sim_params = {
     "init_self_pred": True,  # initialize feedback weights to self-predicting state
     "plasticity": True,  # enable synaptic plasticity
     "SIM_TIME": 100,  # simulation time per input pattern in ms
-    "n_runs": 10000,  # number of training iterations
+    "n_epochs": 1000,  # number of training iterations
     "noise": False,  # apply noise to membrane potentials
     "sigma": sigma,
     "noise_factor": np.sqrt(delta_t) * sigma,  # constant noise factor for numpy simulations
