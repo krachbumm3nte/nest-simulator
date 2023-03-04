@@ -150,6 +150,7 @@ class NestNetwork(Network):
                     self.U_y_record = np.concatenate((self.U_y_record, np.expand_dims(U_y, 0)), axis=0)
 
                 self.train_loss.append((self.epoch, mse(y, U_y)))
+            self.reset()
 
     def test_teacher(self, n_samples=5):
         raise DeprecationWarning

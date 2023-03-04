@@ -88,7 +88,7 @@ class NumpyNetwork(Network):
             self.target_seq = y_train
             for i in range(int(self.sim_time/self.dt)):
                 self.simulate(self.target_filtered)
-        self.reset()
+            self.reset()
 
     def test_bars(self, n_samples=8):
         acc = []
