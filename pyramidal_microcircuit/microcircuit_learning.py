@@ -100,7 +100,7 @@ if not args.cont:
     utils.store_synaptic_weights(net, root_dir, "init_weights.json")
 
 print("setup complete, running simulations...")
-
+net.test_bars()
 try:
     for epoch in range(sim_params["n_epochs"] + 1):
         start = time()
