@@ -68,8 +68,8 @@ if __name__ == "__main__":
                 print()
 
             # remove simulation data from the previous run
-            for file in sorted(os.listdir(datadir)):
-                f = os.path.join(datadir, file)
-                os.remove(f)
+            # for file in sorted(os.listdir(datadir)):
+            #     f = os.path.join(datadir, file)
+            #     os.remove(f)
     print(f"\n\nAll runs completed.")
     print(f"{sum(test_results)}/{len(test_results)} tests passed.")

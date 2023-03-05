@@ -68,6 +68,7 @@ else:
 
 if args.weights:
     with open(args.weights) as f:
+        print(f"initializing network with weights from {args.weights}")
         weight_dict = json.load(f)
     net.set_weights(weight_dict)
 

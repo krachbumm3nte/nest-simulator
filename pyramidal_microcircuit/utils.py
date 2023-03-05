@@ -6,7 +6,7 @@ import os
 import glob
 import re
 from scipy.ndimage import uniform_filter1d
-import torch
+# import torch
 from networks.network import Network
 import json
 from copy import deepcopy
@@ -32,20 +32,20 @@ def setup_nest(sim_params, datadir=os.getcwd()):
     nest.SetKernelStatus({"data_path": datadir})
 
 
-def setup_torch(use_cuda=True):
-    # We don't make use of gradients, so we can save some compute time here.
-    torch.set_grad_enabled(False)
+# def setup_torch(use_cuda=True):
+#     # We don't make use of gradients, so we can save some compute time here.
+#     torch.set_grad_enabled(False)
 
-    device_name = "cpu"
-    if use_cuda:
-        if not torch.cuda.is_available():
-            print("Cuda is not available on this system, computing on CPU")
-        else:
-            device_name = "cuda"
-            torch.set_default_tensor_type('torch.cuda.FloatTensor')
+#     device_name = "cpu"
+#     if use_cuda:
+#         if not torch.cuda.is_available():
+#             print("Cuda is not available on this system, computing on CPU")
+#         else:
+#             device_name = "cuda"
+#             torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
-    device = torch.device(device_name)
-    return device
+#     device = torch.device(device_name)
+#     return device
 
 
 def rolling_avg(input, size):

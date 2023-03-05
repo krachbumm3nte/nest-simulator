@@ -23,7 +23,7 @@ sim_params = {
     "k_yh": 10,  # hidden to output teacher weight scaling factor
     "k_hx": 1,  # input to hidden teacher weight scaling factor
     "use_mm": False,  # If true, record activity of nest neurons using multimeters
-    "recording_backend": "ascii",  # Backend for NEST multimeter recordings
+    "recording_backend": "memory",  # Backend for NEST multimeter recordings
 }
 
 
