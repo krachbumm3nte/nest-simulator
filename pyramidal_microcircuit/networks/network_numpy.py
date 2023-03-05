@@ -11,15 +11,11 @@ class NumpyNetwork(Network):
 
     def __init__(self, sim, nrn, syn) -> None:
         super().__init__(sim, nrn, syn)
-
-        self.conns = {}
-
         self.u_target = np.zeros(self.dims[-1])
         self.output_loss = []
         self.r_in = np.zeros(self.dims[0])
         self.setup_populations()
         self.reset_records()
-        self.iteration = 0
 
     def setup_populations(self):
         eta = {}
@@ -75,6 +71,7 @@ class NumpyNetwork(Network):
         return weights
 
     def test_teacher(self, T):
+        raise NotImplementedError
         for i in range(int(T/self.dt)):
             # do not inject output layer current during testing
             self.simulate(np.zeros(self.dims[-1]), False, False)
@@ -99,11 +96,11 @@ class NumpyNetwork(Network):
             self.set_input(x_test)
             for i in range(int(self.sim_time/self.dt)):
                 self.simulate(lambda: np.zeros(self.dims[-1]), True, False)
-            print(self.U_y_record.shape)
-            y_pred = self.U_y_record[int((self.sim["out_lag"]/self.sim_time)*self.record_interval):]
+            y_pred = np.mean(self.U_y_record[int((self.sim["out_lag"]/self.sim_time)*self.record_interval):], axis=0)
             loss_mse.append(mse(y_actual, y_pred))
             acc.append(np.argmax(y_actual) == np.argmax(y_pred))
             self.reset()
+            self.reset_records()
 
         self.test_acc.append([self.epoch, np.mean(acc)])
         self.test_loss.append([self.epoch, np.mean(loss_mse)])
