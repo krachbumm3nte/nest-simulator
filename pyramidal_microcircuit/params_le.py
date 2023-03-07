@@ -8,11 +8,11 @@ sigma = 0.3  # standard deviation for membrane potential noise
 
 sim_params = {
     "delta_t": delta_t,
-    "threads": 7,
-    "record_interval": 1,  # interval for storing membrane potentials in ms
+    "threads": 9,
+    "record_interval": 0.2,  # interval for storing membrane potentials in ms
     "init_self_pred": True,  # initialize feedback weights to self-predicting state
     "plasticity": True,  # enable synaptic plasticity
-    "SIM_TIME": 5,  # simulation time per input pattern in ms
+    "SIM_TIME": 10,  # simulation time per input pattern in ms
     "n_epochs": 1000,  # number of training iterations
     "noise": False,  # apply noise to membrane potentials
     "sigma": sigma,
@@ -22,8 +22,10 @@ sim_params = {
     "dims_teacher": [9, 10, 3],  # teacher network dimensions.
     "k_yh": 10,  # hidden to output teacher weight scaling factor
     "k_hx": 1,  # input to hidden teacher weight scaling factor
-    "use_mm": False,  # If true, record activity of nest neurons using multimeters
+    "use_mm": True,  # If true, record activity of nest neurons using multimeters
     "recording_backend": "memory",  # Backend for NEST multimeter recordings
+    "out_lag": 4,  # lag in ms before recording output neuron voltage during testing
+    "test_interval": 10, # test the network every N epochs 
 }
 
 
@@ -33,8 +35,9 @@ g_a = 0.06  # apical compartment coupling conductance
 g_d = 0.1  # basal compartment coupling conductance
 g_som = 0.06
 lambda_ah = g_a / (g_d + g_a + g_l)  # Useful constant for scaling learning rates
-lambda_bh = g_som / (g_d + g_som + g_l)  # Useful constant for scaling learning rates
-lambda_out = g_som / (g_d + g_som + g_l)
+lambda_bh = g_d / (g_d + g_a + g_l)  # Useful constant for scaling learning rates
+
+lambda_out = g_d / (g_d + g_l)
 g_l_eff = g_l + g_d + g_a
 
 
@@ -61,7 +64,7 @@ neuron_params = {
     'beta': beta,
     'theta': theta,
     "g_l_eff": g_l_eff,
-    "weight_scale": 2000,
+    "weight_scale": 250,
     "latent_equilibrium": True
 }
 
@@ -118,7 +121,7 @@ neuron_params["intn"] = intn_params
 
 Wmin, Wmax = -4, 4
 # Dicts derived from this can be passed directly to nest.Connect() as synapse parameters
-tau_delta = 0.1
+tau_delta = 1
 syn_params = {
     'synapse_model': None,  # Synapse model (for NEST simulations only)
     'tau_Delta': tau_delta,  # Synaptic time constant
@@ -127,8 +130,8 @@ syn_params = {
     'delay': sim_params['delta_t'],  # synaptic delay
     'tau_Delta': tau_delta,
     'eta': {
-        'ip': [0.04, 0],
+        'ip': [0.02, 0],
         'pi': [0, 0],
-        'up': [0.1, 0.02],
+        'up': [0.05, 0.01],
     }
 }

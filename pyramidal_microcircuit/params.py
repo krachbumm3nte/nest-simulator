@@ -24,7 +24,9 @@ sim_params = {
     "k_hx": 1,  # input to hidden teacher weight scaling factor
     "use_mm": True,  # If true, record activity of nest neurons using multimeters
     "recording_backend": "memory",  # Backend for NEST multimeter recordings
-    "out_lag": 80  # lag in ms before recording output neuron voltage during testing
+    "out_lag": 65,  # lag in ms before recording output neuron voltage during testing
+    "test_interval": 25, # test the network every N epochs 
+    "spiking": True,
 }
 
 
@@ -63,7 +65,7 @@ neuron_params = {
     'beta': beta,
     'theta': theta,
     "g_l_eff": g_l_eff,
-    "weight_scale": 250,
+    "weight_scale": 5,
     "latent_equilibrium": False
 }
 
@@ -79,7 +81,7 @@ pyr_params = {
     'soma': deepcopy(comp_defaults),
     'basal': deepcopy(comp_defaults),
     'apical_lat': deepcopy(comp_defaults),
-    'tau_m': 1,  # Membrane time constant
+    'tau_m': 2,  # Membrane time constant
     'C_m': 1.0,  # Membrane capacitance
     'lambda': neuron_params["g_som"],  # Interneuron nudging conductance
     'gamma': gamma,
@@ -120,7 +122,7 @@ neuron_params["intn"] = intn_params
 
 Wmin, Wmax = -4, 4
 # Dicts derived from this can be passed directly to nest.Connect() as synapse parameters
-tau_delta = 1
+tau_delta = 2
 syn_params = {
     'synapse_model': None,  # Synapse model (for NEST simulations only)
     'tau_Delta': tau_delta,  # Synaptic time constant
@@ -129,8 +131,11 @@ syn_params = {
     'delay': sim_params['delta_t'],  # synaptic delay
     'tau_Delta': tau_delta,
     'eta': {
-        'ip': [0.002, 0],
+        # 'ip': [0.002, 0],
+        # 'pi': [0, 0],
+        # 'up': [0.005, 0.001],
+        'ip': [0.00001, 0],
         'pi': [0, 0],
-        'up': [0.005, 0.001],
+        'up': [0.000025, 0.000005],
     }
 }

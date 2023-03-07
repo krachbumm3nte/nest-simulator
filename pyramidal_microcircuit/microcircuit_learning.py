@@ -10,6 +10,7 @@ import os
 import json
 import sys
 import argparse
+import pandas as pd
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--network",
@@ -26,14 +27,20 @@ parser.add_argument("--cont",
 parser.add_argument("--weights",
                     type=str,
                     help="Start simulations from a given set of weights to ensure comparable results.")
+parser.add_argument("--plot",
+                    type=int,
+                    default=0,
+                    help="generate a plot of training progress after every n epochs.")
+
 args = parser.parse_args()
 if args.le:
     from params_le import *  # nopep8
 else:
     from params import *  # nopep8
 
-
+print(args)
 neuron_params["latent_equilibrium"] = args.le
+sim_params["network_type"] = args.network
 
 if args.cont:
     root_dir = args.cont
@@ -48,13 +55,12 @@ if args.cont:
     with open(os.path.join(root_dir, "progress.json"), "r") as f:
         progress = json.load(f)
 else:
-    root_dir, imgdir, datadir = utils.setup_directories()
+    root_dir, imgdir, datadir = utils.setup_directories(type=args.network)
 sim_params["timestamp"] = root_dir.split(os.path.sep)[-1]
 
 
 spiking = args.network == "snest"
 sim_params["spiking"] = spiking
-sim_params["network_type"] = args.network
 
 utils.setup_nest(sim_params, datadir)
 utils.setup_models(spiking, neuron_params, sim_params, syn_params, False)
@@ -62,9 +68,6 @@ if args.network == "numpy":
     net = NumpyNetwork(sim_params, neuron_params, syn_params)
 else:
     net = NestNetwork(sim_params, neuron_params, syn_params, spiking)
-    print(nest.GetConnections())
-    print(nest.GetNodes())
-
 
 if args.weights:
     with open(args.weights) as f:
@@ -77,10 +80,7 @@ dims = sim_params["dims"]
 cmap_1 = plt.cm.get_cmap('hsv', dims[1]+1)
 cmap_2 = plt.cm.get_cmap('hsv', dims[2]+1)
 
-plot_interval = 50
-
-T = []
-
+simulation_times = []
 if args.cont:
     net.test_acc = progress["test_acc"]
     net.test_loss = progress["test_loss"]
@@ -101,22 +101,41 @@ if not args.cont:
     utils.store_synaptic_weights(net, root_dir, "init_weights.json")
 
 print("setup complete, running simulations...")
-net.test_bars()
-try:
-    for epoch in range(sim_params["n_epochs"] + 1):
-        start = time()
-        net.train_epoch_bars()
-        t = time() - start
-        T.append(t)
+plot_every = args.plot
+start_training = time()
 
-        if epoch % plot_interval == 0:
-            print(f"plotting epoch {epoch}")
-            start = time()
+if spiking:
+    sr = nest.Create("spike_recorder")
+    nest.Connect(nest.GetNodes({"model": neuron_params["model"]}), sr)
+
+
+try: # catches KeyboardInterruptException to ensure proper cleanup and storage of progress
+    net.test_bars()
+    for epoch in range(sim_params["n_epochs"] + 1):
+        start_epoch = time()
+        net.train_epoch_bars()
+        t = time() - start_epoch
+        simulation_times.append(t)
+
+        if epoch % sim_params["test_interval"] == 0:
+            if spiking:
+                sr.set({"start": 0, "stop": 8*sim_params["SIM_TIME"], "origin":nest.biological_time, "n_events":0})
             net.test_bars()
-            fig, axes = plt.subplots(4, 2, constrained_layout=True)
-            [ax0, ax1, ax2, ax3, ax4, ax5, ax6, ax7] = axes.flatten()
+            if spiking:
+                spikes = pd.DataFrame.from_dict(sr.events).groupby("senders")
+                n_spikes_avg = spikes.count()["times"].mean()
+                rate = 1000 *  n_spikes_avg / (8*sim_params["SIM_TIME"])
+                print(f"test completed, acc: {net.test_acc[-1][1]:.3f}, loss: {net.test_loss[-1][1]:.3f}, neurons firing at {rate:.1f}Hz\n")
+
+        
+        if plot_every > 0 and epoch % plot_every == 0:
+            print(f"plotting epoch {epoch}")
+
             plt.rcParams['savefig.dpi'] = 300
 
+            fig, axes = plt.subplots(4, 2, constrained_layout=True)
+            [ax0, ax1, ax2, ax3, ax4, ax5, ax6, ax7] = axes.flatten()
+            
             intn_error = np.square(net.U_y_record - net.U_i_record)
 
             mean_error = utils.rolling_avg(np.mean(intn_error, axis=1), size=200)
@@ -126,7 +145,6 @@ try:
             ax0_2 = ax0.secondary_yaxis("right")
             ax0_2.set_yticks([intn_error_now])
 
-            # plot apical error
             apical_error = np.linalg.norm(net.V_ah_record, axis=1)
             ax1.plot(utils.rolling_avg(apical_error, size=150))
 
@@ -144,13 +162,15 @@ try:
 
             fb_error_now = mse(WHY.flatten(), -WHI.flatten())
             fb_error.append([epoch, fb_error_now])
-            ax2.plot(*zip(*fb_error), label=f"FB error: {fb_error_now:.3f}")
+
 
             ff_error_now = mse(WYH.flatten(), WIH.flatten())
             ff_error.append([epoch, ff_error_now])
+
+            ax2.plot(*zip(*fb_error), label=f"FB error: {fb_error_now:.3f}")
             ax3.plot(*zip(*ff_error), label=f"FF error: {ff_error_now:.3f}")
 
-            # plot weights
+            # plot synaptic weights
             for i in range(dims[2]):
                 col = cmap_2(i)
                 for j in range(dims[1]):
@@ -185,14 +205,11 @@ try:
             plt.savefig(os.path.join(imgdir, f"{epoch}.png"))
             plt.close()
 
-            plot_duration = time() - start
-            print(f"sim time: {np.mean(T[-50:]):.2f}s. plot time:{plot_duration:.2f}s.")
+            print(f"epoch time: {np.mean(simulation_times[-50:]):.2f}s.")
             print(f"train loss: {net.train_loss[-1][1]:.4f}, test loss: {net.test_loss[-1][1]:.4f}")
             print(f"ff error: {ff_error_now:.5f}, fb error: {fb_error_now:.5f}")
             print(f"apical error: {apical_error_now:.2f}, intn error: {intn_error_now:.4f}\n")
 
-        elif epoch % 100 == 0:
-            print(f"epoch {epoch} completed.")
 except KeyboardInterrupt:
     print("KeyboardInterrupt received - storing progress...")
 finally:

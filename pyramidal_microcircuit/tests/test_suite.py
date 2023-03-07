@@ -6,6 +6,7 @@ from copy import deepcopy
 import traceback
 from tests01_neuron_dynamics import *
 from tests02_plasticity import *
+from itertools import permutations
 sys.path.append("/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit")
 import utils  # nopep8
 from params import *  # nopep8
@@ -34,8 +35,9 @@ if __name__ == "__main__":
     plot_all_runs = True
     test_results = []
 
-    for use_spiking_neurons in [False, True]:
+    for use_spiking_neurons, latent_equilibrium in permutations([False, True], [False, True]):
         spiking_str = 'spiking' if use_spiking_neurons else 'rate'
+        le_str = '_le' if latent_equilibrium else ""
         for test_class in classes:
             test_name = test_class.__name__
             nest.ResetKernel()

@@ -32,7 +32,7 @@ class AbstractLayer():
         self.gamma = nrn["gamma"]
         self.beta = nrn["beta"]
         self.theta = nrn["theta"]
-        self.weight_scale = nrn["weight_scale"]
+        self.weight_scale = nrn["weight_scale"] if sim["spiking"] else 1
 
     @abstractmethod
     def update(self, r_in, u_next, plasticity, noise_on=False):
