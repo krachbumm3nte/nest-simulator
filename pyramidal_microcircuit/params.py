@@ -9,7 +9,7 @@ sigma = 0.3  # standard deviation for membrane potential noise
 sim_params = {
     "delta_t": delta_t,
     "threads": 9,
-    "record_interval": 5,  # interval for storing membrane potentials in ms
+    "record_interval": 1,  # interval for storing membrane potentials in ms
     "init_self_pred": True,  # initialize feedback weights to self-predicting state
     "plasticity": True,  # enable synaptic plasticity
     "SIM_TIME": 100,  # simulation time per input pattern in ms
@@ -66,7 +66,7 @@ neuron_params = {
     'theta': theta,
     "g_l_eff": g_l_eff,
     "weight_scale": 5,
-    "latent_equilibrium": False
+    "latent_equilibrium": True
 }
 
 
@@ -81,7 +81,7 @@ pyr_params = {
     'soma': deepcopy(comp_defaults),
     'basal': deepcopy(comp_defaults),
     'apical_lat': deepcopy(comp_defaults),
-    'tau_m': 2,  # Membrane time constant
+    'tau_m': 1,  # Membrane time constant
     'C_m': 1.0,  # Membrane capacitance
     'lambda': neuron_params["g_som"],  # Interneuron nudging conductance
     'gamma': gamma,
@@ -122,7 +122,7 @@ neuron_params["intn"] = intn_params
 
 Wmin, Wmax = -4, 4
 # Dicts derived from this can be passed directly to nest.Connect() as synapse parameters
-tau_delta = 2
+tau_delta = 1
 syn_params = {
     'synapse_model': None,  # Synapse model (for NEST simulations only)
     'tau_Delta': tau_delta,  # Synaptic time constant
@@ -134,8 +134,8 @@ syn_params = {
         # 'ip': [0.002, 0],
         # 'pi': [0, 0],
         # 'up': [0.005, 0.001],
-        'ip': [0.00001, 0],
+        'ip': [0.0001, 0],
         'pi': [0, 0],
-        'up': [0.000025, 0.000005],
+        'up': [0.00025, 0.00005],
     }
 }

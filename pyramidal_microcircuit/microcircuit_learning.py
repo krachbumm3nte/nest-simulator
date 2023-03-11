@@ -11,11 +11,12 @@ import json
 import sys
 import argparse
 import pandas as pd
+from datetime import timedelta
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--network",
                     type=str, choices=["numpy", "rnest", "snest"],
-                    default="numpy",
+                    default="snest",
                     help="""Type of network to train. Choice between exact mathematical simulation ('numpy') and NEST simulations with rate- or spiking neurons ('rnest', 'snest')""")
 parser.add_argument("--le",
                     action="store_true",
@@ -29,18 +30,12 @@ parser.add_argument("--weights",
                     help="Start simulations from a given set of weights to ensure comparable results.")
 parser.add_argument("--plot",
                     type=int,
-                    default=0,
+                    default=100,
                     help="generate a plot of training progress after every n epochs.")
 
 args = parser.parse_args()
-if args.le:
-    from params_le import *  # nopep8
-else:
-    from params import *  # nopep8
 
-print(args)
-neuron_params["latent_equilibrium"] = args.le
-sim_params["network_type"] = args.network
+
 
 if args.cont:
     root_dir = args.cont
@@ -52,19 +47,27 @@ if args.cont:
         sim_params = all_params["simulation"]
         neuron_params = all_params["neurons"]
         syn_params = all_params["synapses"]
+        args.le = neuron_params["latent_equilibrium"]
     with open(os.path.join(root_dir, "progress.json"), "r") as f:
         progress = json.load(f)
+    spiking = sim_params["spiking"]
 else:
+    if args.le:
+        from params_le import *  # nopep8
+    else:
+        from params import *  # nopep8
     root_dir, imgdir, datadir = utils.setup_directories(type=args.network)
-sim_params["timestamp"] = root_dir.split(os.path.sep)[-1]
+    spiking = args.network == "snest"
+    sim_params["network_type"] = args.network
+    sim_params["timestamp"] = root_dir.split(os.path.sep)[-1]
+    sim_params["spiking"] = spiking
+    # neuron_params["latent_equilibrium"] = args.le
 
 
-spiking = args.network == "snest"
-sim_params["spiking"] = spiking
 
 utils.setup_nest(sim_params, datadir)
 utils.setup_models(spiking, neuron_params, sim_params, syn_params, False)
-if args.network == "numpy":
+if sim_params["network_type"] == "numpy":
     net = NumpyNetwork(sim_params, neuron_params, syn_params)
 else:
     net = NestNetwork(sim_params, neuron_params, syn_params, spiking)
@@ -73,12 +76,13 @@ if args.weights:
     with open(args.weights) as f:
         print(f"initializing network with weights from {args.weights}")
         weight_dict = json.load(f)
-    net.set_weights(weight_dict)
+    net.set_all_weights(weight_dict)
 
 dims = sim_params["dims"]
 
 cmap_1 = plt.cm.get_cmap('hsv', dims[1]+1)
 cmap_2 = plt.cm.get_cmap('hsv', dims[2]+1)
+
 
 simulation_times = []
 if args.cont:
@@ -90,9 +94,14 @@ if args.cont:
     net.U_i_record = np.array(progress["U_i_record"])
     ff_error = progress["ff_error"]
     fb_error = progress["fb_error"]
+    epoch_offset = progress["epochs_completed"]
+    net.epoch = epoch_offset
+    print(f"continuing training from epoch {epoch_offset}")
 else:
     ff_error = []
     fb_error = []
+    epoch_offset = 0
+
 
 if not args.cont:
     # dump simulation parameters and initial weights to .json files
@@ -110,12 +119,14 @@ if spiking:
 
 
 try: # catches KeyboardInterruptException to ensure proper cleanup and storage of progress
-    net.test_bars()
-    for epoch in range(sim_params["n_epochs"] + 1):
-        start_epoch = time()
+    t_start_training = time()
+    if not args.cont:
+        net.test_bars()
+    for epoch in range(epoch_offset, sim_params["n_epochs"] + 1):
+        t_start_epoch = time()
         net.train_epoch_bars()
-        t = time() - start_epoch
-        simulation_times.append(t)
+        t_epoch = time() - t_start_epoch
+        simulation_times.append(t_epoch)
 
         if epoch % sim_params["test_interval"] == 0:
             if spiking:
@@ -125,8 +136,13 @@ try: # catches KeyboardInterruptException to ensure proper cleanup and storage o
                 spikes = pd.DataFrame.from_dict(sr.events).groupby("senders")
                 n_spikes_avg = spikes.count()["times"].mean()
                 rate = 1000 *  n_spikes_avg / (8*sim_params["SIM_TIME"])
-                print(f"test completed, acc: {net.test_acc[-1][1]:.3f}, loss: {net.test_loss[-1][1]:.3f}, neurons firing at {rate:.1f}Hz\n")
-
+                print(f"neurons firing at {rate:.1f}Hz")
+            
+            print(f"test completed, acc: {net.test_acc[-1][1]:.3f}, loss: {net.test_loss[-1][1]:.3f}")
+            if epoch > 0:
+                t_processed = time() - t_start_training
+                t_epoch = t_processed / epoch
+                print(f"\tETA: {timedelta(seconds=np.round(t_epoch * (sim_params['n_epochs']-epoch)))}\n")
         
         if plot_every > 0 and epoch % plot_every == 0:
             print(f"plotting epoch {epoch}")
@@ -223,7 +239,8 @@ finally:
         "fb_error": fb_error,
         "V_ah_record": net.V_ah_record.tolist(),
         "U_y_record": net.U_y_record.tolist(),
-        "U_i_record": net.U_i_record.tolist()
+        "U_i_record": net.U_i_record.tolist(),
+        "epochs_completed": epoch
     }
     with open(os.path.join(root_dir, "progress.json"), "w") as f:
         json.dump(progress, f, indent=4)

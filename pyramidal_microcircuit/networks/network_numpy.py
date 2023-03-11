@@ -173,7 +173,7 @@ class NumpyNetwork(Network):
         for l in self.layers:
             l.reset()
 
-    def set_weights(self, weights):
+    def set_all_weights(self, weights):
         for i, w in enumerate(weights[:-1]):
             self.layers[i].W_up = w["up"].copy()
             self.layers[i].W_down = w["down"].copy()

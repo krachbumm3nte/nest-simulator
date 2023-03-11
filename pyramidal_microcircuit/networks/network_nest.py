@@ -108,10 +108,10 @@ class NestNetwork(Network):
             l_current.set_feedback_conns(l_next.pyr)
             if self.sim["init_self_pred"]:
                 w_down = self.get_weight_array_from_syn(l_current.down)
-                self.set_weights(-w_down, l_current.pi)
+                self.set_weights_from_syn(-w_down, l_current.pi)
                 w_up = self.get_weight_array_from_syn(l_next.up)
 
-                self.set_weights(w_up * l_next.gb / (l_next.gl + l_next.ga + l_next.gb) *
+                self.set_weights_from_syn(w_up * l_next.gb / (l_next.gl + l_next.ga + l_next.gb) *
                                  (l_current.gl + l_current.gd) / l_current.gd, l_current.ip)
 
     def simulate(self, T, enable_recording=False):
@@ -249,10 +249,18 @@ class NestNetwork(Network):
             l.reset()
         self.mm.n_events = 0
 
-    def set_weights(self, weights, synapse_collection):
+    def set_weights_from_syn(self, weights, synapse_collection):
         # TODO: match numpy variant
         for i, source_id in enumerate(sorted(set(synapse_collection.sources()))):
             for j, target_id in enumerate(sorted(set(synapse_collection.targets()))):
                 source = nest.GetNodes({"global_id": source_id})
                 target = nest.GetNodes({"global_id": target_id})
                 nest.GetConnections(source, target).set({"weight": weights[j][i]})
+
+    def set_all_weights(self, weight_dict):
+        for i, layer in enumerate(self.layers[:-1]):
+            self.set_weights_from_syn(weight_dict[i]["up"], layer.up)
+            self.set_weights_from_syn(weight_dict[i]["ip"], layer.ip)
+            self.set_weights_from_syn(weight_dict[i]["pi"], layer.pi)
+            self.set_weights_from_syn(weight_dict[i]["down"], layer.down)
+        self.set_weights_from_syn(weight_dict[-1]["up"], self.layers[-1].up)

@@ -381,7 +381,7 @@ class NetworkPlasticity(TestClass):
 
         self.numpy_net = NumpyNetwork(deepcopy(sim), deepcopy(nrn), deepcopy(syn))
         self.nest_net = NestNetwork(deepcopy(sim), deepcopy(nrn), deepcopy(syn), self.spiking_neurons)
-        self.numpy_net.set_weights(self.nest_net.get_weight_dict())
+        self.numpy_net.set_all_weights(self.nest_net.get_weight_dict())
 
     def run(self):
 

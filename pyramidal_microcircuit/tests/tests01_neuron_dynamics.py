@@ -477,7 +477,7 @@ class NetworkDynamics(TestClass):
         self.disable_plasticity()
         self.numpy_net = NumpyNetwork(deepcopy(self.sim), deepcopy(self.nrn), deepcopy(self.syn))
         self.nest_net = NestNetwork(deepcopy(self.sim), deepcopy(self.nrn), deepcopy(self.syn), self.spiking_neurons)
-        self.numpy_net.set_weights(self.nest_net.get_weight_dict())
+        self.numpy_net.set_all_weights(self.nest_net.get_weight_dict())
 
         self.starting_weights = self.nest_net.get_weight_dict()
 

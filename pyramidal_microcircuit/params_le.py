@@ -24,8 +24,9 @@ sim_params = {
     "k_hx": 1,  # input to hidden teacher weight scaling factor
     "use_mm": True,  # If true, record activity of nest neurons using multimeters
     "recording_backend": "memory",  # Backend for NEST multimeter recordings
-    "out_lag": 4,  # lag in ms before recording output neuron voltage during testing
+    "out_lag": 6.5,  # lag in ms before recording output neuron voltage during testing
     "test_interval": 10, # test the network every N epochs 
+    "spiking": True,
 }
 
 
@@ -64,7 +65,7 @@ neuron_params = {
     'beta': beta,
     'theta': theta,
     "g_l_eff": g_l_eff,
-    "weight_scale": 250,
+    "weight_scale": 1500,
     "latent_equilibrium": True
 }
 

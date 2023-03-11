@@ -50,7 +50,7 @@ class Network:
         return np.random.uniform(wmin, wmax, (n_out, n_in))
 
     @abstractmethod
-    def set_weights(self, weights):
+    def set_all_weights(self, weights):
         pass
 
     @abstractmethod
