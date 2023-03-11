@@ -12,7 +12,7 @@ import json
 from copy import deepcopy
 
 
-def setup_directories(root="/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/runs", type=""):
+def setup_directories(root=os.path.join(os.getcwd(), "runs"), type=""):
     # TODO: remove personal path!
     root = os.path.join(root, f"{type}_{datetime.now().strftime('%Y_%m_%d-%H_%M_%S')}")
 
