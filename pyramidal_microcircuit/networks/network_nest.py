@@ -10,8 +10,8 @@ from .layer_NEST import NestLayer, NestOutputLayer
 
 class NestNetwork(Network):
 
-    def __init__(self, sim, nrn, syn, spiking=True) -> None:
-        super().__init__(sim, nrn, syn)
+    def __init__(self, sim, nrn, syn, mode, spiking=True) -> None:
+        super().__init__(sim, nrn, syn, mode)
 
         self.noise = None
 
@@ -137,49 +137,33 @@ class NestNetwork(Network):
         for i in range(self.dims[0]):
             self.input_neurons[i].set({"soma": {"I_e": input_currents[i] / self.nrn["tau_x"]}})
 
-    def train_epoch(self, x_batch, y_batch):
-
+    def train_batch(self, x_batch, y_batch):
         for i, (x, y) in enumerate(zip(x_batch, y_batch)):
             self.set_input(x)
             self.set_target(y)
             self.simulate(self.sim_time)
-            if i == len(x)-1:
-                U_y = [nrn.get("soma")["V_m"] for nrn in self.layers[-1].pyr]
-                if not self.use_mm:
-                    U_h = [nrn.get("soma")["V_m"] for nrn in self.layers[0].pyr]
-                    V_ah = [nrn.get("apical_lat")["V_m"] for nrn in self.layers[0].pyr]
-                    U_i = [nrn.get("soma")["V_m"] for nrn in self.layers[0].intn]
+            # if i == len(x)-1:
+            #     U_y = [nrn.get("soma")["V_m"] for nrn in self.layers[-1].pyr]
+            #     if not self.use_mm:
+            #         U_h = [nrn.get("soma")["V_m"] for nrn in self.layers[0].pyr]
+            #         V_ah = [nrn.get("apical_lat")["V_m"] for nrn in self.layers[0].pyr]
+            #         U_i = [nrn.get("soma")["V_m"] for nrn in self.layers[0].intn]
 
-                    self.V_ah_record = np.concatenate((self.V_ah_record, np.expand_dims(V_ah, 0)), axis=0)
-                    self.U_h_record = np.concatenate((self.U_h_record, np.expand_dims(U_h, 0)), axis=0)
-                    self.U_i_record = np.concatenate((self.U_i_record, np.expand_dims(U_i, 0)), axis=0)
-                    self.U_y_record = np.concatenate((self.U_y_record, np.expand_dims(U_y, 0)), axis=0)
+            #         self.V_ah_record = np.concatenate((self.V_ah_record, np.expand_dims(V_ah, 0)), axis=0)
+            #         self.U_h_record = np.concatenate((self.U_h_record, np.expand_dims(U_h, 0)), axis=0)
+            #         self.U_i_record = np.concatenate((self.U_i_record, np.expand_dims(U_i, 0)), axis=0)
+            #         self.U_y_record = np.concatenate((self.U_y_record, np.expand_dims(U_y, 0)), axis=0)
 
-                self.train_loss.append((self.epoch, mse(y, U_y)))
+            #     self.train_loss.append((self.epoch, mse(y, U_y)))
             self.reset()
 
-    def test_teacher(self, n_samples=5):
-        raise DeprecationWarning
-        assert self.teacher
-        loss = []
-        for i in range(n_samples):
-            x_test, y_actual = self.generate_teacher_data()
-
-            WHX = self.get_weight_array(self.pyr_pops[0], self.pyr_pops[1])
-            WYH = self.get_weight_array(self.pyr_pops[1], self.pyr_pops[2])
-            y_pred = self.nrn["lambda_out"] * self.weight_scale * \
-                WYH @ self.phi(self.nrn["lambda_ah"] * self.weight_scale * WHX @ x_test)
-            loss.append(mse(y_actual, y_pred))
-        self.test_loss.append(np.mean(loss))
-
-    def test_bars(self, n_samples=8):
+    def test_batch(self, x_batch, y_batch):
         acc = []
         loss_mse = []
         # set all learning rates to zero
         self.disable_learning()
 
-        for sample_idx in range(n_samples):
-            x_test, y_actual = self.generate_bar_data(sample_idx)
+        for x_test, y_actual in zip(x_batch, y_batch):
             self.set_input(x_test)
             self.mm.set({"start": self.sim["out_lag"], 'stop': self.sim_time, 'origin': nest.biological_time})
             self.simulate(self.sim_time)
@@ -190,11 +174,9 @@ class NestNetwork(Network):
             acc.append(np.argmax(y_actual) == np.argmax(y_pred))
             self.reset()
 
-        self.test_acc.append([self.epoch, np.mean(acc)])
-        self.test_loss.append([self.epoch, np.mean(loss_mse)])
-
         # set learning rates to their original values
         self.enable_learning()
+        return np.mean(acc), np.mean(loss_mse)
 
     def disable_learning(self):
         nest.GetConnections(synapse_model=self.syn["synapse_model"]).set({"eta": 0})

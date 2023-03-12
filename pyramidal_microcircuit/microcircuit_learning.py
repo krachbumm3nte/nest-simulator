@@ -32,6 +32,10 @@ parser.add_argument("--plot",
                     type=int,
                     default=100,
                     help="generate a plot of training progress after every n epochs.")
+parser.add_argument("--mode",
+                    type=str,
+                    default="bars",
+                    help="which dataset to train on")
 
 args = parser.parse_args()
 
@@ -68,9 +72,9 @@ else:
 utils.setup_nest(sim_params, datadir)
 utils.setup_models(spiking, neuron_params, sim_params, syn_params, False)
 if sim_params["network_type"] == "numpy":
-    net = NumpyNetwork(sim_params, neuron_params, syn_params)
+    net = NumpyNetwork(sim_params, neuron_params, syn_params, args.mode)
 else:
-    net = NestNetwork(sim_params, neuron_params, syn_params, spiking)
+    net = NestNetwork(sim_params, neuron_params, syn_params, args.mode, spiking)
 
 if args.weights:
     with open(args.weights) as f:
@@ -121,17 +125,17 @@ if spiking:
 try: # catches KeyboardInterruptException to ensure proper cleanup and storage of progress
     t_start_training = time()
     if not args.cont:
-        net.test_bars()
+        net.test_epoch()
     for epoch in range(epoch_offset, sim_params["n_epochs"] + 1):
         t_start_epoch = time()
-        net.train_epoch_bars()
+        net.train_epoch()
         t_epoch = time() - t_start_epoch
         simulation_times.append(t_epoch)
 
         if epoch % sim_params["test_interval"] == 0:
             if spiking:
                 sr.set({"start": 0, "stop": 8*sim_params["SIM_TIME"], "origin":nest.biological_time, "n_events":0})
-            net.test_bars()
+            net.test_epoch()
             if spiking:
                 spikes = pd.DataFrame.from_dict(sr.events).groupby("senders")
                 n_spikes_avg = spikes.count()["times"].mean()
@@ -222,9 +226,9 @@ try: # catches KeyboardInterruptException to ensure proper cleanup and storage o
             plt.close()
 
             print(f"epoch time: {np.mean(simulation_times[-50:]):.2f}s.")
-            print(f"train loss: {net.train_loss[-1][1]:.4f}, test loss: {net.test_loss[-1][1]:.4f}")
-            print(f"ff error: {ff_error_now:.5f}, fb error: {fb_error_now:.5f}")
-            print(f"apical error: {apical_error_now:.2f}, intn error: {intn_error_now:.4f}\n")
+            print(f"test loss: {net.test_loss[-1][1]:.4f}")
+            # print(f"ff error: {ff_error_now:.5f}, fb error: {fb_error_now:.5f}")
+            # print(f"apical error: {apical_error_now:.2f}, intn error: {intn_error_now:.4f}\n")
 
 except KeyboardInterrupt:
     print("KeyboardInterrupt received - storing progress...")

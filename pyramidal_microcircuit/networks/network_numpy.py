@@ -3,14 +3,13 @@ from .network import Network
 from sklearn.metrics import mean_squared_error as mse
 from time import time
 from copy import deepcopy
-from .layer import Layer
-from .outputlayer import OutputLayer
+from .layer import Layer, OutputLayer
 
 
 class NumpyNetwork(Network):
 
-    def __init__(self, sim, nrn, syn) -> None:
-        super().__init__(sim, nrn, syn)
+    def __init__(self, sim, nrn, syn, mode) -> None:
+        super().__init__(sim, nrn, syn, mode)
         self.u_target = np.zeros(self.dims[-1])
         self.output_loss = []
         self.r_in = np.zeros(self.dims[0])
@@ -79,7 +78,7 @@ class NumpyNetwork(Network):
             # TODO: fix scaling between teacher and predicted output!
             self.output_loss.append(mse(np.asarray(self.u_target), self.output_pred))
 
-    def train_epoch(self, x_batch, y_batch):
+    def train_batch(self, x_batch, y_batch):
         for x_train, y_train in zip(x_batch, y_batch):
             self.set_input(x_train)
             self.target_seq = y_train
@@ -88,7 +87,7 @@ class NumpyNetwork(Network):
             self.train_loss.append([self.epoch, mse(self.u_target, self.layers[- 1].u_pyr["soma"])])
             self.reset()
 
-    def test_bars(self, n_samples=8):
+    def test_batch(self, n_samples=8):
         acc = []
         loss_mse = []
         for sample_idx in range(n_samples):
