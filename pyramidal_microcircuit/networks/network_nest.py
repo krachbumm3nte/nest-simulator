@@ -34,6 +34,7 @@ class NestNetwork(Network):
             self.p.syn_model = 'record_syn'
             nest.CopyModel(self.p.static_syn_model, 'static_record_syn', {"weight_recorder": self.wr})
             self.p.static_syn_model = 'static_record_syn'
+        
         self.p.setup_nest_configs()
         # Create input layer neurons
         self.input_neurons = nest.Create(self.p.neuron_model, self.dims[0], self.p.input_params)

@@ -8,8 +8,7 @@ class Params:
 
         # parameters regarding the general simulation environment
         self.delta_t = 0.1         # Euler integration step in ms
-        self.sigma = 0.3         # standard deviation for membrane potential noise
-        self.threads = 9         # number of threads for parallel processing
+        self.threads = 10         # number of threads for parallel processing
         self.record_interval = 0.5         # interval for storing membrane potentials in ms
         self.SIM_TIME = 100         # simulation time per input pattern in ms #TODO: un-capitalize
         self.n_epochs = 1000         # number of training iterations
@@ -19,6 +18,7 @@ class Params:
         self.dims = [9, 30, 3]         # network dimensions, i.e. neurons per layer
         self.init_self_pred = True         # flag to initialize feedback weights to self-predicting state
         self.noise = False         # flag to apply noise to membrane potentials
+        self.sigma = 0.3         # standard deviation for membrane potential noise
         self.noise_factor = np.sqrt(self.delta_t) * self.sigma         # constant noise factor for numpy simulations
         self.mode = "bars" # Which dataset to train on. Default: Bars dataset from Haider (2021) 
 
@@ -48,18 +48,18 @@ class Params:
         self.tau_delta = 1
         self.synapse_model = None,  # Synapse model (for NEST simulations only)
         self.eta = {
-            # 'ip': [0.002, 0],
-            # 'pi': [0, 0],
-            # 'up': [0.005, 0.001],
-            'ip': [0.0001, 0],
+            'ip': [0.002, 0],
             'pi': [0, 0],
-            'up': [0.00025, 0.00005],
+            'up': [0.005, 0.001],
+            # 'ip': [0.0001, 0],
+            # 'pi': [0, 0],
+            # 'up': [0.00025, 0.00005],
             'down': [0, 0]
         }
 
         # parameters that regard only simulations in NEST
         self.record_weights = False  # flag to record weights in NEST using a 'weight_recorder'
-        self.weight_scale = 25        # weight scaling factor # TODO: rename this
+        self.weight_scale = 150        # weight scaling factor # TODO: rename this
         self.spiking = True        # flag to enable simulation with spiking neurons
 
         if config_file:

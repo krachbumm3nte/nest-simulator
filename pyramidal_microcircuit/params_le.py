@@ -2,6 +2,10 @@ import nest
 from copy import deepcopy
 import numpy as np
 
+
+
+
+
 # Simulation parameters
 delta_t = 0.1  # euler integration step in ms
 sigma = 0.3  # standard deviation for membrane potential noise
@@ -25,7 +29,7 @@ sim_params = {
     "use_mm": True,  # If true, record activity of nest neurons using multimeters
     "recording_backend": "memory",  # Backend for NEST multimeter recordings
     "out_lag": 6.5,  # lag in ms before recording output neuron voltage during testing
-    "test_interval": 10, # test the network every N epochs 
+    "test_interval": 10,  # test the network every N epochs
     "spiking": True,
 }
 
