@@ -4,12 +4,13 @@ from sklearn.metrics import mean_squared_error as mse
 from time import time
 from copy import deepcopy
 from .layer import Layer, OutputLayer
+from .params import Params
 
 
 class NumpyNetwork(Network):
 
-    def __init__(self, sim, nrn, syn, mode) -> None:
-        super().__init__(sim, nrn, syn, mode)
+    def __init__(self, p: Params) -> None:
+        super().__init__(p)
         self.u_target = np.zeros(self.dims[-1])
         self.output_loss = []
         self.r_in = np.zeros(self.dims[0])
@@ -19,16 +20,16 @@ class NumpyNetwork(Network):
     def setup_populations(self):
         eta = {}
         for i in range(len(self.dims)-2):
-            eta["up"] = self.syn["eta"]["up"][i]
-            eta["pi"] = self.syn["eta"]["pi"][i]
-            eta["ip"] = self.syn["eta"]["ip"][i]
-            self.layers.append(Layer(self.nrn, self.sim, self.syn, i, eta))
-        eta["up"] = self.syn["eta"]["up"][-1]
-        eta["pi"] = self.syn["eta"]["pi"][-1]
-        eta["ip"] = self.syn["eta"]["ip"][-1]
-        self.layers.append(OutputLayer(self.nrn, self.sim, self.syn, eta))
+            eta["up"] = self.p.eta["up"][i]
+            eta["pi"] = self.p.eta["pi"][i]
+            eta["ip"] = self.p.eta["ip"][i]
+            self.layers.append(Layer(self.p, self, i))
+        eta["up"] = self.p.eta["up"][-1]
+        eta["pi"] = self.p.eta["pi"][-1]
+        eta["ip"] = self.p.eta["ip"][-1]
+        self.layers.append(OutputLayer(self.p, self, len(self.dims)-2))
 
-        if self.sim["init_self_pred"]:
+        if self.p.init_self_pred:
             for i in range(len(self.layers) - 1):
                 l = self.layers[i]
                 l_next = self.layers[i + 1]
@@ -69,15 +70,6 @@ class NumpyNetwork(Network):
         weights.append({"up": self.layers[-1].W_up.copy()})
         return weights
 
-    def test_teacher(self, T):
-        raise NotImplementedError
-        for i in range(int(T/self.dt)):
-            # do not inject output layer current during testing
-            self.simulate(np.zeros(self.dims[-1]), False, False)
-            self.output_pred = self.lambda_out * self.conns["yh"]["w"] @ self.phi(self.lambda_bh * self.V_bh)
-            # TODO: fix scaling between teacher and predicted output!
-            self.output_loss.append(mse(np.asarray(self.u_target), self.output_pred))
-
     def train_batch(self, x_batch, y_batch):
         for x_train, y_train in zip(x_batch, y_batch):
             self.set_input(x_train)
@@ -87,22 +79,20 @@ class NumpyNetwork(Network):
             self.train_loss.append([self.epoch, mse(self.u_target, self.layers[- 1].u_pyr["soma"])])
             self.reset()
 
-    def test_batch(self, n_samples=8):
+    def test_batch(self, x_batch, y_batch):
         acc = []
         loss_mse = []
-        for sample_idx in range(n_samples):
-            x_test, y_actual = self.generate_bar_data(sample_idx)
+        for x_test, y_actual in zip(x_batch, y_batch):
             self.set_input(x_test)
             for i in range(int(self.sim_time/self.dt)):
                 self.simulate(lambda: np.zeros(self.dims[-1]), True, False)
-            y_pred = np.mean(self.U_y_record[int((self.sim["out_lag"]/self.sim_time)*self.record_interval):], axis=0)
+            y_pred = np.mean(self.U_y_record[int((self.p.out_lag/self.sim_time)*self.record_interval):], axis=0)
             loss_mse.append(mse(y_actual, y_pred))
             acc.append(np.argmax(y_actual) == np.argmax(y_pred))
             self.reset()
             self.reset_records()
 
-        self.test_acc.append([self.epoch, np.mean(acc)])
-        self.test_loss.append([self.epoch, np.mean(loss_mse)])
+        return np.mean(acc), np.mean(loss_mse)
 
     def target_filtered(self):
         u_old = deepcopy(self.u_target)

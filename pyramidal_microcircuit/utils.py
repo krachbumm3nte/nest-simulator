@@ -24,28 +24,12 @@ def setup_directories(root=os.path.join(os.getcwd(), "runs"), type=""):
     return root, imgdir, datadir
 
 
-def setup_nest(sim_params, datadir=os.getcwd()):
+def setup_nest(params, datadir=os.getcwd()):
     nest.set_verbosity("M_ERROR")
-    nest.resolution = sim_params["delta_t"]
-    nest.SetKernelStatus({"local_num_threads": sim_params["threads"]})
-    nest.SetDefaults("multimeter", {'interval': sim_params["record_interval"]})
+    nest.resolution = params.delta_t
+    nest.SetKernelStatus({"local_num_threads": params.threads})
+    nest.SetDefaults("multimeter", {'interval': params.record_interval})
     nest.SetKernelStatus({"data_path": datadir})
-
-
-# def setup_torch(use_cuda=True):
-#     # We don't make use of gradients, so we can save some compute time here.
-#     torch.set_grad_enabled(False)
-
-#     device_name = "cpu"
-#     if use_cuda:
-#         if not torch.cuda.is_available():
-#             print("Cuda is not available on this system, computing on CPU")
-#         else:
-#             device_name = "cuda"
-#             torch.set_default_tensor_type('torch.cuda.FloatTensor')
-
-#     device = torch.device(device_name)
-#     return device
 
 
 def rolling_avg(input, size):
@@ -67,85 +51,6 @@ def store_synaptic_weights(network: Network, dirname, filename="weights.json"):
         json.dump(weights, f, indent=4)
 
 
-def setup_models(spiking, nrn, sim, syn, record_weights=False):
-    if not spiking:
-        nrn["weight_scale"] = 1
-        nrn["pyr"]["basal"]["g_L"] = 1
-        nrn["pyr"]["apical_lat"]["g_L"] = 1
-        nrn["intn"]["basal"]["g_L"] = 1
-        nrn["intn"]["apical_lat"]["g_L"] = 1
-        nrn["input"]["basal"]["g_L"] = 1
-        nrn["input"]["apical_lat"]["g_L"] = 1
-
-    if nrn["latent_equilibrium"]:
-        nrn["pyr"]["latent_equilibrium"] = True
-        nrn["intn"]["latent_equilibrium"] = True
-        nrn["input"]["latent_equilibrium"] = True
-
-    neuron_model = 'pp_cond_exp_mc_pyr' if spiking else 'rate_neuron_pyr'
-    nrn["model"] = neuron_model
-    syn_model = 'pyr_synapse' if spiking else 'pyr_synapse_rate'
-    syn["synapse_model"] = syn_model
-    static_syn_model = 'static_synapse' if spiking else 'rate_connection_delayed'
-
-    wr = None
-    if record_weights:
-        wr = nest.Create("weight_recorder", params={'record_to': "ascii", "precision": 12})
-        # wr = nest.Create("weight_recorder")
-        nest.CopyModel(syn_model, 'record_syn', {"weight_recorder": wr})
-        syn_model = 'record_syn'
-        nest.CopyModel(static_syn_model, 'static_record_syn', {"weight_recorder": wr})
-        static_syn_model = 'static_record_syn'
-
-    syn_static = {
-        "synapse_model": static_syn_model,
-        "delay": sim["delta_t"]
-    }
-
-    syn_plastic = {
-        "synapse_model": syn_model,
-        'tau_Delta': syn["tau_Delta"],
-        'Wmin': syn["Wmin"] / (nrn["weight_scale"] if spiking else 1),  # minimum weight
-        'Wmax': syn["Wmax"] / (nrn["weight_scale"] if spiking else 1),  # maximum weight
-        'delay': sim["delta_t"]
-    }
-
-    connections = []
-    pyr_comps = nest.GetDefaults(neuron_model)["receptor_types"]
-    basal_dendrite = pyr_comps['basal']
-    apical_dendrite = pyr_comps['apical_lat']
-    for layer in range(len(sim["dims"])-2):
-        connections_l = {}
-
-        for type in ["up", "pi", "ip"]:
-            eta = syn["eta"][type][layer]
-
-            if eta != 0:
-                connections_l[type] = deepcopy(syn_plastic)
-                connections_l[type]["eta"] = eta
-            else:
-                connections_l[type] = deepcopy(syn_static)
-
-        connections_l["down"] = deepcopy(syn_static)
-
-        connections_l["up"]['receptor_type'] = basal_dendrite
-        connections_l["ip"]['receptor_type'] = basal_dendrite
-        connections_l["pi"]['receptor_type'] = apical_dendrite
-        connections_l["down"]['receptor_type'] = apical_dendrite
-        # connections_l["down"]['delay'] = 2*sim["delta_t"]
-        connections.append(connections_l)
-
-    connection_out = {}
-    if syn["eta"]["up"][-1] > 0:
-        connection_out["up"] = deepcopy(syn_plastic)
-        connection_out["up"]["eta"] = syn["eta"]["up"][-1]
-    else:
-        connection_out["up"] = deepcopy(syn_static)
-    connection_out["up"]['receptor_type'] = basal_dendrite
-    connections.append(connection_out)
-
-    syn["conns"] = connections
-    return wr
 
 
 def read_mm(device_id, path, it_min=None, it_max=None):

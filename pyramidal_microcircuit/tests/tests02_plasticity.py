@@ -5,13 +5,13 @@ from pprint import pprint
 
 class PlasticityYH(DynamicsYH):
 
-    def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
-        super().__init__(nrn, sim, syn, spiking_neurons, record_weights=True, **kwargs)
+    def __init__(self, p, **kwargs) -> None:
+        super().__init__(p, record_weights=True, **kwargs)
         self.eta = 0.04
 
         conn = nest.GetConnections(self.neuron_01, self.neuron_02)
-        if spiking_neurons:
-            conn.eta = self.eta/(self.weight_scale**2 * self.syn["tau_Delta"])
+        if self.spiking:
+            conn.eta = self.eta/(self.weight_scale**2 * self.tau_delta)
             conn.weight = self.weight / self.weight_scale
         else:
             conn.eta = self.eta
@@ -61,7 +61,7 @@ class PlasticityYH(DynamicsYH):
                 self.weights_numpy.append(self.weight)
 
     def evaluate(self) -> bool:
-        if self.spiking_neurons:
+        if self.spiking:
             self.weights_nest = [val*self.weight_scale for val in self.weights_nest]
 
         return records_match(self.weights_nest, self.weights_numpy, 0.1)
@@ -89,13 +89,13 @@ class PlasticityYH(DynamicsYH):
 
 class PlasticityHX(DynamicsHX):
 
-    def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
-        super().__init__(nrn, sim, syn, spiking_neurons, record_weights=True, **kwargs)
+    def __init__(self, params, **kwargs) -> None:
+        super().__init__(params, record_weights=True, **kwargs)
         self.eta = 0.04
 
         self.conn = nest.GetConnections(self.neuron_01, self.neuron_02)
-        if spiking_neurons:
-            self.conn.eta = self.eta/(self.weight_scale**2 * self.syn["tau_Delta"])
+        if self.spiking:
+            self.conn.eta = self.eta/(self.weight_scale**2 * self.tau_delta)
             self.conn.weight = self.weight / self.weight_scale
         else:
             self.conn.eta = self.eta
@@ -142,7 +142,7 @@ class PlasticityHX(DynamicsHX):
                 self.VBH.append(V_bh)
 
     def evaluate(self) -> bool:
-        if self.spiking_neurons:
+        if self.spiking:
             self.weights_nest = [val*self.weight_scale for val in self.weights_nest]
         return records_match(self.weights_nest, self.weights_numpy)
 
@@ -173,23 +173,24 @@ class PlasticityHXMulti(PlasticityHX):
     solution if parameters are set correctly.
     """
 
-    def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
+    def __init__(self, params, **kwargs) -> None:
 
-        super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
+        super().__init__(params, **kwargs)
 
         self.weight2 = -0.5
-        if spiking_neurons:
-            syn["conns"][0]["up"]["weight"] = self.weight2 / self.weight_scale
-            syn["conns"][0]["up"]["eta"] = self.eta/(self.weight_scale**2 * syn["tau_Delta"])
+        synapse = self.p.syn_plastic
+        if self.spiking:
+            synapse["weight"] = self.weight2 / self.weight_scale
+            synapse["eta"] = self.eta/(self.weight_scale**2 * self.tau_delta)
         else:
-            syn["conns"][0]["up"]["weight"] = self.weight2
-            syn["conns"][0]["up"]["eta"] = self.eta
+            synapse["weight"] = self.weight2
+            synapse["eta"] = self.eta
 
-        self.neuron_03 = nest.Create(self.neuron_model, 1, nrn["input"])
+        self.neuron_03 = nest.Create(self.neuron_model, 1, params.input_params)
         self.mm_03 = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
         nest.Connect(self.mm_03, self.neuron_03)
 
-        nest.Connect(self.neuron_03, self.neuron_02, syn_spec=syn["conns"][0]["up"])
+        nest.Connect(self.neuron_03, self.neuron_02, syn_spec=synapse)
 
     def run(self):
         r_h = 0
@@ -252,7 +253,7 @@ class PlasticityHXMulti(PlasticityHX):
                 self.VBH.append(V_bh)
 
     def evaluate(self) -> bool:
-        if self.spiking_neurons:
+        if self.spiking:
             self.weights_nest = [val*self.weight_scale for val in self.weights_nest]
             self.nest_weights_2 = [val*self.weight_scale for val in self.weights_nest_2]
 
@@ -295,13 +296,13 @@ class PlasticityHXMulti(PlasticityHX):
 
 
 class PlasticityIH(DynamicsHI):
-    def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
-        super().__init__(nrn, sim, syn, spiking_neurons, record_weights=True, **kwargs)
+    def __init__(self, params, **kwargs) -> None:
+        super().__init__(params, record_weights=True, **kwargs)
         self.eta = 0.04
 
         self.conn = nest.GetConnections(self.neuron_01, self.neuron_02)
-        if spiking_neurons:
-            self.conn.eta = self.eta/(self.weight_scale**2 * self.syn["tau_Delta"])
+        if self.spiking:
+            self.conn.eta = self.eta/(self.weight_scale**2 * self.tau_delta)
             self.conn.weight = self.weight / self.weight_scale
         else:
             self.conn.eta = self.eta
@@ -346,7 +347,7 @@ class PlasticityIH(DynamicsHI):
                 self.VBH.append(V_ah)
 
     def evaluate(self) -> bool:
-        if self.spiking_neurons:
+        if self.spiking:
             self.weights_nest = [val*self.weight_scale for val in self.weights_nest]
 
         return records_match(self.weights_nest, self.weights_numpy)
@@ -373,14 +374,12 @@ class PlasticityIH(DynamicsHI):
 
 
 class NetworkPlasticity(TestClass):
-    def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
-        sim["teacher"] = False
-        sim["noise"] = False
-        sim["dims"] = [4, 3, 2]
-        super().__init__(nrn, sim, syn, spiking_neurons, record_weights=True, **kwargs)
+    def __init__(self, params, **kwargs) -> None:
+        params.dims = [4, 3, 2]
+        super().__init__(params, record_weights=True, **kwargs)
 
-        self.numpy_net = NumpyNetwork(deepcopy(sim), deepcopy(nrn), deepcopy(syn))
-        self.nest_net = NestNetwork(deepcopy(sim), deepcopy(nrn), deepcopy(syn), self.spiking_neurons)
+        self.numpy_net = NumpyNetwork(params)
+        self.nest_net = NestNetwork(params)
         self.numpy_net.set_all_weights(self.nest_net.get_weight_dict())
 
     def run(self):

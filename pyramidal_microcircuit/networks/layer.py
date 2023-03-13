@@ -1,35 +1,43 @@
 
 import numpy as np
 from abc import ABC, abstractmethod
-
 dtype = np.float32
 
 
 class AbstractLayer():
-    def __init__(self, nrn, sim, syn, eta) -> None:
-        self.ga = nrn["g_a"]
-        self.gb = nrn["g_d"]  # TODO: separate these?
-        self.gd = nrn["g_d"]
-        self.gl = nrn["g_l"]
-        self.gsom = nrn["g_som"]
-        self.tau_x = nrn["tau_x"]
-        self.le = nrn["latent_equilibrium"]
+    def __init__(self, p, net, layer) -> None:
+        self.layer = layer
+        self.p = p
+        self.net = net
+        self.ga = p.g_a
+        self.gb = p.g_d  # TODO: separate these?
+        self.gd = p.g_d
+        self.gl = p.g_l
+        self.gsom = p.g_som
+        self.tau_x = p.tau_x
+        self.le = p.latent_equilibrium
 
-        self.noise_factor = sim["noise_factor"] if sim["noise"] else 0
-        self.tau_delta = syn["tau_Delta"]
-        self.dt = sim["delta_t"]
+        self.noise_factor = p.noise_factor if p.noise else 0
+        self.tau_delta = p.tau_delta
+        self.dt = p.delta_t
 
         self.leakage = self.gl + self.ga + self.gb
-        self.lambda_out = nrn["lambda_out"]
-        self.lambda_ah = nrn["lambda_ah"]
-        self.lambda_bh = nrn["lambda_bh"]
-        self.eta = eta.copy()
+        self.lambda_out = p.lambda_out
+        self.lambda_ah = p.lambda_ah
+        self.lambda_bh = p.lambda_bh
 
         self.Wmin = -4
         self.Wmax = 4  # TODO: read from config
-        self.gamma = nrn["gamma"]
-        self.beta = nrn["beta"]
-        self.theta = nrn["theta"]
+        self.gamma = p.gamma
+        self.beta = p.beta
+        self.theta = p.theta
+        self.weight_scale = p.weight_scale if p.spiking else 1
+        self.eta= {
+            "up": p.eta["up"][self.layer],
+            "ip": p.eta["ip"][self.layer],
+            "pi": p.eta["pi"][self.layer],
+            "down": p.eta["down"][self.layer],
+        }
 
     @abstractmethod
     def update(self, r_in, u_next, plasticity, noise_on=False):
@@ -45,9 +53,9 @@ class AbstractLayer():
 
     def gen_weights(self, n_in, n_out, wmin=None, wmax=None):
         if not wmin:
-            wmin = -1
+            wmin = -1/self.weight_scale
         if not wmax:
-            wmax = 1
+            wmax = 1/self.weight_scale
         return np.random.uniform(wmin, wmax, (n_out, n_in))
 
     def phi(self, x, thresh=15):
@@ -55,18 +63,20 @@ class AbstractLayer():
         res = x.copy()
         ind = np.abs(x) < thresh
         res[x < -thresh] = 0
-        res[ind] = self.gamma * np.log(1 + np.exp(self.beta * (x[ind] - self.theta)))
+        res[ind] = np.log(1 + np.exp(x[ind]))
         return res
+        return self.gamma * np.log(1 + np.exp(self.beta * (x - self.theta)))
+
 
 
 class Layer(AbstractLayer):
 
-    def __init__(self, nrn, sim, syn, n, eta) -> None:
-        super().__init__(nrn, sim, syn, eta)
+    def __init__(self, p, net, layer) -> None:
+        super().__init__(p, net, layer)
 
-        self.N_in = sim["dims"][n]
-        self.N_pyr = sim["dims"][n+1]
-        self.N_next = sim["dims"][n+2]
+        self.N_in = net.dims[layer]
+        self.N_pyr = net.dims[layer+1]
+        self.N_next = net.dims[layer+2]
 
         self.W_down = self.gen_weights(self.N_next, self.N_pyr, -1, 1)
         self.W_up = self.gen_weights(self.N_in, self.N_pyr, -1, 1)
@@ -173,11 +183,11 @@ class Layer(AbstractLayer):
 
 class OutputLayer(AbstractLayer):
 
-    def __init__(self, nrn, sim, syn, eta) -> None:
-        super().__init__(nrn, sim, syn, eta)
+    def __init__(self, net, p, layer) -> None:
+        super().__init__(net, p, layer)
         self.ga = 0
-        self.N_in = sim["dims"][-2]
-        self.N_out = sim["dims"][-1]
+        self.N_in = net.dims[-2]
+        self.N_out = net.dims[-1]
         self.u_pyr = {"basal": np.zeros(self.N_out, dtype=dtype), "soma": np.zeros(self.N_out, dtype=dtype),
                       "steadystate": np.zeros(self.N_out, dtype=dtype), "forw": np.zeros(self.N_out, dtype=dtype),
                       "udot": np.zeros(self.N_out, dtype=dtype)}

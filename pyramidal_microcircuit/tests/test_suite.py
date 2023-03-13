@@ -9,7 +9,7 @@ from tests02_plasticity import *
 from itertools import permutations
 sys.path.append("/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit")
 import utils  # nopep8
-from params import *  # nopep8
+from networks.params import Params  # nopep8
 
 if __name__ == "__main__":
 
@@ -19,33 +19,32 @@ if __name__ == "__main__":
         classes = [FilteredInputCurrent, CurrentConnection, TargetCurrent, DynamicsHX, DynamicsHXMulti, DynamicsHI,
                    DynamicsYH, NetworkDynamics, PlasticityHX, PlasticityHXMulti, PlasticityYH, NetworkPlasticity]
 
-    root, imgdir, datadir = utils.setup_directories(
-        "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/tests/runs")
+    test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
+    root, imgdir, datadir = utils.setup_directories(os.path.join(test_dir, "runs"))
 
-    # classes = [NetworkPlasticity]
-    sim_params["record_interval"] = 0.1
-    sim_params["recording_backend"] = "memory"
-    sim_params["datadir"] = datadir
-    sim_params["use_mm"] = True
-
-    # increase learning rates to absurd levels to make plasticity visible
-    for syn_name in ["ip", "pi", "up"]:
-        syn_params["eta"][syn_name] = [500 * lr for lr in syn_params["eta"][syn_name]]
 
     plot_all_runs = True
     test_results = []
 
-    for use_spiking_neurons, latent_equilibrium in permutations([False, True], [False, True]):
+    for use_spiking_neurons, latent_equilibrium in permutations([False, True]):
+        params = Params(os.path.join(test_dir, "test_params.json"))
+        params.datadir = datadir
+        params.spiking = use_spiking_neurons
+        params.latent_equilibrium = latent_equilibrium
+        
         spiking_str = 'spiking' if use_spiking_neurons else 'rate'
         le_str = '_le' if latent_equilibrium else ""
+
+        params.setup_nest_configs()
+
+
         for test_class in classes:
             test_name = test_class.__name__
             nest.ResetKernel()
-            nrn, sim, syn = deepcopy(neuron_params), deepcopy(sim_params), deepcopy(syn_params)
-            utils.setup_nest(sim_params, datadir)
+            utils.setup_nest(params, datadir)
             print(f"{test_name} with {spiking_str} neurons:")
             try:
-                instance = test_class(nrn, sim, syn, use_spiking_neurons)
+                instance = test_class(deepcopy(params))
                 instance.run()
             except Exception as e:
                 print(f"Test {test_name} raised an exception: ")

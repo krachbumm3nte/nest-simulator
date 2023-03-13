@@ -12,6 +12,7 @@ import sys
 import argparse
 import pandas as pd
 from datetime import timedelta
+from networks.params import *  # nopep8
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--network",
@@ -46,35 +47,31 @@ if args.cont:
     imgdir = os.path.join(root_dir, "plots")
     datadir = os.path.join(root_dir, "data")
     args.weights = os.path.join(root_dir, "weights.json")
-    with open(os.path.join(root_dir, "params.json"), "r") as f:
-        all_params = json.load(f)
-        sim_params = all_params["simulation"]
-        neuron_params = all_params["neurons"]
-        syn_params = all_params["synapses"]
-        args.le = neuron_params["latent_equilibrium"]
+    params = Params(os.path.join(root_dir, "params.json"))
+    args.le = params.latent_equilibrium
     with open(os.path.join(root_dir, "progress.json"), "r") as f:
         progress = json.load(f)
-    spiking = sim_params["spiking"]
+    spiking = params.spiking
 else:
-    if args.le:
-        from params_le import *  # nopep8
-    else:
-        from params import *  # nopep8
+    # if args.le:
+    #     #TODO: create custom interface
+    #     from params_le import *  # nopep8
+    # else:
+    params = Params()
     root_dir, imgdir, datadir = utils.setup_directories(type=args.network)
     spiking = args.network == "snest"
-    sim_params["network_type"] = args.network
-    sim_params["timestamp"] = root_dir.split(os.path.sep)[-1]
-    sim_params["spiking"] = spiking
-    # neuron_params["latent_equilibrium"] = args.le
+    params.network_type = args.network
+    params.timestamp = root_dir.split(os.path.sep)[-1]
+    params.spiking = spiking
+    params.latent_equilibrium = args.le
+    params.mode = args.mode
 
 
-
-utils.setup_nest(sim_params, datadir)
-utils.setup_models(spiking, neuron_params, sim_params, syn_params, False)
-if sim_params["network_type"] == "numpy":
-    net = NumpyNetwork(sim_params, neuron_params, syn_params, args.mode)
+utils.setup_nest(params, datadir)
+if params.network_type == "numpy":
+    net = NumpyNetwork(params)
 else:
-    net = NestNetwork(sim_params, neuron_params, syn_params, args.mode, spiking)
+    net = NestNetwork(params)
 
 if args.weights:
     with open(args.weights) as f:
@@ -82,7 +79,7 @@ if args.weights:
         weight_dict = json.load(f)
     net.set_all_weights(weight_dict)
 
-dims = sim_params["dims"]
+dims = net.dims
 
 cmap_1 = plt.cm.get_cmap('hsv', dims[1]+1)
 cmap_2 = plt.cm.get_cmap('hsv', dims[2]+1)
@@ -109,8 +106,7 @@ else:
 
 if not args.cont:
     # dump simulation parameters and initial weights to .json files
-    with open(os.path.join(root_dir, "params.json"), "w") as f:
-        json.dump({"simulation": sim_params, "neurons": neuron_params, "synapses": syn_params}, f, indent=4)
+    params.to_json(os.path.join(root_dir, "params.json"))
     utils.store_synaptic_weights(net, root_dir, "init_weights.json")
 
 print("setup complete, running simulations...")
@@ -119,34 +115,34 @@ start_training = time()
 
 if spiking:
     sr = nest.Create("spike_recorder")
-    nest.Connect(nest.GetNodes({"model": neuron_params["model"]}), sr)
+    nest.Connect(nest.GetNodes({"model": params.neuron_model}), sr)
 
 
 try: # catches KeyboardInterruptException to ensure proper cleanup and storage of progress
     t_start_training = time()
     if not args.cont:
         net.test_epoch()
-    for epoch in range(epoch_offset, sim_params["n_epochs"] + 1):
+    for epoch in range(epoch_offset, params.n_epochs + 1):
         t_start_epoch = time()
         net.train_epoch()
         t_epoch = time() - t_start_epoch
         simulation_times.append(t_epoch)
 
-        if epoch % sim_params["test_interval"] == 0:
+        if epoch % params.test_interval == 0:
             if spiking:
-                sr.set({"start": 0, "stop": 8*sim_params["SIM_TIME"], "origin":nest.biological_time, "n_events":0})
+                sr.set({"start": 0, "stop": 8*params.SIM_TIME, "origin":nest.biological_time, "n_events":0})
             net.test_epoch()
             if spiking:
                 spikes = pd.DataFrame.from_dict(sr.events).groupby("senders")
                 n_spikes_avg = spikes.count()["times"].mean()
-                rate = 1000 *  n_spikes_avg / (8*sim_params["SIM_TIME"])
+                rate = 1000 *  n_spikes_avg / (8*params.SIM_TIME)
                 print(f"neurons firing at {rate:.1f}Hz")
             
             print(f"test completed, acc: {net.test_acc[-1][1]:.3f}, loss: {net.test_loss[-1][1]:.3f}")
             if epoch > 0:
                 t_processed = time() - t_start_training
                 t_epoch = t_processed / epoch
-                print(f"\tETA: {timedelta(seconds=np.round(t_epoch * (sim_params['n_epochs']-epoch)))}\n")
+                print(f"\tETA: {timedelta(seconds=np.round(t_epoch * (params.n_epochs-epoch)))}\n")
         
         if plot_every > 0 and epoch % plot_every == 0:
             print(f"plotting epoch {epoch}")

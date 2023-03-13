@@ -2,16 +2,16 @@ from copy import deepcopy
 import numpy as np
 from abc import abstractmethod
 from .dataset import MnistDataset, BarDataset
+from .params import Params
+
 
 class Network:
 
-    def __init__(self, sim, nrn, syns, mode) -> None:
-        self.sim = sim  # simulation parameters
-        self.nrn = nrn  # neuron parameters
-        self.syn = syns  # synapse parameters
+    def __init__(self, p: Params) -> None:
+        self.p = p
 
-        self.mode = mode
-        if mode == "bars":
+        self.mode = p.mode
+        if self.mode == "bars":
             self.dims = [9, 30, 3]
             self.train_samples = 24
             self.val_samples = 8
@@ -20,7 +20,7 @@ class Network:
             self.get_training_data = self.bar_dataset.get_samples
             self.get_val_data = self.bar_dataset.get_samples
             self.get_test_data = self.bar_dataset.get_samples
-        elif mode == "mnist":
+        elif self.mode == "mnist":
             self.classes = 2
             self.dims = [784, 100, 25, self.classes]
             self.train_samples = 25
@@ -47,34 +47,36 @@ class Network:
             self.get_val_data = self.val_dataset.get_samples
             self.get_test_data = self.test_dataset.get_samples
 
-
             print("...Done.")
-        elif mode == "teacher":
+        elif self.mode == "teacher":
             self.train_samples = 25
             self.val_samples = 8
             self.test_samples = 8
-            self.dims_teacher = sim["dims_teacher"]
+            self.k_yh = 10         # hidden to output teacher weight scaling factor
+            self.k_hx = 1         # input to hidden teacher weight scaling factor
+            self.dims_teacher = self.dims
+            self.dims_teacher[1:-1] = self.dims_teacher[1:-1]  # TODO: reduce teacher network size
             self.whx_trgt = self.gen_weights(self.dims_teacher[0], self.dims_teacher[1], -1, 1)
             self.wyh_trgt = self.gen_weights(self.dims_teacher[1], self.dims_teacher[2], -1, 1)
             self.y = np.random.random(self.dims_teacher[-1])
-            self.k_yh = sim["k_yh"]
-            self.k_hx = sim["k_hx"]
+            self.k_yh = self.p.k_yh
+            self.k_hx = self.p.k_hx
+        elif self.mode == "test":
+            self.dims = p.dims
+            
 
-        self.dims = sim["dims"]
-        self.sim_time = sim["SIM_TIME"]
-        self.dt = sim["delta_t"]
-        self.teacher = sim["teacher"]
-        self.sigma_noise = sim["sigma"]
-        self.record_interval = sim["record_interval"]
 
-        self.gamma = nrn["gamma"]
-        self.beta = nrn["beta"]
-        self.theta = nrn["theta"]
-        self.tau_x = nrn["tau_x"]
-        self.le = nrn["latent_equilibrium"]
+        self.p.dims = self.dims
+        self.sim_time = self.p.SIM_TIME
+        self.dt = self.p.delta_t
+        self.sigma_noise = self.p.sigma
+        self.record_interval = self.p.record_interval
 
-        self.Wmin = syns["Wmin"]
-        self.Wmax = syns["Wmax"]
+        self.gamma = self.p.gamma
+        self.beta = self.p.beta
+        self.theta = self.p.theta
+        self.tau_x = self.p.tau_x
+        self.le = self.p.latent_equilibrium
 
         self.iteration = 0  # number of times simulate() has been called. mostly used for storing recordings
         self.epoch = 0  # number of training epochs passed
@@ -123,7 +125,6 @@ class Network:
     def reset(self):
         pass
 
-
     def generate_teacher_data(self):
         x = np.random.random(self.dims[0])
 
@@ -142,16 +143,16 @@ class Network:
     def test_epoch(self):
         x_batch, y_batch = self.get_test_data(self.train_samples)
         acc, loss = self.test_batch(x_batch, y_batch)
-        
+
         self.test_acc.append([self.epoch, acc])
         self.test_loss.append([self.epoch, loss])
-        
+
         self.reset()
 
     def validate_epoch(self):
         x_batch, y_batch = self.get_val_data(self.train_samples)
         acc, loss = self.test_batch(x_batch, y_batch)
-        
+
         self.val_acc.append([self.epoch, acc])
         self.val_loss.append([self.epoch, loss])
 

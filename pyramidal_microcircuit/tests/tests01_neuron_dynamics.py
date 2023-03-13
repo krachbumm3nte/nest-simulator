@@ -9,14 +9,14 @@ class FilteredInputCurrent(TestClass):
     # current behaves like a low pass filter on injected current. It also shows that setting
     # currents through a step generator leads to the same result, thus enabling batch learning
     # for slightly better performance.
-    def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
-        super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
+    def __init__(self, params, **kwargs) -> None:
+        super().__init__(params, **kwargs)
 
-        self.neuron_01 = nest.Create(self.neuron_model, 1, nrn["input"])
+        self.neuron_01 = nest.Create(self.neuron_model, 1, params.input_params)
         self.mm_01 = nest.Create("multimeter", 1, {'record_from': ["V_m.b", "V_m.s", "V_m.a_lat"]})
         nest.Connect(self.mm_01, self.neuron_01)
 
-        self.neuron_02 = nest.Create(self.neuron_model, 1, nrn["input"])
+        self.neuron_02 = nest.Create(self.neuron_model, 1, params.input_params)
         self.mm_02 = nest.Create("multimeter", 1, {'record_from': ["V_m.b", "V_m.s", "V_m.a_lat"]})
         nest.Connect(self.mm_02, self.neuron_02)
         compartments = nest.GetDefaults(self.neuron_model)["receptor_types"]
@@ -55,11 +55,11 @@ class FilteredInputCurrent(TestClass):
 
 class TargetCurrent(FilteredInputCurrent):
 
-    def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
-        super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
+    def __init__(self, params, **kwargs) -> None:
+        super().__init__(params, **kwargs)
 
-        self.neuron_01.set(nrn["pyr"])
-        self.neuron_02.set(nrn["pyr"])
+        self.neuron_01.set(params.pyr_params)
+        self.neuron_02.set(params.pyr_params)
 
     def run(self):
         delta_u = 0
@@ -90,14 +90,14 @@ class CurrentConnection(TestClass):
     # This test shows that the current connection which transmits somatic voltage to a single target neuron
     # neuron model behaves as intended and causes appropriate changes in the somatic voltage.
 
-    def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
-        super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
+    def __init__(self, params, **kwargs) -> None:
+        super().__init__(params, **kwargs)
 
-        self.pyr_y = nest.Create(nrn["model"], 1, nrn["input"])
+        self.pyr_y = nest.Create(params.neuron_model, 1, params.input_params)
         self.mm_y = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
         nest.Connect(self.mm_y, self.pyr_y)
 
-        self.intn = nest.Create(nrn["model"], 1, nrn["pyr"])
+        self.intn = nest.Create(params.neuron_model, 1, params.pyr_params)
         self.mm_i = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
         nest.Connect(self.mm_i, self.intn)
 
@@ -150,24 +150,20 @@ class DynamicsHX(TestClass):
     solution if parameters are set correctly.
     """
 
-    def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
+    def __init__(self, params, **kwargs) -> None:
 
-        super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
+        super().__init__(params, **kwargs)
 
         self.weight = 1
 
-        conn_hx = syn["conns"][0]["up"]
-        conn_hx.update({"weight": self.weight, "eta": 0})
+        conn_hx = self.p.syn_plastic
+        conn_hx.update({"weight": self.weight, "eta": 0, "receptor_type": self.p.compartments["basal"]})
 
-        if spiking_neurons:
-            nrn["input"]["gamma"] = self.weight_scale
-            conn_hx.update({"weight": self.weight/self.weight_scale})
-
-        self.neuron_01 = nest.Create(self.neuron_model, 1, nrn["input"])
+        self.neuron_01 = nest.Create(params.neuron_model, 1, params.input_params)
         self.mm_01 = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
         nest.Connect(self.mm_01, self.neuron_01)
 
-        self.neuron_02 = nest.Create(self.neuron_model, 1, nrn["pyr"])
+        self.neuron_02 = nest.Create(params.neuron_model, 1, params.pyr_params)
         self.mm_02 = nest.Create("multimeter", 1, {'record_from': ["V_m.s", "V_m.b", "V_m.a_lat"]})
         nest.Connect(self.mm_02, self.neuron_02)
         nest.Connect(self.neuron_01, self.neuron_02, syn_spec=conn_hx)
@@ -233,15 +229,15 @@ class DynamicsHXMulti(DynamicsHX):
     solution if parameters are set correctly.
     """
 
-    def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
+    def __init__(self, params, **kwargs) -> None:
 
-        super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
+        super().__init__(params, **kwargs)
 
         self.weight_2 = -0.5
-        conn_hx = syn["conns"][0]["up"]
+        conn_hx = self.p.syn_plastic
         conn_hx["weight"] = self.weight_2 / self.weight_scale
 
-        self.neuron_03 = nest.Create(self.neuron_model, 1, nrn["input"])
+        self.neuron_03 = nest.Create(self.neuron_model, 1, self.p.input_params)
         self.mm_03 = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
         nest.Connect(self.mm_03, self.neuron_03)
 
@@ -313,23 +309,17 @@ class DynamicsHI(DynamicsHX):
     solution if parameters are set correctly.
     """
 
-    def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
+    def __init__(self, params, **kwargs) -> None:
 
-        super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
+        super().__init__(params, **kwargs)
 
-        synapse = syn["conns"][0]["pi"]
-        synapse.update({"weight": self.weight})
-        if "eta" in synapse:
-            synapse["eta"] = 0
+        synapse = self.p.syn_plastic
+        synapse.update({"weight": self.weight, "eta": 0, "receptor_type":self.p.compartments["apical_lat"]})
 
-        if spiking_neurons:
-            nrn["intn"]["gamma"] = self.gamma * self.weight_scale
-            synapse.update({"weight": self.weight/self.weight_scale})
-
-        self.neuron_01.set(nrn["intn"])
-        self.neuron_02.set(nrn["pyr"])
+        self.neuron_01.set(params.intn_params)
+        self.neuron_02.set(params.pyr_params)
         nest.Disconnect(self.neuron_01, self.neuron_02, conn_spec='all_to_all',
-                        syn_spec={'synapse_model': syn["conns"][0]["up"]["synapse_model"]})
+                        syn_spec={'synapse_model': self.p.syn_plastic["synapse_model"]})
 
         nest.Connect(self.neuron_01, self.neuron_02, syn_spec=synapse)
 
@@ -362,7 +352,7 @@ class DynamicsHI(DynamicsHX):
     def evaluate(self) -> bool:
         VAH_nest = self.mm_02.events["V_m.a_lat"]
         UH_nest = self.mm_02.events["V_m.s"]
-        if self.spiking_neurons:
+        if self.spiking:
             return records_match(self.VAH, VAH_nest, 0.01) and records_match(self.UH, UH_nest, 0.01)
         else:
             return records_match(self.VAH, VAH_nest) and records_match(self.UH, UH_nest)
@@ -395,21 +385,17 @@ class DynamicsYH(DynamicsHX):
     solution if parameters are set correctly.
     """
 
-    def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
+    def __init__(self, params, **kwargs) -> None:
 
-        super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
+        super().__init__(params, **kwargs)
 
-        synapse = syn["conns"][-1]["up"]
-        synapse.update({"weight": self.weight, "eta": 0})
+        synapse = self.p.syn_plastic
+        synapse.update({"weight": self.weight, "eta": 0, "receptor_type":self.p.compartments["basal"]})
 
-        if spiking_neurons:
-            nrn["pyr"]["gamma"] = self.gamma * self.weight_scale
-            synapse.update({"weight": self.weight/self.weight_scale})
-
-        self.neuron_01.set(nrn["pyr"])
-        self.neuron_02.set(nrn["pyr"])
+        self.neuron_01.set(params.pyr_params)
+        self.neuron_02.set(params.pyr_params)
         nest.Disconnect(self.neuron_01, self.neuron_02, conn_spec='all_to_all',
-                        syn_spec={'synapse_model': syn["conns"][0]["up"]["synapse_model"]})
+                        syn_spec={'synapse_model': self.p.syn_plastic["synapse_model"]})
 
         nest.Connect(self.neuron_01, self.neuron_02, syn_spec=synapse)
 
@@ -440,7 +426,7 @@ class DynamicsYH(DynamicsHX):
     def evaluate(self) -> bool:
         VBH_nest = self.mm_02.events["V_m.b"]
         UH_nest = self.mm_02.events["V_m.s"]
-        if self.spiking_neurons:
+        if self.spiking:
             return records_match(self.VBY, VBH_nest, 0.01) and records_match(self.UY, UH_nest, 0.01)
         else:
             return records_match(self.VBY, VBH_nest) and records_match(self.UY, UH_nest)
@@ -469,14 +455,11 @@ class DynamicsYH(DynamicsHX):
 
 class NetworkDynamics(TestClass):
 
-    def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
-        sim["teacher"] = False
-        sim["noise"] = False
-        sim["dims"] = [4, 3, 2]
-        super().__init__(nrn, sim, syn, spiking_neurons, **kwargs)
+    def __init__(self, params, **kwargs) -> None:
+        super().__init__(params, **kwargs)
         self.disable_plasticity()
-        self.numpy_net = NumpyNetwork(deepcopy(self.sim), deepcopy(self.nrn), deepcopy(self.syn))
-        self.nest_net = NestNetwork(deepcopy(self.sim), deepcopy(self.nrn), deepcopy(self.syn), self.spiking_neurons)
+        self.numpy_net = NumpyNetwork(params)
+        self.nest_net = NestNetwork(params)
         self.numpy_net.set_all_weights(self.nest_net.get_weight_dict())
 
         self.starting_weights = self.nest_net.get_weight_dict()

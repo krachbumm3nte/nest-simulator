@@ -14,34 +14,31 @@ import utils  # nopep8
 
 class TestClass(ABC):
 
-    def __init__(self, nrn, sim, syn, spiking_neurons, **kwargs) -> None:
+    def __init__(self, p, **kwargs) -> None:
         if "record_weights" in kwargs:
             record_weights = kwargs["record_weights"]
         else:
             record_weights = False
-        self.wr = utils.setup_models(spiking_neurons, nrn, sim, syn, False)
+        self.p = p
         self.record_interval = 2
-        self.nrn = nrn
-        self.sim = sim
-        self.syn = syn
-        self.tau_x = nrn["tau_x"]
-        self.delta_t = sim["delta_t"]
-        self.neuron_model = nrn["model"]
-        self.g_l_eff = nrn["g_l_eff"]
-        self.g_a = nrn["g_a"]
-        self.g_d = nrn["g_d"]
-        self.g_l = nrn["g_l"]
-        self.g_som = nrn["g_som"]
-        self.gamma = nrn["gamma"]
-        self.beta = nrn["beta"]
-        self.theta = nrn["theta"]
-        self.dims = sim["dims"]
-        self.spiking_neurons = spiking_neurons
-        self.lambda_ah = nrn["lambda_ah"]
-        self.lambda_bh = nrn["lambda_bh"]
-        self.lambda_out = nrn["lambda_out"]
-        self.tau_delta = syn["tau_Delta"]
-        self.weight_scale = nrn["weight_scale"] if spiking_neurons else 1
+        self.tau_x = p.tau_x
+        self.delta_t = p.delta_t
+        self.neuron_model = p.neuron_model
+        self.g_l_eff = p.g_l_eff
+        self.g_a = p.g_a
+        self.g_d = p.g_d
+        self.g_l = p.g_l
+        self.g_som = p.g_som
+        self.gamma = p.gamma
+        self.beta = p.beta
+        self.theta = p.theta
+        self.dims = p.dims
+        self.spiking = p.spiking
+        self.lambda_ah = p.lambda_ah
+        self.lambda_bh = p.lambda_bh
+        self.lambda_out = p.lambda_out
+        self.tau_delta = p.tau_delta
+        self.weight_scale = p.weight_scale if self.spiking else 1
 
     @abstractmethod
     def run(self):
@@ -72,14 +69,8 @@ class TestClass(ABC):
         return (1 / self.beta) * (self.beta * self.theta + np.log(np.exp(x/self.gamma) - 1))
 
     def disable_plasticity(self):
-        for i, layer in enumerate(self.syn["conns"]):
-            for conn_type in ["up", "down", "pi", "ip"]:
-                if conn_type in layer:
-                    if "eta" in layer[conn_type]:
-                        layer[conn_type]["eta"] = 0
-                if conn_type in self.syn["eta"]:
-                    self.syn["eta"][i] = 0
-
+        for conn_type in ["up", "down", "pi", "ip"]:
+            self.p.eta[conn_type] = [0 for conn in self.p.eta[conn_type]]
 
 def read_multimeter(mm, key):
     return np.array((mm.events["times"]/0.1, mm.events[key])).swapaxes(0, 1)
