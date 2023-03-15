@@ -97,3 +97,19 @@ def set_nest_weights(sources, targets, weight_array, scaling_factor):
     for i, source in enumerate(sources):
         for j, target in enumerate(targets):
             nest.GetConnections(source, target).set({"weight": weight_array[j][i] * scaling_factor})
+
+def dump_state(net, filename):
+    with open(filename, "w") as f:
+        wtf = {
+            "in": net.input_neurons[0].get(),
+            "pyr": net.layers[0].pyr[0].get(),
+            "intn": net.layers[0].intn[0].get(),
+            "out": net.layers[-1].pyr[0].get(),
+            "up0": net.layers[0].up.get(),
+            "ip0": net.layers[0].ip[0].get(),
+            "pi0": net.layers[0].pi[0].get(),
+            "down0": net.layers[0].down[0].get(),
+            "up1": net.layers[1].up[0].get(),
+        }
+        
+        json.dump(wtf, f, indent=4)

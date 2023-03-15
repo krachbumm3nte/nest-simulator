@@ -3,6 +3,18 @@ from .layer import AbstractLayer
 import nest
 from copy import deepcopy
 
+
+
+
+
+
+
+
+
+
+
+
+
 class NestLayer(AbstractLayer):
 
     def __init__(self, net, p, layer) -> None:

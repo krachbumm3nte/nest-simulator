@@ -17,7 +17,7 @@ from networks.params import *  # nopep8
 parser = argparse.ArgumentParser()
 parser.add_argument("--network",
                     type=str, choices=["numpy", "rnest", "snest"],
-                    default="snest",
+                    default="rnest",
                     help="""Type of network to train. Choice between exact mathematical simulation ('numpy') and NEST simulations with rate- or spiking neurons ('rnest', 'snest')""")
 parser.add_argument("--le",
                     action="store_true",
@@ -31,7 +31,7 @@ parser.add_argument("--weights",
                     help="Start simulations from a given set of weights to ensure comparable results.")
 parser.add_argument("--plot",
                     type=int,
-                    default=100,
+                    default=50,
                     help="generate a plot of training progress after every n epochs.")
 parser.add_argument("--mode",
                     type=str,
@@ -53,10 +53,6 @@ if args.cont:
         progress = json.load(f)
     spiking = params.spiking
 else:
-    # if args.le:
-    #     #TODO: create custom interface
-    #     from params_le import *  # nopep8
-    # else:
     params = Params()
     root_dir, imgdir, datadir = utils.setup_directories(type=args.network)
     spiking = args.network == "snest"
@@ -72,6 +68,7 @@ if params.network_type == "numpy":
     net = NumpyNetwork(params)
 else:
     net = NestNetwork(params)
+
 
 if args.weights:
     with open(args.weights) as f:

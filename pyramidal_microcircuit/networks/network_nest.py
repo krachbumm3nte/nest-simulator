@@ -7,6 +7,7 @@ import pandas as pd
 from copy import deepcopy
 from .layer_NEST import NestLayer, NestOutputLayer
 from .params import Params
+import utils
 
 
 class NestNetwork(Network):
@@ -139,19 +140,8 @@ class NestNetwork(Network):
             self.set_input(x)
             self.set_target(y)
             self.simulate(self.sim_time)
-            # if i == len(x)-1:
-            #     U_y = [nrn.get("soma")["V_m"] for nrn in self.layers[-1].pyr]
-            #     if not self.use_mm:
-            #         U_h = [nrn.get("soma")["V_m"] for nrn in self.layers[0].pyr]
-            #         V_ah = [nrn.get("apical_lat")["V_m"] for nrn in self.layers[0].pyr]
-            #         U_i = [nrn.get("soma")["V_m"] for nrn in self.layers[0].intn]
-
-            #         self.V_ah_record = np.concatenate((self.V_ah_record, np.expand_dims(V_ah, 0)), axis=0)
-            #         self.U_h_record = np.concatenate((self.U_h_record, np.expand_dims(U_h, 0)), axis=0)
-            #         self.U_i_record = np.concatenate((self.U_i_record, np.expand_dims(U_i, 0)), axis=0)
-            #         self.U_y_record = np.concatenate((self.U_y_record, np.expand_dims(U_y, 0)), axis=0)
-
-            #     self.train_loss.append((self.epoch, mse(y, U_y)))
+            if i == 0 == self.epoch:
+                utils.dump_state(self, "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/new.json")
             self.reset()
 
     def test_batch(self, x_batch, y_batch):
