@@ -63,10 +63,8 @@ class AbstractLayer():
         res = x.copy()
         ind = np.abs(x) < thresh
         res[x < -thresh] = 0
-        res[ind] = np.log(1 + np.exp(x[ind]))
+        res[ind] = self.gamma * np.log(1 + np.exp(self.beta * (x[ind] - self.theta)))
         return res
-        return self.gamma * np.log(1 + np.exp(self.beta * (x - self.theta)))
-
 
 
 class Layer(AbstractLayer):

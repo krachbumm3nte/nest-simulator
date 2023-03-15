@@ -134,6 +134,7 @@ class NestNetwork(Network):
             self.input_neurons[i].set({"soma": {"I_e": input_currents[i] / self.p.tau_x}})
 
     def train_batch(self, x_batch, y_batch):
+
         for i, (x, y) in enumerate(zip(x_batch, y_batch)):
             self.set_input(x)
             self.set_target(y)

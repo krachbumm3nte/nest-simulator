@@ -8,7 +8,6 @@ class NestLayer(AbstractLayer):
     def __init__(self, net, p, layer) -> None:
         super().__init__(p, net, layer)
         self.synapses = {}
-        learning_rates_l = {}
         for type in ["up", "pi", "ip", "down"]:
             eta = self.eta[type]
 
@@ -17,8 +16,6 @@ class NestLayer(AbstractLayer):
                 self.synapses[type]["eta"] = eta
             else:
                 self.synapses[type] = deepcopy(p.syn_static)
-
-            learning_rates_l[type] = eta
 
         basal_dendrite = p.compartments['basal']
         apical_dendrite = p.compartments['apical_lat']
