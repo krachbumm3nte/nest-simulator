@@ -137,7 +137,7 @@ class NestNetwork(Network):
             self.input_neurons[i].set({"soma": {"I_e": input_currents[i] / self.p.tau_x}})
 
     def train_batch(self, x_batch, y_batch):
-        class_loss = [[] for i in range(3)]
+        loss = []
         for i, (x, y) in enumerate(zip(x_batch, y_batch)):
             self.set_input(x)
             self.set_target(y)
@@ -148,15 +148,10 @@ class NestNetwork(Network):
             U_Y = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]
             y_pred = np.mean(U_Y, axis=1)
 
-            foo = np.where(y > 0)
-            class_loss[foo[0][0]].append(mse(y_pred, y))
-
-            # print(f"{y}, {[f'{a:.4f}' for a in y_pred]}, {mse(y_pred, y)}")
+            loss.append(mse(y_pred, y))
             self.reset()
 
-        self.train_loss.append((self.epoch, np.mean([item for sublist in class_loss for item in sublist])))
-
-        # print(f"labels: {np.argmax(y_batch, axis=1)}, train loss per class: {[np.mean(l) for l in class_loss]}")
+        self.train_loss.append((self.epoch, np.mean(loss)))
 
     def test_batch(self, x_batch, y_batch):
         acc = []

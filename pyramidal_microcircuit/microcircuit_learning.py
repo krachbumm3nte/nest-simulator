@@ -13,6 +13,10 @@ import argparse
 import pandas as pd
 from datetime import timedelta
 from networks.params import *  # nopep8
+import warnings
+warnings.simplefilter('error', RuntimeWarning)
+
+
 
 parser = argparse.ArgumentParser()
 # parser.add_argument("--le",
@@ -120,9 +124,9 @@ print("setup complete, running simulations...")
 plot_every = args.plot
 start_training = time()
 
-if spiking:
-    sr = nest.Create("spike_recorder")
-    nest.Connect(nest.GetNodes({"model": params.neuron_model}), sr)
+# if spiking:
+#     sr = nest.Create("spike_recorder")
+#     nest.Connect(nest.GetNodes({"model": params.neuron_model}), sr)
 
 
 try:  # catches KeyboardInterruptException to ensure proper cleanup and storage of progress
@@ -136,23 +140,23 @@ try:  # catches KeyboardInterruptException to ensure proper cleanup and storage 
         simulation_times.append(t_epoch)
 
         if epoch % params.test_interval == 0:
-            if spiking:
-                sr.set({"start": 0, "stop": 8*params.sim_time, "origin": nest.biological_time, "n_events": 0})
+            # if spiking:
+            #     sr.set({"start": 0, "stop": 8*params.sim_time, "origin": nest.biological_time, "n_events": 0})
             net.test_epoch()
-            if spiking:
-                spikes = pd.DataFrame.from_dict(sr.events).groupby("senders")
-                n_spikes_avg = spikes.count()["times"].mean()
-                rate = 1000 * n_spikes_avg / (8*params.sim_time)
-                print(f"neurons firing at {rate:.1f}Hz")
+            # if spiking:
+            #     spikes = pd.DataFrame.from_dict(sr.events).groupby("senders")
+            #     n_spikes_avg = spikes.count()["times"].mean()
+            #     rate = 1000 * n_spikes_avg / (8*params.sim_time)
+            #     print(f"neurons firing at {rate:.1f}Hz")
 
-            print(f"test completed, acc: {net.test_acc[-1][1]:.3f}, loss: {net.test_loss[-1][1]:.3f}")
+            print(f"Ep {epoch}: test completed, acc: {net.test_acc[-1][1]:.3f}, loss: {net.test_loss[-1][1]:.3f}")
             if epoch > 0:
                 t_processed = time() - t_start_training
                 t_epoch = t_processed / epoch
                 print(f"\tETA: {timedelta(seconds=np.round(t_epoch * (params.n_epochs-epoch)))}\n")
 
         if plot_every > 0 and epoch % plot_every == 0:
-            print(f"plotting epoch {epoch}")
+            print(f"Ep {epoch}: generating plot...")
 
             plt.rcParams['savefig.dpi'] = 300
 
@@ -228,8 +232,8 @@ try:  # catches KeyboardInterruptException to ensure proper cleanup and storage 
             plt.savefig(os.path.join(imgdir, f"{epoch}.png"))
             plt.close()
 
-            print(f"epoch time: {np.mean(simulation_times[-50:]):.2f}s.")
-            print(f"test loss: {net.test_loss[-1][1]:.4f}")
+            print(f"plot complete. epoch time: {np.mean(simulation_times[-50:]):.2f}s.\n")
+            # print(f"test loss: {net.test_loss[-1][1]:.4f}")
             # print(f"ff error: {ff_error_now:.5f}, fb error: {fb_error_now:.5f}")
             # print(f"apical error: {apical_error_now:.2f}, intn error: {intn_error_now:.4f}\n")
 
