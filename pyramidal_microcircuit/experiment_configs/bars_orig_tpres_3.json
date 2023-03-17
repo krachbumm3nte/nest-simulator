@@ -1,12 +1,12 @@
 {
-    "sim_time": 1,
-    "out_lag": 0.6,
+    "sim_time": 0.3,
+    "out_lag": 0.2,
     "tau_delta": 1,
     "tau_m": 1,
-    "latent_equilibrium": true,
+    "latent_equilibrium": false,
     "eta": {
         "ip": [
-            0.2,
+            0.6666666666666667,
             0.0
         ],
         "pi": [
@@ -14,8 +14,8 @@
             0.0
         ],
         "up": [
-            0.5,
-            0.1
+            1.6666666666666667,
+            0.33333333333333337
         ],
         "down": [
             0.0,
