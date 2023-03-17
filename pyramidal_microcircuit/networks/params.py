@@ -9,15 +9,15 @@ class Params:
 
         # parameters regarding the general simulation environment
         self.delta_t = 0.1         # Euler integration step in ms
-        self.threads = 10         # number of threads for parallel processing
-        self.record_interval = 0.5         # interval for storing membrane potentials in ms
+        self.threads = 9         # number of threads for parallel processing
+        self.record_interval = 1         # interval for storing membrane potentials in ms
         # simulation time per input pattern in ms #TODO: un-capitalize
         self.SIM_TIME = 100
         self.n_epochs = 1000         # number of training iterations
-        self.out_lag = 75         # lag in ms before recording output neuron voltage during testing
-        self.test_interval = 25         # test the network every N epochs
+        self.out_lag = 65         # lag in ms before recording output neuron voltage during testing
+        self.test_interval = 10         # test the network every N epochs
         # flag for whether to use latent equilibrium during training
-        self.latent_equilibrium = False
+        self.latent_equilibrium = True
         # network dimensions, i.e. neurons per layer
         self.dims = [9, 30, 3]
         # flag to initialize feedback weights to self-predicting state
@@ -37,7 +37,7 @@ class Params:
         # effective leakage conductance
         self.g_l_eff = self.g_l + self.g_d + self.g_a
         self.tau_x = 0.1        # input filtering time constant
-        self.tau_m = 2  # membrane time constant for pyramidal and interneurons
+        self.tau_m = 1  # membrane time constant for pyramidal and interneurons
         self.g_lk_dnd = self.delta_t        # dendritic leakage conductance
         # Useful constants for scaling learning rates
         self.lambda_ah = self.g_a / (self.g_d + self.g_a + self.g_l)
@@ -52,8 +52,8 @@ class Params:
         # parameters for synaptic connections
         self.Wmin = -4
         self.Wmax = 4
-        self.tau_delta = 2
-        self.synapse_model = None,  # Synapse model (for NEST simulations only)
+        self.tau_delta = 1.
+        self.syn_model = None,  # Synapse model (for NEST simulations only)
         self.eta = {
             'ip': [0.002, 0],
             'pi': [0, 0],
@@ -161,5 +161,6 @@ class Params:
             self.from_dict(json.load(f))
 
     def to_json(self, filename):
+        d = dict(sorted(self.to_dict().items()))
         with open(filename, "w") as f:
-            json.dump(self.to_dict(), f, indent=4)
+            json.dump(d, f, indent=4)

@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-import torchvision.datasets as datasets
+# import torchvision.datasets as datasets
 
 
 class MnistDataset(Dataset):
@@ -79,7 +79,7 @@ class MnistDataset(Dataset):
         return self.vals[indices], self.cs[indices]
 
 
-class BarDataset(Dataset):
+class BarDataset():  # Dataset):
 
     def __init__(self, lo=0.1, hi=1):
         """
@@ -138,7 +138,6 @@ class BarDataset(Dataset):
             self.target_currents.append(target_pattern)
         self.target_currents = np.array(self.target_currents)
 
-
     def __getitem__(self, key):
         return self.stimulus[key], self.target_currents[key]
 
@@ -149,5 +148,9 @@ class BarDataset(Dataset):
         return 8
 
     def get_samples(self, n_samples):
+
         indices = np.random.choice(8, n_samples)
+        indices = np.arange(n_samples) % 8
+        np.random.shuffle(indices)
+
         return self.stimulus[indices], self.target_currents[indices]

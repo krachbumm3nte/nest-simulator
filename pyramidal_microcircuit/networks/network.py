@@ -141,16 +141,17 @@ class Network:
         self.epoch += 1
 
     def test_epoch(self):
-        x_batch, y_batch = self.get_test_data(self.train_samples)
+        x_batch, y_batch = self.get_test_data(self.test_samples)
+
         acc, loss = self.test_batch(x_batch, y_batch)
 
         self.test_acc.append([self.epoch, acc])
         self.test_loss.append([self.epoch, loss])
-
+        
         self.reset()
 
     def validate_epoch(self):
-        x_batch, y_batch = self.get_val_data(self.train_samples)
+        x_batch, y_batch = self.get_val_data(self.val_samples)
         acc, loss = self.test_batch(x_batch, y_batch)
 
         self.val_acc.append([self.epoch, acc])

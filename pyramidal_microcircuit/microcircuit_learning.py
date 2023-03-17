@@ -41,7 +41,6 @@ parser.add_argument("--mode",
 args = parser.parse_args()
 
 
-
 if args.cont:
     root_dir = args.cont
     imgdir = os.path.join(root_dir, "plots")
@@ -68,6 +67,7 @@ if params.network_type == "numpy":
     net = NumpyNetwork(params)
 else:
     net = NestNetwork(params)
+    utils.dump_state(net, os.path.join(root_dir, "wtf.json"))
 
 
 if args.weights:
@@ -115,7 +115,7 @@ if spiking:
     nest.Connect(nest.GetNodes({"model": params.neuron_model}), sr)
 
 
-try: # catches KeyboardInterruptException to ensure proper cleanup and storage of progress
+try:  # catches KeyboardInterruptException to ensure proper cleanup and storage of progress
     t_start_training = time()
     if not args.cont:
         net.test_epoch()
@@ -127,20 +127,20 @@ try: # catches KeyboardInterruptException to ensure proper cleanup and storage o
 
         if epoch % params.test_interval == 0:
             if spiking:
-                sr.set({"start": 0, "stop": 8*params.SIM_TIME, "origin":nest.biological_time, "n_events":0})
+                sr.set({"start": 0, "stop": 8*params.SIM_TIME, "origin": nest.biological_time, "n_events": 0})
             net.test_epoch()
             if spiking:
                 spikes = pd.DataFrame.from_dict(sr.events).groupby("senders")
                 n_spikes_avg = spikes.count()["times"].mean()
-                rate = 1000 *  n_spikes_avg / (8*params.SIM_TIME)
+                rate = 1000 * n_spikes_avg / (8*params.SIM_TIME)
                 print(f"neurons firing at {rate:.1f}Hz")
-            
+
             print(f"test completed, acc: {net.test_acc[-1][1]:.3f}, loss: {net.test_loss[-1][1]:.3f}")
             if epoch > 0:
                 t_processed = time() - t_start_training
                 t_epoch = t_processed / epoch
                 print(f"\tETA: {timedelta(seconds=np.round(t_epoch * (params.n_epochs-epoch)))}\n")
-        
+
         if plot_every > 0 and epoch % plot_every == 0:
             print(f"plotting epoch {epoch}")
 
@@ -148,7 +148,7 @@ try: # catches KeyboardInterruptException to ensure proper cleanup and storage o
 
             fig, axes = plt.subplots(4, 2, constrained_layout=True)
             [ax0, ax1, ax2, ax3, ax4, ax5, ax6, ax7] = axes.flatten()
-            
+
             intn_error = np.square(net.U_y_record - net.U_i_record)
 
             mean_error = utils.rolling_avg(np.mean(intn_error, axis=1), size=200)
@@ -176,11 +176,11 @@ try: # catches KeyboardInterruptException to ensure proper cleanup and storage o
             fb_error_now = mse(WHY.flatten(), -WHI.flatten())
             fb_error.append([epoch, fb_error_now])
 
-
             ff_error_now = mse(WYH.flatten(), WIH.flatten())
             ff_error.append([epoch, ff_error_now])
 
-            ax2.plot(*zip(*fb_error), label=f"FB error: {fb_error_now:.3f}")
+            # ax2.plot(*zip(*fb_error), label=f"FB error: {fb_error_now:.3f}")
+            ax2.plot(*zip(*net.train_loss))
             ax3.plot(*zip(*ff_error), label=f"FF error: {ff_error_now:.3f}")
 
             # plot synaptic weights

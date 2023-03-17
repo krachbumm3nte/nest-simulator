@@ -35,7 +35,7 @@ class NestNetwork(Network):
             self.p.syn_model = 'record_syn'
             nest.CopyModel(self.p.static_syn_model, 'static_record_syn', {"weight_recorder": self.wr})
             self.p.static_syn_model = 'static_record_syn'
-        
+
         self.p.setup_nest_configs()
         # Create input layer neurons
         self.input_neurons = nest.Create(self.p.neuron_model, self.dims[0], self.p.input_params)
@@ -55,9 +55,12 @@ class NestNetwork(Network):
             # Inject Gaussian white noise into neuron somata.
             self.noise_generator = nest.Create("noise_generator", 1, {"mean": 0., "std": self.sigma_noise})
             for l_current in self.layers[:-1]:
-                nest.Connect(self.noise_generator, l_current.pyr, syn_spec={"receptor_type": self.p.compartments["soma_curr"]})
-                nest.Connect(self.noise_generator, l_current.intn, syn_spec={"receptor_type": self.p.compartments["soma_curr"]})
-            nest.Connect(self.noise_generator, self.layers[-1].pyr, syn_spec={"receptor_type": self.p.compartments["soma_curr"]})
+                nest.Connect(self.noise_generator, l_current.pyr, syn_spec={
+                             "receptor_type": self.p.compartments["soma_curr"]})
+                nest.Connect(self.noise_generator, l_current.intn, syn_spec={
+                             "receptor_type": self.p.compartments["soma_curr"]})
+            nest.Connect(self.noise_generator, self.layers[-1].pyr,
+                         syn_spec={"receptor_type": self.p.compartments["soma_curr"]})
 
         if self.use_mm:
             self.mm = nest.Create('multimeter', 1, {'record_to': self.recording_backend,
@@ -109,8 +112,7 @@ class NestNetwork(Network):
 
                 self.set_weights_from_syn(w_up * l_next.gb / (l_next.gl + l_next.ga + l_next.gb) *
                                           (l_current.gl + l_current.gd) / l_current.gd, l_current.ip)
-        
-        
+
     def simulate(self, T, enable_recording=False):
         if enable_recording:
             # TODO: record with out_lag aswell?
@@ -135,14 +137,30 @@ class NestNetwork(Network):
             self.input_neurons[i].set({"soma": {"I_e": input_currents[i] / self.p.tau_x}})
 
     def train_batch(self, x_batch, y_batch):
-
+        class_loss = [[] for i in range(3)]
         for i, (x, y) in enumerate(zip(x_batch, y_batch)):
             self.set_input(x)
             self.set_target(y)
+            self.mm.set({"start": self.p.out_lag, 'stop': self.sim_time, 'origin': nest.biological_time})
+
             self.simulate(self.sim_time)
+            mm_data = pd.DataFrame.from_dict(self.mm.events)
+            U_Y = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]
+            y_pred = np.mean(U_Y, axis=1)
+
+            foo = np.where(y > 0)
+            class_loss[foo[0][0]].append(mse(y_pred, y))
+
+            # print(f"{y}, {[f'{a:.4f}' for a in y_pred]}, {mse(y_pred, y)}")
+
             if i == 0 == self.epoch:
                 utils.dump_state(self, "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/new.json")
             self.reset()
+
+        self.train_loss.append((self.epoch, np.mean([item for sublist in class_loss for item in sublist])))
+        
+
+        print(f"labels: {np.argmax(y_batch, axis=1)}, train loss per class: {[np.mean(l) for l in class_loss]}")
 
     def test_batch(self, x_batch, y_batch):
         acc = []
@@ -161,7 +179,20 @@ class NestNetwork(Network):
             acc.append(np.argmax(y_actual) == np.argmax(y_pred))
             self.reset()
 
+        class_acc = [[]for i in range(3)]
+        class_loss = [[]for i in range(3)]
+        out_labels = np.argmax(y_batch, axis=1)
+        for label, guess, loss in zip(out_labels, acc, loss_mse):
+            class_acc[label].append(guess)
+            class_loss[label].append(loss)
+        print(y_batch)
+        print([np.mean(loss) for loss in class_loss])
+
+        print([np.mean(acc) for acc in class_acc])
+        print()
+
         # set learning rates to their original values
+
         self.enable_learning()
         return np.mean(acc), np.mean(loss_mse)
 
