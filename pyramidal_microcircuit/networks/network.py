@@ -105,7 +105,7 @@ class Network:
         Returns:
             input currents (np.array(3,3)), output currents (np.array(3)) 
         """
-        if not config:
+        if config is None:
             config = np.random.randint(0, 8)
         elif not 0 <= config < 8:
             raise ValueError("Input configuration must be between (0,8]")

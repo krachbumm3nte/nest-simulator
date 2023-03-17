@@ -106,7 +106,12 @@ else:
 if not args.cont:
     # dump simulation parameters and initial weights to .json files
     with open(os.path.join(root_dir, "params.json"), "w") as f:
-        json.dump({"simulation": sim_params, "neurons": neuron_params, "synapses": syn_params}, f, indent=4)
+        foo= {}
+        foo.update(sim_params)
+        foo.update(neuron_params)
+        foo.update(syn_params)
+        foo = dict(sorted(foo.items()))
+        json.dump(foo, f, indent=4)
     utils.store_synaptic_weights(net, root_dir, "init_weights.json")
 
 print("setup complete, running simulations...")
@@ -183,7 +188,9 @@ try: # catches KeyboardInterruptException to ensure proper cleanup and storage o
             ff_error_now = mse(WYH.flatten(), WIH.flatten())
             ff_error.append([epoch, ff_error_now])
 
-            ax2.plot(*zip(*fb_error), label=f"FB error: {fb_error_now:.3f}")
+            # ax2.plot(*zip(*fb_error), label=f"FB error: {fb_error_now:.3f}")
+            ax2.plot(*zip(*net.train_loss))
+
             ax3.plot(*zip(*ff_error), label=f"FF error: {ff_error_now:.3f}")
 
             # plot synaptic weights
@@ -223,7 +230,7 @@ try: # catches KeyboardInterruptException to ensure proper cleanup and storage o
 
             print(f"epoch time: {np.mean(simulation_times[-50:]):.2f}s.")
             print(f"train loss: {net.train_loss[-1][1]:.4f}, test loss: {net.test_loss[-1][1]:.4f}")
-            print(f"ff error: {ff_error_now:.5f}, fb error: {fb_error_now:.5f}")
+            # print(f"ff error: {ff_error_now:.5f}, fb error: {fb_error_now:.5f}")
             print(f"apical error: {apical_error_now:.2f}, intn error: {intn_error_now:.4f}\n")
 
 except KeyboardInterrupt:

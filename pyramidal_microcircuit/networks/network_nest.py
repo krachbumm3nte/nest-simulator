@@ -6,7 +6,7 @@ from time import time
 import pandas as pd
 from copy import deepcopy
 from .layer_NEST import NestLayer, NestOutputLayer
-
+import utils
 
 class NestNetwork(Network):
 
@@ -139,10 +139,19 @@ class NestNetwork(Network):
 
     def train_epoch(self, x_batch, y_batch):
 
+        class_loss = [[] for i in range(3)]
         for i, (x, y) in enumerate(zip(x_batch, y_batch)):
             self.set_input(x)
             self.set_target(y)
+            self.mm.set({"start": 65, 'stop': self.sim_time, 'origin': nest.biological_time})
+
             self.simulate(self.sim_time)
+            mm_data = pd.DataFrame.from_dict(self.mm.events)
+            U_Y = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]
+            y_pred = np.mean(U_Y, axis=1)
+
+            foo = np.where(y > 0)
+            class_loss[foo[0][0]].append(mse(y_pred, y))
             if i == len(x)-1:
                 U_y = [nrn.get("soma")["V_m"] for nrn in self.layers[-1].pyr]
                 if not self.use_mm:
@@ -155,8 +164,19 @@ class NestNetwork(Network):
                     self.U_i_record = np.concatenate((self.U_i_record, np.expand_dims(U_i, 0)), axis=0)
                     self.U_y_record = np.concatenate((self.U_y_record, np.expand_dims(U_y, 0)), axis=0)
 
-                self.train_loss.append((self.epoch, mse(y, U_y)))
+                # self.train_loss.append((self.epoch, mse(y, U_y)))
+            # print(f"{y}, {[f'{a:.4f}' for a in y_pred]}, {mse(y_pred, y)}")
+
+            if i == 0 == self.epoch:
+                utils.dump_state(self, "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/old.json")
+
             self.reset()
+
+        
+        self.train_loss.append((self.epoch, np.mean([item for sublist in class_loss for item in sublist])))
+
+        print(f"labels: {np.argmax(y_batch, axis=1)}, train loss per class: {[np.mean(l) for l in class_loss]}")
+
 
     def test_teacher(self, n_samples=5):
         raise DeprecationWarning
@@ -178,6 +198,7 @@ class NestNetwork(Network):
         # set all learning rates to zero
         self.disable_learning()
 
+        x_batch, y_batch = [], []
         for sample_idx in range(n_samples):
             x_test, y_actual = self.generate_bar_data(sample_idx)
             self.set_input(x_test)
@@ -189,9 +210,24 @@ class NestNetwork(Network):
             loss_mse.append(mse(y_actual, y_pred))
             acc.append(np.argmax(y_actual) == np.argmax(y_pred))
             self.reset()
+            x_batch.append(x_test)
+            y_batch.append(y_actual)
 
         self.test_acc.append([self.epoch, np.mean(acc)])
         self.test_loss.append([self.epoch, np.mean(loss_mse)])
+
+        class_acc = [[]for i in range(3)]
+        class_loss = [[]for i in range(3)]
+        out_labels = np.argmax(y_batch, axis=1)
+        for label, guess, loss in zip(out_labels, acc, loss_mse):
+            class_acc[label].append(guess)
+            class_loss[label].append(loss)
+
+        print(y_batch)
+        print([np.mean(loss) for loss in class_loss])
+
+        print([np.mean(acc) for acc in class_acc])
+        print()
 
         # set learning rates to their original values
         self.enable_learning()

@@ -9,7 +9,7 @@ sigma = 0.3  # standard deviation for membrane potential noise
 sim_params = {
     "delta_t": delta_t,
     "threads": 9,
-    "record_interval": 1,  # interval for storing membrane potentials in ms
+    "record_interval": 0.5,  # interval for storing membrane potentials in ms
     "init_self_pred": True,  # initialize feedback weights to self-predicting state
     "plasticity": True,  # enable synaptic plasticity
     "SIM_TIME": 100,  # simulation time per input pattern in ms
@@ -25,7 +25,7 @@ sim_params = {
     "use_mm": True,  # If true, record activity of nest neurons using multimeters
     "recording_backend": "memory",  # Backend for NEST multimeter recordings
     "out_lag": 65,  # lag in ms before recording output neuron voltage during testing
-    "test_interval": 25, # test the network every N epochs 
+    "test_interval": 10, # test the network every N epochs 
     "spiking": True,
 }
 
@@ -66,7 +66,7 @@ neuron_params = {
     'theta': theta,
     "g_l_eff": g_l_eff,
     "weight_scale": 5,
-    "latent_equilibrium": True
+    "latent_equilibrium": False
 }
 
 
@@ -131,11 +131,11 @@ syn_params = {
     'delay': sim_params['delta_t'],  # synaptic delay
     'tau_Delta': tau_delta,
     'eta': {
-        # 'ip': [0.002, 0],
-        # 'pi': [0, 0],
-        # 'up': [0.005, 0.001],
-        'ip': [0.0001, 0],
+        'ip': [0.002, 0],
         'pi': [0, 0],
-        'up': [0.00025, 0.00005],
+        'up': [0.005, 0.001],
+        # 'ip': [0.0001, 0],
+        # 'pi': [0, 0],
+        # 'up': [0.00025, 0.00005],
     }
 }
