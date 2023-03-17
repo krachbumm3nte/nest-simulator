@@ -13,9 +13,9 @@ class Network:
         self.mode = p.mode
         if self.mode == "bars":
             self.dims = [9, 30, 3]
-            self.train_samples = 24
-            self.val_samples = 8
-            self.test_samples = 8
+            self.train_samples = 3
+            self.val_samples = 1
+            self.test_samples = 1
             self.bar_dataset = BarDataset()
             self.get_training_data = self.bar_dataset.get_samples
             self.get_val_data = self.bar_dataset.get_samples
@@ -67,7 +67,7 @@ class Network:
 
 
         self.p.dims = self.dims
-        self.sim_time = self.p.SIM_TIME
+        self.sim_time = self.p.sim_time
         self.dt = self.p.delta_t
         self.sigma_noise = self.p.sigma
         self.record_interval = self.p.record_interval

@@ -15,14 +15,18 @@ from datetime import timedelta
 from networks.params import *  # nopep8
 
 parser = argparse.ArgumentParser()
+# parser.add_argument("--le",
+#                     action="store_true",
+#                     help="""Use latent equilibrium in activation and plasticity."""
+#                     )
+# parser.add_argument("--mode",
+#                     type=str,
+#                     default="bars",
+#                     help="which dataset to train on")
 parser.add_argument("--network",
                     type=str, choices=["numpy", "rnest", "snest"],
                     default="rnest",
                     help="""Type of network to train. Choice between exact mathematical simulation ('numpy') and NEST simulations with rate- or spiking neurons ('rnest', 'snest')""")
-parser.add_argument("--le",
-                    action="store_true",
-                    help="""Use latent equilibrium in activation and plasticity."""
-                    )
 parser.add_argument("--cont",
                     type=str,
                     help="""continue training from a previous simulation""")
@@ -33,10 +37,13 @@ parser.add_argument("--plot",
                     type=int,
                     default=50,
                     help="generate a plot of training progress after every n epochs.")
-parser.add_argument("--mode",
+parser.add_argument("--config",
                     type=str,
-                    default="bars",
-                    help="which dataset to train on")
+                    help="path to a .json file specifying which parameters should deviate from their defaults.")
+parser.add_argument("--threads",
+                    type=int,
+                    default=10,
+                    help="number of threads to allocate. Only has an effect when simulating with NEST.")
 
 args = parser.parse_args()
 
@@ -47,27 +54,30 @@ if args.cont:
     datadir = os.path.join(root_dir, "data")
     args.weights = os.path.join(root_dir, "weights.json")
     params = Params(os.path.join(root_dir, "params.json"))
-    args.le = params.latent_equilibrium
     with open(os.path.join(root_dir, "progress.json"), "r") as f:
         progress = json.load(f)
     spiking = params.spiking
 else:
-    params = Params()
-    root_dir, imgdir, datadir = utils.setup_directories(type=args.network)
+    if args.config:
+        params = Params(args.config)
+        config_name = os.path.split(args.config)[-1].split(".")[0]
+    else:
+        params = Params()
+        config_name = "default_config"
+    root_dir, imgdir, datadir = utils.setup_directories(name=config_name, type=args.network)
+
     spiking = args.network == "snest"
     params.network_type = args.network
     params.timestamp = root_dir.split(os.path.sep)[-1]
     params.spiking = spiking
-    params.latent_equilibrium = args.le
-    params.mode = args.mode
-
+    # params.mode = args.mode
+params.threads = args.threads
 
 utils.setup_nest(params, datadir)
 if params.network_type == "numpy":
     net = NumpyNetwork(params)
 else:
     net = NestNetwork(params)
-    utils.dump_state(net, os.path.join(root_dir, "wtf.json"))
 
 
 if args.weights:
@@ -127,12 +137,12 @@ try:  # catches KeyboardInterruptException to ensure proper cleanup and storage 
 
         if epoch % params.test_interval == 0:
             if spiking:
-                sr.set({"start": 0, "stop": 8*params.SIM_TIME, "origin": nest.biological_time, "n_events": 0})
+                sr.set({"start": 0, "stop": 8*params.sim_time, "origin": nest.biological_time, "n_events": 0})
             net.test_epoch()
             if spiking:
                 spikes = pd.DataFrame.from_dict(sr.events).groupby("senders")
                 n_spikes_avg = spikes.count()["times"].mean()
-                rate = 1000 * n_spikes_avg / (8*params.SIM_TIME)
+                rate = 1000 * n_spikes_avg / (8*params.sim_time)
                 print(f"neurons firing at {rate:.1f}Hz")
 
             print(f"test completed, acc: {net.test_acc[-1][1]:.3f}, loss: {net.test_loss[-1][1]:.3f}")

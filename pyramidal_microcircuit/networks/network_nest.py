@@ -152,15 +152,11 @@ class NestNetwork(Network):
             class_loss[foo[0][0]].append(mse(y_pred, y))
 
             # print(f"{y}, {[f'{a:.4f}' for a in y_pred]}, {mse(y_pred, y)}")
-
-            if i == 0 == self.epoch:
-                utils.dump_state(self, "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/new.json")
             self.reset()
 
         self.train_loss.append((self.epoch, np.mean([item for sublist in class_loss for item in sublist])))
-        
 
-        print(f"labels: {np.argmax(y_batch, axis=1)}, train loss per class: {[np.mean(l) for l in class_loss]}")
+        # print(f"labels: {np.argmax(y_batch, axis=1)}, train loss per class: {[np.mean(l) for l in class_loss]}")
 
     def test_batch(self, x_batch, y_batch):
         acc = []
@@ -170,8 +166,8 @@ class NestNetwork(Network):
 
         for x_test, y_actual in zip(x_batch, y_batch):
             self.set_input(x_test)
-            self.mm.set({"start": self.p.out_lag, 'stop': self.sim_time, 'origin': nest.biological_time})
-            self.simulate(self.sim_time)
+            self.mm.set({"start": self.p.out_lag_test, 'stop': self.p.t_test, 'origin': nest.biological_time})
+            self.simulate(self.p.t_test)
             mm_data = pd.DataFrame.from_dict(self.mm.events)
             U_Y = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]
             y_pred = np.mean(U_Y, axis=1)
@@ -185,11 +181,10 @@ class NestNetwork(Network):
         for label, guess, loss in zip(out_labels, acc, loss_mse):
             class_acc[label].append(guess)
             class_loss[label].append(loss)
-        print(y_batch)
-        print([np.mean(loss) for loss in class_loss])
+        # print([np.mean(loss) for loss in class_loss])
 
-        print([np.mean(acc) for acc in class_acc])
-        print()
+        # print([np.mean(acc) for acc in class_acc])
+        # print()
 
         # set learning rates to their original values
 
@@ -200,8 +195,8 @@ class NestNetwork(Network):
         nest.GetConnections(synapse_model=self.p.syn_model).set({"eta": 0})
 
     def enable_learning(self):
-        for l in self.layers:
-            l.enable_learning()
+        for layer in self.layers:
+            layer.enable_learning()
 
     def set_target(self, target_currents):
         """Inject a constant current into all neurons in the output layer.
@@ -234,19 +229,19 @@ class NestNetwork(Network):
 
     def get_weight_dict(self, normalized=True):
         weights = []
-        for l in self.layers[:-1]:
-            weights.append({"up": self.get_weight_array_from_syn(l.up, normalized),
-                            "pi": self.get_weight_array_from_syn(l.pi, normalized),
-                            "ip": self.get_weight_array_from_syn(l.ip, normalized),
-                            "down": self.get_weight_array_from_syn(l.down, normalized)})
+        for layer in self.layers[:-1]:
+            weights.append({"up": self.get_weight_array_from_syn(layer.up, normalized),
+                            "pi": self.get_weight_array_from_syn(layer.pi, normalized),
+                            "ip": self.get_weight_array_from_syn(layer.ip, normalized),
+                            "down": self.get_weight_array_from_syn(layer.down, normalized)})
         weights.append({"up": self.get_weight_array_from_syn(self.layers[-1].up, normalized)})
         return weights
 
     def reset(self):
         self.input_neurons.set({"soma": {"V_m": 0, "I_e": 0}, "basal": {
                                "V_m": 0, "I_e": 0}, "apical_lat": {"V_m": 0, "I_e": 0}})
-        for l in self.layers:
-            l.reset()
+        for layer in self.layers:
+            layer.reset()
         self.mm.n_events = 0
 
     def set_weights_from_syn(self, weights, synapse_collection):

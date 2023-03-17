@@ -149,8 +149,10 @@ class BarDataset():  # Dataset):
 
     def get_samples(self, n_samples):
 
-        indices = np.random.choice(8, n_samples)
-        indices = np.arange(n_samples) % 8
+        indices = np.arange(n_samples * 8) % 8
         np.random.shuffle(indices)
 
         return self.stimulus[indices], self.target_currents[indices]
+
+    def get_full_dataset(self):
+        return self.stimulus, self.target_currents

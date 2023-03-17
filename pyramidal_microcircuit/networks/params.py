@@ -9,12 +9,14 @@ class Params:
 
         # parameters regarding the general simulation environment
         self.delta_t = 0.1         # Euler integration step in ms
-        self.threads = 9         # number of threads for parallel processing
+        self.threads = 10         # number of threads for parallel processing
         self.record_interval = 1         # interval for storing membrane potentials in ms
         # simulation time per input pattern in ms #TODO: un-capitalize
-        self.SIM_TIME = 100
+        self.sim_time = 500
         self.n_epochs = 1000         # number of training iterations
-        self.out_lag = 65         # lag in ms before recording output neuron voltage during testing
+        self.out_lag = 400         # lag in ms before recording output neuron voltage during testing
+        self.t_test = 50  # simulation time for validation and testing
+        self.out_lag_test = 35  # delay before recording output during tests and validation
         self.test_interval = 10         # test the network every N epochs
         # flag for whether to use latent equilibrium during training
         self.latent_equilibrium = True
@@ -55,12 +57,9 @@ class Params:
         self.tau_delta = 1.
         self.syn_model = None,  # Synapse model (for NEST simulations only)
         self.eta = {
-            'ip': [0.002, 0],
+            'ip': [0.0004, 0],
             'pi': [0, 0],
-            'up': [0.005, 0.001],
-            # 'ip': [0.0001, 0],
-            # 'pi': [0, 0],
-            # 'up': [0.00025, 0.00005],
+            'up': [0.001, 0.0002],
             'down': [0, 0]
         }
 
@@ -71,6 +70,7 @@ class Params:
         self.spiking = True        # flag to enable simulation with spiking neurons
 
         if config_file:
+            self.config_file = config_file
             self.from_json(config_file)
 
     def setup_nest_configs(self):

@@ -12,9 +12,9 @@ import json
 from copy import deepcopy
 
 
-def setup_directories(root=os.path.join(os.getcwd(), "runs"), type=""):
+def setup_directories(type, name="default", root=os.path.join(os.getcwd(), "runs"), ):
     # TODO: remove personal path!
-    root = os.path.join(root, f"{type}_{datetime.now().strftime('%Y_%m_%d-%H_%M_%S')}")
+    root = os.path.join(root, f"{name}_{type}_{datetime.now().strftime('%Y_%m_%d-%H_%M_%S')}")
 
     imgdir = os.path.join(root, "plots")
     datadir = os.path.join(root, "data")
