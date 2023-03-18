@@ -15,8 +15,6 @@ class Params:
         self.sim_time = 500
         self.n_epochs = 1000         # number of training iterations
         self.out_lag = 400         # lag in ms before recording output neuron voltage during testing
-        self.t_test = 50  # simulation time for validation and testing
-        self.out_lag_test = 35  # delay before recording output during tests and validation
         self.test_interval = 10         # test the network every N epochs
         # flag for whether to use latent equilibrium during training
         self.latent_equilibrium = True

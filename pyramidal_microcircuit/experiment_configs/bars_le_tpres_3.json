@@ -1,6 +1,6 @@
 {
     "sim_time": 0.3,
-    "out_lag": 0.2,
+    "out_lag": 0.1,
     "tau_delta": 1,
     "tau_m": 1,
     "latent_equilibrium": true,

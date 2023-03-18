@@ -146,6 +146,7 @@ class NestNetwork(Network):
             self.simulate(self.sim_time)
             mm_data = pd.DataFrame.from_dict(self.mm.events)
             U_Y = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]
+            print(U_Y)
             y_pred = np.mean(U_Y, axis=1)
 
             loss.append(mse(y_pred, y))
@@ -161,8 +162,8 @@ class NestNetwork(Network):
 
         for x_test, y_actual in zip(x_batch, y_batch):
             self.set_input(x_test)
-            self.mm.set({"start": self.p.out_lag_test, 'stop': self.p.t_test, 'origin': nest.biological_time})
-            self.simulate(self.p.t_test)
+            self.mm.set({"start": self.p.out_lag, 'stop': self.sim_time, 'origin': nest.biological_time})
+            self.simulate(self.sim_time)
             mm_data = pd.DataFrame.from_dict(self.mm.events)
             U_Y = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]
             y_pred = np.mean(U_Y, axis=1)

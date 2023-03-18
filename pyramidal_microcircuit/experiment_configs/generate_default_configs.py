@@ -19,7 +19,7 @@ for le in [False, True]:
 
         config = {
             "sim_time": t,
-            "out_lag": round(0.6*t, 1),
+            "out_lag": round(0.5*t, 1),
             "tau_delta": 1,
             "tau_m": 1,
             "latent_equilibrium": le,
