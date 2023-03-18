@@ -50,18 +50,12 @@ for i, config in enumerate(all_configs):
         print(f"skipping file {config}")
         continue
 
-    print(config)
-    print(os.path.split(config))
-    print(os.path.split(config)[-1])
-    print(os.path.split(config)[-1].split("."))
-
     config_name = os.path.split(config)[-1].split(".")[0]
-    print(f"name: {config_name}")
     root_dir, imgdir, datadir = utils.setup_directories(name=config_name, type=args.network)
-    print(f"created dirs: {root_dir}")
     if not root_dir:
         print("\ta simulation of that name already exists, skipping.\n")
         continue
+    print(f"created dirs: {root_dir}")
 
     params = Params(os.path.join(args.config_dir, config))
     print("created params")
@@ -83,15 +77,15 @@ for i, config in enumerate(all_configs):
     params.to_json(os.path.join(root_dir, "params.json"))
     utils.store_synaptic_weights(net, root_dir, "init_weights.json")
 
-    print(f"simulation set up. Start training for {config_name}...")
+    print(f"Setup complete, beginning to train...")
 
     run_simulations(net, params, root_dir, imgdir, datadir)
 
-    nest.ResetKernel()
-
     print("training complete.")
+    nest.ResetKernel()
+    print("simulator reset.")
     global_t_processed = time.time() - global_t_start
 
-    t_config = global_t_processed / i
+    t_config = global_t_processed / (i + 1)
     print(
         f"time per training: {t_config:.2f}s, ETA: {timedelta(seconds=np.round(t_config * (len(all_configs)-i)))}\n\n")
