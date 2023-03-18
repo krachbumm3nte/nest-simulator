@@ -51,7 +51,7 @@ for i, config in enumerate(all_configs):
         print(f"skipping file {config}")
         continue
     print("resetting")
-    if i > 0:
+    if len(nest.GetNodes().get()) > 0:
         nest.ResetKernel()
 
     config_name = os.path.split(config)[-1].split(".")[0]
