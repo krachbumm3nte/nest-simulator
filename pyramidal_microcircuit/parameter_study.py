@@ -50,8 +50,8 @@ for i, config in enumerate(all_configs):
     if not config.endswith(".json"):
         print(f"skipping file {config}")
         continue
-    print("resetting")
-    if len(nest.GetNodes().get()) > 0:
+    if len(nest.GetNodes()) > 0:
+        print("resetting")
         nest.ResetKernel()
 
     config_name = os.path.split(config)[-1].split(".")[0]
