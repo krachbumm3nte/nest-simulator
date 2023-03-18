@@ -54,6 +54,11 @@ for i, config in enumerate(all_configs):
         print("resetting")
         nest.ResetKernel()
 
+    print(config)
+    print(os.path.split(config))
+    print(os.path.split(config)[-1])
+    print(os.path.split(config)[-1].split("."))
+
     config_name = os.path.split(config)[-1].split(".")[0]
     print(f"name: {config_name}")
     root_dir, imgdir, datadir = utils.setup_directories(name=config_name, type=args.network)
