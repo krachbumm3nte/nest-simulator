@@ -53,12 +53,15 @@ for i, config in enumerate(all_configs):
     nest.ResetKernel()
 
     config_name = os.path.split(config)[-1].split(".")[0]
+    print(f"name: {config_name}")
     root_dir, imgdir, datadir = utils.setup_directories(name=config_name, type=args.network)
+    print(f"created dirs: {root_dir}")
     if not root_dir:
         print("\ta simulation of that name already exists, skipping.\n")
         continue
 
     params = Params(os.path.join(args.config_dir, config))
+    print("created params")
     spiking = args.network == "snest"
     params.network_type = args.network
     params.timestamp = root_dir.split(os.path.sep)[-1]
