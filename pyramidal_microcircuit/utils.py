@@ -14,10 +14,15 @@ from copy import deepcopy
 
 def setup_directories(type, name="default", root=os.path.join(os.getcwd(), "runs"), ):
     # TODO: remove personal path!
-    root = os.path.join(root, f"{name}_{type}_{datetime.now().strftime('%Y_%m_%d-%H_%M_%S')}")
+
+    root = os.path.join(root, f"{name}_{type}")  # _{datetime.now().strftime('%Y_%m_%d-%H_%M_%S')}")
 
     imgdir = os.path.join(root, "plots")
     datadir = os.path.join(root, "data")
+
+    if os.path.exists(root):
+        return False, False, False
+
     for dir in [root, imgdir, datadir]:
         os.mkdir(dir)
 
@@ -37,9 +42,6 @@ def rolling_avg(input, size):
 
 
 def store_synaptic_weights(network: Network, dirname, filename="weights.json"):
-    if len(network.dims) != 3:
-        raise ValueError("I'm too lazy to generalize this!")
-
     weights = network.get_weight_dict()
 
     for layer in weights:
