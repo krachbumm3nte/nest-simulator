@@ -51,7 +51,7 @@ for i, config in enumerate(all_configs):
         print(f"skipping file {config}")
         continue
     print("resetting")
-    nest.ResetKernel()
+    # nest.ResetKernel()
 
     config_name = os.path.split(config)[-1].split(".")[0]
     print(f"name: {config_name}")
