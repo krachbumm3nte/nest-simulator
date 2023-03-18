@@ -49,12 +49,6 @@ for i, config in enumerate(all_configs):
     if not config.endswith(".json"):
         print(f"skipping file {config}")
         continue
-    foo = nest.Create("pp_cond_exp_mc_pyr")
-    print("foo")
-    print(foo.get())
-    if len(nest.GetNodes()) > 0:
-        print("resetting")
-        nest.ResetKernel()
 
     print(config)
     print(os.path.split(config))
@@ -92,6 +86,8 @@ for i, config in enumerate(all_configs):
     print(f"simulation set up. Start training for {config_name}...")
 
     run_simulations(net, params, root_dir, imgdir, datadir)
+
+    nest.ResetKernel()
 
     print("training complete.")
     global_t_processed = time.time() - global_t_start
