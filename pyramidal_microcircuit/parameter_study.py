@@ -50,6 +50,7 @@ for i, config in enumerate(all_configs):
     if not config.endswith(".json"):
         print(f"skipping file {config}")
         continue
+    print("foo")
     if len(nest.GetNodes()) > 0:
         print("resetting")
         nest.ResetKernel()
