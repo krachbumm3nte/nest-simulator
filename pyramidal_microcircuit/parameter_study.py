@@ -1,4 +1,4 @@
-import sys
+import nest
 import argparse
 import os
 from networks.params import Params
@@ -6,7 +6,6 @@ import utils
 from networks.network_nest import NestNetwork
 from networks.network_numpy import NumpyNetwork
 import time
-import nest
 from microcircuit_learning import run_simulations
 import numpy as np
 from datetime import timedelta
