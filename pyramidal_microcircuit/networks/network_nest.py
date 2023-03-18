@@ -146,7 +146,6 @@ class NestNetwork(Network):
             self.simulate(self.sim_time)
             mm_data = pd.DataFrame.from_dict(self.mm.events)
             U_Y = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]
-            print(U_Y)
             y_pred = np.mean(U_Y, axis=1)
 
             loss.append(mse(y_pred, y))

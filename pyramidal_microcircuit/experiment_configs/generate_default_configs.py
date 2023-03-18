@@ -23,7 +23,8 @@ for le in [False, True]:
             "tau_delta": 1,
             "tau_m": 1,
             "latent_equilibrium": le,
-            "eta": eta
+            "eta": eta,
+            "record_interval": max(0.1, round(0.01*t, 1))
         }
 
         config_name = f"bars_{'le' if le else 'orig'}_tpres_{int(10*t)}.json"
