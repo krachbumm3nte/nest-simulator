@@ -2,11 +2,22 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-import utils as utils
+import src.utils as utils
 from sklearn.metrics import mean_squared_error as mse
 
 ff_error = []
 fb_error = []
+
+
+def setup_plt():
+    plt.rcParams['savefig.dpi'] = 300
+    plt.rcParams['figure.constrained_layout.use'] = True
+    plt.rcParams['text.usetex'] = True
+    # font = {'family': 'normal',
+    #         'weight': 'bold',
+    #         'size': 22}
+
+    # plt.rcParams['font'] = font
 
 
 def plot_progress(epoch, net, imgdir):
@@ -14,8 +25,6 @@ def plot_progress(epoch, net, imgdir):
 
     cmap_1 = plt.cm.get_cmap('hsv', net.dims[1]+1)
     cmap_2 = plt.cm.get_cmap('hsv', net.dims[2]+1)
-
-    plt.rcParams['savefig.dpi'] = 300
 
     fig, axes = plt.subplots(4, 2, constrained_layout=True)
     [ax0, ax1, ax2, ax3, ax4, ax5, ax6, ax7] = axes.flatten()

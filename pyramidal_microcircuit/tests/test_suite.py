@@ -1,14 +1,17 @@
-import sys
-import nest
-import matplotlib.pyplot as plt
 import os
-from copy import deepcopy
+import sys
 import traceback
-from tests01_neuron_dynamics import *
-from tests02_plasticity import *
+from copy import deepcopy
+from datetime import datetime
 from itertools import permutations
+
+import matplotlib.pyplot as plt
 import src.utils as utils
 from src.params import Params
+from tests01_neuron_dynamics import *
+from tests02_plasticity import *
+
+import nest
 
 if __name__ == "__main__":
 
@@ -19,8 +22,8 @@ if __name__ == "__main__":
                    DynamicsYH, NetworkDynamics, PlasticityHX, PlasticityHXMulti, PlasticityYH, NetworkPlasticity]
 
     test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
-    root, imgdir, datadir = utils.setup_directories("test_run", root=os.path.join(test_dir, "results"))
-
+    root, imgdir, datadir = utils.setup_directories(
+        f"{datetime.now().strftime('%Y_%m_%d-%H_%M_%S')}", root=os.path.join(test_dir, "results"))
     plot_all_runs = True
     test_results = []
 
@@ -33,7 +36,7 @@ if __name__ == "__main__":
         spiking_str = 'spiking' if use_spiking_neurons else 'rate'
         le_str = '_le' if latent_equilibrium else ""
 
-        params.setup_nest_configs()
+        # params.setup_nest_configs()
 
         for test_class in classes:
             test_name = test_class.__name__

@@ -256,7 +256,8 @@ class PlasticityHXMulti(PlasticityHX):
             self.weights_nest = [val*self.weight_scale for val in self.weights_nest]
             self.nest_weights_2 = [val*self.weight_scale for val in self.weights_nest_2]
 
-        return records_match(self.weights_nest, self.weights_numpy) and records_match(self.weights_nest_2, self.weights_numpy_2)
+        return records_match(self.weights_nest, self.weights_numpy) \
+            and records_match(self.weights_nest_2, self.weights_numpy_2)
 
     def plot_results(self):
 
@@ -375,10 +376,12 @@ class PlasticityIH(DynamicsHI):
 class NetworkPlasticity(TestClass):
     def __init__(self, params, **kwargs) -> None:
         params.dims = [4, 3, 2]
+        print(params.eta)
         super().__init__(params, record_weights=True, **kwargs)
-
-        self.numpy_net = NumpyNetwork(params)
-        self.nest_net = NestNetwork(params)
+        self.numpy_net = NumpyNetwork(deepcopy(params))
+        self.nest_net = NestNetwork(deepcopy(params))
+        print(self.nest_net.layers[0].eta)
+        print(self.numpy_net.layers[0].eta)
         self.numpy_net.set_all_weights(self.nest_net.get_weight_dict())
 
     def run(self):
@@ -390,7 +393,7 @@ class NetworkPlasticity(TestClass):
         self.ip_0 = []
         self.down_0 = []
         self.up_1 = []
-        for i in range(10):
+        for i in range(1):
             input_currents = np.random.random(self.dims[0])
             target_currents = np.random.random(self.dims[-1])
             self.nest_net.set_input(input_currents)

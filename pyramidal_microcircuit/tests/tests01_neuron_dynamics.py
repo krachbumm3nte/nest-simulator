@@ -1,5 +1,10 @@
+from copy import deepcopy
+
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+from src.networks.network_nest import NestNetwork
+from src.networks.network_numpy import NumpyNetwork
 from src.test_utils import *
 
 import nest
@@ -459,11 +464,9 @@ class NetworkDynamics(TestClass):
     def __init__(self, params, **kwargs) -> None:
         super().__init__(params, **kwargs)
         self.disable_plasticity()
-        self.numpy_net = NumpyNetwork(params)
-        self.nest_net = NestNetwork(params)
+        self.numpy_net = NumpyNetwork(deepcopy(params))
+        self.nest_net = NestNetwork(deepcopy(params))
         self.numpy_net.set_all_weights(self.nest_net.get_weight_dict())
-
-        self.starting_weights = self.nest_net.get_weight_dict()
 
     def run(self):
         input_currents = np.random.random(self.dims[0])

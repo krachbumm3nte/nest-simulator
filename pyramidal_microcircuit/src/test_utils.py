@@ -14,7 +14,6 @@ class TestClass(ABC):
         self.record_interval = 2
         self.tau_x = p.tau_x
         self.delta_t = p.delta_t
-        self.neuron_model = p.neuron_model
         self.g_l_eff = p.g_l_eff
         self.g_a = p.g_a
         self.g_d = p.g_d
