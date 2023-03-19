@@ -5,13 +5,13 @@ import re
 
 import numpy as np
 import pandas as pd
-from networks.network import Network
+from src.networks.network import Network
 from scipy.ndimage import uniform_filter1d
 
 import nest
 
 
-def setup_directories(type, name="default", root=os.path.join(os.getcwd(), "runs"), ):
+def setup_directories(type, name="default", root=os.path.join(os.getcwd(), "results"), ):
     root = os.path.join(root, f"{name}_{type}")  # _{datetime.now().strftime('%Y_%m_%d-%H_%M_%S')}")
 
     imgdir = os.path.join(root, "plots")

@@ -1,10 +1,10 @@
 from copy import deepcopy
 
 import numpy as np
-from layer import Layer, OutputLayer
-from network import Network
 from sklearn.metrics import mean_squared_error as mse
-from params import Params
+from src.networks.layer import Layer, OutputLayer
+from src.networks.network import Network
+from src.params import Params
 
 
 class NumpyNetwork(Network):

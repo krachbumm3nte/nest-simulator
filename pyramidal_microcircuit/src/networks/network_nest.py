@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
-from layer_NEST import NestLayer, NestOutputLayer
-from network import Network
-from params import Params
+from src.networks.layer_NEST import NestLayer, NestOutputLayer
+from src.networks.network import Network
+from src.params import Params
 from sklearn.metrics import mean_squared_error as mse
 
 import nest

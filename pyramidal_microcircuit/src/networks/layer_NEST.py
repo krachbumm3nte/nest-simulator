@@ -1,7 +1,7 @@
 
 from copy import deepcopy
 
-from layer import AbstractLayer
+from src.networks.layer import AbstractLayer
 
 import nest
 
