@@ -1,18 +1,9 @@
 
-from .layer import AbstractLayer
-import nest
 from copy import deepcopy
 
+from layer import AbstractLayer
 
-
-
-
-
-
-
-
-
-
+import nest
 
 
 class NestLayer(AbstractLayer):
@@ -98,7 +89,7 @@ class NestOutputLayer(AbstractLayer):
             self.synapse_up["eta"] = self.eta["up"]
         else:
             self.synapse_up = deepcopy(p.syn_static)
-        
+
         basal_dendrite = p.compartments['basal']
         self.synapse_up['receptor_type'] = basal_dendrite
         self.synapse_up["weight"] = self.gen_weights(self.N_prev, self.N_out)

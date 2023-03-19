@@ -1,8 +1,8 @@
-from copy import deepcopy
-import numpy as np
 from abc import abstractmethod
-from .dataset import MnistDataset, BarDataset
-from .params import Params
+
+import numpy as np
+from src.dataset import BarDataset, MnistDataset
+from src.params import Params
 
 
 class Network:
@@ -63,8 +63,6 @@ class Network:
             self.k_hx = self.p.k_hx
         elif self.mode == "test":
             self.dims = p.dims
-            
-
 
         self.p.dims = self.dims
         self.sim_time = self.p.sim_time
@@ -147,7 +145,7 @@ class Network:
 
         self.test_acc.append([self.epoch, acc])
         self.test_loss.append([self.epoch, loss])
-        
+
         self.reset()
 
     def validate_epoch(self):

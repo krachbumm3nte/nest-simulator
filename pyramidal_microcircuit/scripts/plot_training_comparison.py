@@ -1,21 +1,17 @@
-import nest
+import argparse
+import json
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
-from networks.network_nest import NestNetwork
-from networks.network_numpy import NumpyNetwork
-from sklearn.metrics import mean_squared_error as mse
-from time import time
-import utils
-import os
-import json
-import sys
-import argparse
+import src.utils as utils
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--network",
                     type=str, choices=["numpy", "rnest", "snest"],
                     default="numpy",
-                    help="""Type of network to train. Choice between exact mathematical simulation ('numpy') and NEST simulations with rate- or spiking neurons ('rnest', 'snest')""")
+                    help="""Type of network to train. Choice between exact mathematical simulation ('numpy') and \
+NEST simulations with rate- or spiking neurons ('rnest', 'snest')""")
 parser.add_argument("--le",
                     action="store_true",
                     help="""Use latent equilibrium in activation and plasticity."""
@@ -29,8 +25,6 @@ parser.add_argument("--weights",
 args = parser.parse_args()
 
 run_folder = "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/full_runs"
-
-
 
 
 classes = {
@@ -92,7 +86,7 @@ for name, data_dirs in classes.items():
     test_acc = np.mean(test_acc, axis=0)
     test_loss = np.mean(test_loss, axis=0)
     train_loss = np.mean(train_loss, axis=0)
-    train_loss[:,1] = utils.rolling_avg(train_loss[:,1], size=25)
+    train_loss[:, 1] = utils.rolling_avg(train_loss[:, 1], size=25)
     # apical_error = np.mean(apical_error, axis=0)
     # U_y_record = np.mean(U_y_record, axis=0)
     # U_i_record = np.mean(U_i_record, axis=0)
@@ -111,7 +105,6 @@ for name, data_dirs in classes.items():
 
     axes[1][0].set_xlabel("training epoch")
     axes[1][1].set_xlabel("training epoch")
-
 
     axes[0][0].legend()
     axes[0][1].legend()

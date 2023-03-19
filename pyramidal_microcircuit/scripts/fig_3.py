@@ -1,11 +1,11 @@
 import json
 import os
-import sys
-import numpy as np
-import matplotlib.pyplot as plt
 import re
-sys.path.append("/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit")
-import utils  # nopep8
+import sys
+
+import matplotlib.pyplot as plt
+import numpy as np
+import src.utils as utils
 
 linestyles = {5: "solid",
               50: "dashed",
@@ -48,7 +48,7 @@ if __name__ == "__main__":
             times = [entry[0] for entry in acc]
             acc = [1-entry[1] for entry in acc]
             ax0.plot(times, utils.rolling_avg(acc, filter_window),
-                     label=f"t_pres = {round(t_pres)} tau_eff", color="orange", linestyle=linestyles[params["sim_time"]])
+                     label=f"t_pres={round(t_pres)}tau_eff", color="orange", linestyle=linestyles[params["sim_time"]])
 
     for config in configs_le:
 
@@ -67,7 +67,7 @@ if __name__ == "__main__":
             times = [entry[0] for entry in acc]
             acc = [1-entry[1] for entry in acc]
             ax0.plot(times, utils.rolling_avg(acc, filter_window),
-                     label=f"t_pres = {round(t_pres)} tau_eff, le", color="blue", linestyle=linestyles[params["sim_time"]])
+                     label=f"t_pres={round(t_pres)}tau_eff, le", color="blue", linestyle=linestyles[params["sim_time"]])
 
     ax0.legend()
     le_data_1 = sorted(le_data_1)

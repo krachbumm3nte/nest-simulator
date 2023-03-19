@@ -7,9 +7,8 @@ import traceback
 from tests01_neuron_dynamics import *
 from tests02_plasticity import *
 from itertools import permutations
-sys.path.append("/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit")
-import utils  # nopep8
-from networks.params import Params  # nopep8
+import src.utils as utils
+from src.params import Params
 
 if __name__ == "__main__":
 
@@ -20,8 +19,7 @@ if __name__ == "__main__":
                    DynamicsYH, NetworkDynamics, PlasticityHX, PlasticityHXMulti, PlasticityYH, NetworkPlasticity]
 
     test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
-    root, imgdir, datadir = utils.setup_directories("test_run", root=os.path.join(test_dir, "runs"))
-
+    root, imgdir, datadir = utils.setup_directories("test_run", root=os.path.join(test_dir, "results"))
 
     plot_all_runs = True
     test_results = []
@@ -31,12 +29,11 @@ if __name__ == "__main__":
         params.datadir = datadir
         params.spiking = use_spiking_neurons
         params.latent_equilibrium = latent_equilibrium
-        
+
         spiking_str = 'spiking' if use_spiking_neurons else 'rate'
         le_str = '_le' if latent_equilibrium else ""
 
         params.setup_nest_configs()
-
 
         for test_class in classes:
             test_name = test_class.__name__

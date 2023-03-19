@@ -1,13 +1,11 @@
-import nest
 import numpy as np
-from .network import Network
-from sklearn.metrics import mean_squared_error as mse
-from time import time
 import pandas as pd
-from copy import deepcopy
-from .layer_NEST import NestLayer, NestOutputLayer
-from .params import Params
-import utils
+from layer_NEST import NestLayer, NestOutputLayer
+from network import Network
+from params import Params
+from sklearn.metrics import mean_squared_error as mse
+
+import nest
 
 
 class NestNetwork(Network):

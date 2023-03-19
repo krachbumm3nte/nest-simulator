@@ -28,5 +28,5 @@ for le in [False, True]:
         }
 
         config_name = f"bars_{'le' if le else 'orig'}_tpres_{int(10*t)}.json"
-        with open(os.path.join("/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/experiment_configs", config_name), "w") as f:
+        with open(config_name, "w") as f:
             json.dump(config, f, indent=4)

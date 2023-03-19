@@ -1,7 +1,9 @@
-import nest
-import numpy as np
 import json
 from copy import deepcopy
+
+import numpy as np
+
+import nest
 
 
 class Params:
@@ -11,8 +13,7 @@ class Params:
         self.delta_t = 0.1         # Euler integration step in ms
         self.threads = 10         # number of threads for parallel processing
         self.record_interval = 1         # interval for storing membrane potentials in ms
-        # simulation time per input pattern in ms #TODO: un-capitalize
-        self.sim_time = 500
+        self.sim_time = 500  # simulation time per input pattern in ms
         self.n_epochs = 1000         # number of training iterations
         self.out_lag = 400         # lag in ms before recording output neuron voltage during testing
         self.test_interval = 10         # test the network every N epochs
@@ -99,7 +100,7 @@ class Params:
             'gamma': self.gamma,
             'beta': self.beta,
             'theta': self.theta,
-            'use_phi': True,  # If False, rate neuron membrane potentials are transmitted without use of the activation function
+            'use_phi': True,  # If False, membrane potentials are transmitted without use of the activation function
             't_ref': 0.,
             'latent_equilibrium': self.latent_equilibrium
         }

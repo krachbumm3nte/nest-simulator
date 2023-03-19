@@ -1,9 +1,7 @@
 
 import numpy as np
-import torch
+import torchvision.datasets as datasets
 from torch.utils.data import Dataset
-
-# import torchvision.datasets as datasets
 
 
 class MnistDataset(Dataset):
@@ -79,7 +77,7 @@ class MnistDataset(Dataset):
         return self.vals[indices], self.cs[indices]
 
 
-class BarDataset():  # Dataset):
+class BarDataset(Dataset):
 
     def __init__(self, lo=0.1, hi=1):
         """
@@ -93,7 +91,7 @@ class BarDataset():  # Dataset):
             ValueError: if a config outside the specified range is given
 
         Returns:
-            input currents (np.array(3,3)), output currents (np.array(3)) 
+            input currents (np.array(3,3)), output currents (np.array(3))
         """
 
         self.stimulus = np.array([

@@ -1,6 +1,8 @@
 
-import numpy as np
 from abc import ABC, abstractmethod
+
+import numpy as np
+
 dtype = np.float32
 
 
@@ -32,7 +34,7 @@ class AbstractLayer():
         self.beta = p.beta
         self.theta = p.theta
         self.weight_scale = p.weight_scale if p.spiking else 1
-        self.eta= {
+        self.eta = {
             "up": p.eta["up"][self.layer],
             "ip": p.eta["ip"][self.layer],
             "pi": p.eta["pi"][self.layer],
@@ -175,8 +177,6 @@ class Layer(AbstractLayer):
         self.Delta_up.fill(0)
         self.Delta_pi.fill(0)
         self.Delta_ip.fill(0)
-
-
 
 
 class OutputLayer(AbstractLayer):

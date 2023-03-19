@@ -1,21 +1,22 @@
-import numpy as np
-from networks.network_nest import NestNetwork
-from networks.network_numpy import NumpyNetwork
-from time import time
-import utils
-import os
-import json
 import argparse
-from datetime import timedelta
-from networks.params import *
+import json
+import os
 import sys
 import warnings
+from datetime import timedelta
+from time import time
+
+import numpy as np
+import src.utils as utils
+from src.networks.network_nest import NestNetwork
+from src.networks.network_numpy import NumpyNetwork
+from src.params import Params
+from src.plot_utils import plot_progress
+
 warnings.simplefilter('error', RuntimeWarning)
 
 
 def run_simulations(net, params, root_dir, imgdir, datadir, plot_interval=0, progress_interval=200, epoch_offset=0):
-    if plot_interval > 0:
-        from plot_utils import plot_progress
     simulation_times = []
 
     # if spiking:
@@ -65,7 +66,8 @@ def run_simulations(net, params, root_dir, imgdir, datadir, plot_interval=0, pro
             if epoch % 50 == 0:
                 print(f"Epoch {epoch} completed: test acc: {net.test_acc[-1][1]:.3f}, loss: {net.test_loss[-1][1]:.3f}")
                 print(
-                    f"\t epoch time: {np.mean(simulation_times[-50:]):.2f}s, ETA: {timedelta(seconds=np.round(t_epoch * (params.n_epochs-epoch)))}\n")
+                    f"\t epoch time: {np.mean(simulation_times[-50:]):.2f}s, \
+ETA: {timedelta(seconds=np.round(t_epoch * (params.n_epochs-epoch)))}\n")
 
     except KeyboardInterrupt:
         print("KeyboardInterrupt received - storing progress...")
@@ -96,7 +98,8 @@ if __name__ == "__main__":
     parser.add_argument("--network",
                         type=str, choices=["numpy", "rnest", "snest"],
                         default="rnest",
-                        help="""Type of network to train. Choice between exact mathematical simulation ('numpy') and NEST simulations with rate- or spiking neurons ('rnest', 'snest')""")
+                        help="""Type of network to train. Choice between exact mathematical simulation ('numpy') \
+and NEST simulations with rate- or spiking neurons ('rnest', 'snest')""")
     parser.add_argument("--cont",
                         type=str,
                         help="""continue training from a previous simulation""")

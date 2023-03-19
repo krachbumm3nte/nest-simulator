@@ -1,7 +1,7 @@
 
 import nest
 from params import *
-import utils
+import pyramidal_microcircuit.src.utils as utils
 
 utils.setup_nest(sim_params)
 wr = utils.setup_models(False, neuron_params, sim_params, syn_params, True)

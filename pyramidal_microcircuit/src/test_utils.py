@@ -1,15 +1,6 @@
 from abc import ABC, abstractmethod
-import matplotlib.pyplot as plt
-import nest
 from sklearn.metrics import mean_squared_error
-import sys
 import numpy as np
-import pandas as pd
-from copy import deepcopy
-sys.path.append("/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit")
-from networks.network_nest import NestNetwork  # nopep8
-from networks.network_numpy import NumpyNetwork  # nopep8
-import utils  # nopep8
 
 
 class TestClass(ABC):
@@ -71,6 +62,7 @@ class TestClass(ABC):
     def disable_plasticity(self):
         for conn_type in ["up", "down", "pi", "ip"]:
             self.p.eta[conn_type] = [0 for conn in self.p.eta[conn_type]]
+
 
 def read_multimeter(mm, key):
     return np.array((mm.events["times"]/0.1, mm.events[key])).swapaxes(0, 1)

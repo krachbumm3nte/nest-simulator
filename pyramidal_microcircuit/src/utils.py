@@ -1,20 +1,17 @@
-import nest
-import pandas as pd
-import numpy as np
-from datetime import datetime
-import os
 import glob
-import re
-from scipy.ndimage import uniform_filter1d
-# import torch
-from networks.network import Network
 import json
-from copy import deepcopy
+import os
+import re
+
+import numpy as np
+import pandas as pd
+from networks.network import Network
+from scipy.ndimage import uniform_filter1d
+
+import nest
 
 
 def setup_directories(type, name="default", root=os.path.join(os.getcwd(), "runs"), ):
-    # TODO: remove personal path!
-
     root = os.path.join(root, f"{name}_{type}")  # _{datetime.now().strftime('%Y_%m_%d-%H_%M_%S')}")
 
     imgdir = os.path.join(root, "plots")
@@ -69,7 +66,7 @@ def read_mm(device_id, path, it_min=None, it_max=None):
             it = int(result.group('iteration'))
             if (it_min and it < it_min) or (it_max and it >= it_max):
                 continue
-            dataframes.append(pd.read_csv(file, sep="\s+", comment='#'))
+            dataframes.append(pd.read_csv(file, sep=r"\s+", comment='#'))
 
     return pd.concat(dataframes)
 

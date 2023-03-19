@@ -1,10 +1,10 @@
-import numpy as np
-from .network import Network
-from sklearn.metrics import mean_squared_error as mse
-from time import time
 from copy import deepcopy
-from .layer import Layer, OutputLayer
-from .params import Params
+
+import numpy as np
+from layer import Layer, OutputLayer
+from network import Network
+from sklearn.metrics import mean_squared_error as mse
+from params import Params
 
 
 class NumpyNetwork(Network):
@@ -31,10 +31,11 @@ class NumpyNetwork(Network):
 
         if self.p.init_self_pred:
             for i in range(len(self.layers) - 1):
-                l = self.layers[i]
+                layer = self.layers[i]
                 l_next = self.layers[i + 1]
-                l.W_pi = -l.W_down.copy()
-                l.W_ip = l_next.W_up.copy() * l_next.gb / (l_next.gl + l_next.ga + l_next.gb) * (l.gl + l.gd) / l.gd
+                layer.W_pi = -layer.W_down.copy()
+                layer.W_ip = l_next.W_up.copy() * l_next.gb / (l_next.gl + l_next.ga + l_next.gb) * \
+                    (layer.gl + layer.gd) / layer.gd
 
     def reset_records(self):
         self.weight_record = self.copy_weights()
@@ -62,11 +63,11 @@ class NumpyNetwork(Network):
     def copy_weights(self):
         weights = []
         for n in range(len(self.layers) - 1):
-            l = self.layers[n]
-            weights.append({"up": l.W_up.copy(),
-                            "pi": l.W_pi.copy(),
-                            "ip": l.W_ip.copy(),
-                            "down": l.W_down.copy()})
+            layer = self.layers[n]
+            weights.append({"up": layer.W_up.copy(),
+                            "pi": layer.W_pi.copy(),
+                            "ip": layer.W_ip.copy(),
+                            "down": layer.W_down.copy()})
         weights.append({"up": self.layers[-1].W_up.copy()})
         return weights
 
@@ -150,17 +151,17 @@ class NumpyNetwork(Network):
 
     def get_weight_dict(self):
         weights = []
-        for l in self.layers[:-1]:
-            weights.append({"up": l.W_up.copy(),
-                            "pi": l.W_pi.copy(),
-                            "ip": l.W_ip.copy(),
-                            "down": l.W_down.copy()})
+        for layer in self.layers[:-1]:
+            weights.append({"up": layer.W_up.copy(),
+                            "pi": layer.W_pi.copy(),
+                            "ip": layer.W_ip.copy(),
+                            "down": layer.W_down.copy()})
         weights.append({"up": self.layers[-1].W_up.copy()})
         return weights
 
     def reset(self):
-        for l in self.layers:
-            l.reset()
+        for layer in self.layers:
+            layer.reset()
 
     def set_all_weights(self, weights):
         for i, w in enumerate(weights[:-1]):

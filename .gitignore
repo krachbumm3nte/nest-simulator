@@ -74,6 +74,7 @@ cscope.out
 # Merge conflict artifacts
 *.orig
 
-pyramidal_microcircuit/runs/
+pyramidal_microcircuit/results/
 pyramidal_microcircuit/full_runs/
 pyramidal_microcircuit/tests/runs/
+*.egg-info

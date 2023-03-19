@@ -1,6 +1,5 @@
-from test_utils import *
+from src.test_utils import *
 from tests01_neuron_dynamics import *
-from pprint import pprint
 
 
 class PlasticityYH(DynamicsYH):

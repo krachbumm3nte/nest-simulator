@@ -1,9 +1,9 @@
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
-import utils
-import os
+import utils as utils
 from sklearn.metrics import mean_squared_error as mse
-
 
 ff_error = []
 fb_error = []
@@ -89,4 +89,3 @@ def plot_progress(epoch, net, imgdir):
     plt.savefig(os.path.join(imgdir, f"{epoch}.png"))
     plt.close()
     print(f"done.\n")
-

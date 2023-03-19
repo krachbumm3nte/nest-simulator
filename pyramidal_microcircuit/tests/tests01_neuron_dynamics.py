@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
-import nest
 import numpy as np
-from test_utils import *
+from src.test_utils import *
+
+import nest
 
 
 class FilteredInputCurrent(TestClass):
@@ -314,7 +315,7 @@ class DynamicsHI(DynamicsHX):
         super().__init__(params, **kwargs)
 
         synapse = self.p.syn_plastic
-        synapse.update({"weight": self.weight, "eta": 0, "receptor_type":self.p.compartments["apical_lat"]})
+        synapse.update({"weight": self.weight, "eta": 0, "receptor_type": self.p.compartments["apical_lat"]})
 
         self.neuron_01.set(params.intn_params)
         self.neuron_02.set(params.pyr_params)
@@ -390,7 +391,7 @@ class DynamicsYH(DynamicsHX):
         super().__init__(params, **kwargs)
 
         synapse = self.p.syn_plastic
-        synapse.update({"weight": self.weight, "eta": 0, "receptor_type":self.p.compartments["basal"]})
+        synapse.update({"weight": self.weight, "eta": 0, "receptor_type": self.p.compartments["basal"]})
 
         self.neuron_01.set(params.pyr_params)
         self.neuron_02.set(params.pyr_params)

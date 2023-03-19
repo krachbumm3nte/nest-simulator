@@ -1,29 +1,23 @@
-import nest
 import argparse
 import os
-from networks.params import Params
-import utils
-from networks.network_nest import NestNetwork
-from networks.network_numpy import NumpyNetwork
 import time
-from microcircuit_learning import run_simulations
-import numpy as np
 from datetime import timedelta
 
+import numpy as np
+import src.utils as utils
+from microcircuit_learning import run_simulations
+from src.networks.network_nest import NestNetwork
+from src.networks.network_numpy import NumpyNetwork
+from src.params import Params
+
+import nest
 
 parser = argparse.ArgumentParser()
-# parser.add_argument("--le",
-#                     action="store_true",
-#                     help="""Use latent equilibrium in activation and plasticity."""
-#                     )
-# parser.add_argument("--mode",
-#                     type=str,
-#                     default="bars",
-#                     help="which dataset to train on")
 parser.add_argument("--network",
                     type=str, choices=["numpy", "rnest", "snest"],
                     default="rnest",
-                    help="""Type of network to train. Choice between exact mathematical simulation ('numpy') and NEST simulations with rate- or spiking neurons ('rnest', 'snest')""")
+                    help="""Type of network to train. Choice between exact mathematical simulation ('numpy') and \
+NEST simulations with rate- or spiking neurons ('rnest', 'snest')""")
 parser.add_argument("--config_dir",
                     type=str,
                     help="folder in which to search for config files")
@@ -65,8 +59,7 @@ for i, config in enumerate(all_configs):
     params.spiking = spiking
     params.threads = args.threads
 
-    use_nest =  params.network_type != "numpy"
-
+    use_nest = params.network_type != "numpy"
 
     if not use_nest:
         net = NumpyNetwork(params)
