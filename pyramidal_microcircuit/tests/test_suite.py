@@ -20,7 +20,7 @@ if __name__ == "__main__":
                    DynamicsYH, NetworkDynamics, PlasticityHX, PlasticityHXMulti, PlasticityYH, NetworkPlasticity]
 
     test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
-    root, imgdir, datadir = utils.setup_directories(os.path.join(test_dir, "runs"))
+    root, imgdir, datadir = utils.setup_directories("test_run", root=os.path.join(test_dir, "runs"))
 
 
     plot_all_runs = True
