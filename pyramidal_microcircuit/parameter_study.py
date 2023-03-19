@@ -65,10 +65,13 @@ for i, config in enumerate(all_configs):
     params.spiking = spiking
     params.threads = args.threads
 
-    utils.setup_nest(params, datadir)
-    if params.network_type == "numpy":
+    use_nest =  params.network_type != "numpy"
+
+
+    if not use_nest:
         net = NumpyNetwork(params)
     else:
+        utils.setup_nest(params, datadir)
         net = NestNetwork(params)
 
     simulation_times = []
@@ -82,7 +85,8 @@ for i, config in enumerate(all_configs):
     run_simulations(net, params, root_dir, imgdir, datadir)
 
     print("training complete.")
-    nest.ResetKernel()
+    if use_nest:
+        nest.ResetKernel()
     print("simulator reset.")
     global_t_processed = time.time() - global_t_start
 
