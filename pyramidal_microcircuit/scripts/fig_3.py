@@ -23,7 +23,7 @@ if __name__ == "__main__":
     network_type = args[1]
     out_file = args[2]
 
-    all_configs = os.listdir(dirname)
+    all_configs = sorted(os.listdir(dirname))
     configs_le = [name for name in all_configs if re.findall(f".+le_.+_{network_type}", name)]
     configs_orig = [name for name in all_configs if re.findall(f".+orig_.+_{network_type}", name)]
 
