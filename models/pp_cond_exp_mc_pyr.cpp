@@ -437,6 +437,7 @@ nest::pp_cond_exp_mc_pyr::State_::set( const DictionaryDatum& d, const Parameter
     {
       DictionaryDatum dd = getValue< DictionaryDatum >( d, comp_names_[ n ] );
       updateValue< double >( dd, names::V_m, y_[ idx( n, V_M ) ] );
+      updateValue< double >( dd, names::I, y_[ idx( n, I ) ] );
     }
   }
 }
@@ -631,7 +632,8 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
 
     const double delta_V_som = -I_L + I_conn_d_s + B_.I_stim_[ SOMA ] + P_.I_e[ SOMA ];
     S_.y_[ S::idx( SOMA, S::V_M ) ] += B_.step_ * delta_V_som;
-    //std::cout << V_som_old << " + " << delta_V_som << " - " << I_L << "(*)" << pyr_params->g_conn[ SOMA ] << " = " << S_.y_[ S::idx( SOMA, S::V_M ) ] << std::endl;
+    // std::cout << V_som_old << " + " << delta_V_som << " - " << I_L << "(*)" << pyr_params->g_conn[ SOMA ] << " = " <<
+    // S_.y_[ S::idx( SOMA, S::V_M ) ] << std::endl;
     S_.y_[ S::idx( SOMA, S::V_forw ) ] = V_som_old + delta_V_som / pyr_params->g_conn[ SOMA ];
 
 
@@ -703,8 +705,18 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
     // Store dendritic membrane potential for Urbanczik-Senn plasticity
     if ( pyr_params->g_conn[ BASAL ] > 0 or pyr_params->g_conn[ APICAL_LAT ] > 0 )
     {
-      write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ), S_.y_[ S::idx( BASAL, S::V_M ) ], V_som_forward, BASAL );
-      write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ),  S_.y_[ S::idx( APICAL_LAT, S::V_M ) ], V_som_forward, APICAL_LAT );
+      write_urbanczik_history(
+        Time::step( origin.get_steps() + lag + 1 ), S_.y_[ S::idx( BASAL, S::V_M ) ], V_som_forward, BASAL );
+      write_urbanczik_history(
+        Time::step( origin.get_steps() + lag + 1 ), S_.y_[ S::idx( APICAL_LAT, S::V_M ) ], V_som_forward, APICAL_LAT );
+      // write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ),
+      //   S_.y_[ S::idx( BASAL, S::V_M ) ],
+      //   S_.y_[ S::idx( SOMA, S::V_M ) ],
+      //   BASAL );
+      // write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ),
+      //   S_.y_[ S::idx( APICAL_LAT, S::V_M ) ],
+      //   S_.y_[ S::idx( SOMA, S::V_M ) ],
+      //   APICAL_LAT );
     }
 
     // log state data

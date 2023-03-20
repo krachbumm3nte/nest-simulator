@@ -65,7 +65,7 @@ class Params:
         # parameters that regard only simulations in NEST
         # flag to record weights in NEST using a 'weight_recorder'
         self.record_weights = False
-        self.weight_scale = 150        # weight scaling factor # TODO: rename this
+        self.weight_scale = 1000        # weight scaling factor # TODO: rename this
         self.spiking = True        # flag to enable simulation with spiking neurons
 
         if config_file:

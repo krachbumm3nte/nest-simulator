@@ -58,8 +58,12 @@ class NestLayer(AbstractLayer):
         reset_weights:  Also draw weights again from random distribution.
 
         '''
-        self.pyr.set({"soma": {"V_m": 0, "I_e": 0}, "basal": {"V_m": 0, "I_e": 0}, "apical_lat": {"V_m": 0, "I_e": 0}})
-        self.intn.set({"soma": {"V_m": 0, "I_e": 0}, "basal": {"V_m": 0, "I_e": 0}, "apical_lat": {"V_m": 0, "I_e": 0}})
+        self.pyr.set({"soma": {"V_m": 0, "I_e": 0, "I": 0},
+                      "basal": {"V_m": 0, "I_e": 0, "I": 0},
+                      "apical_lat": {"V_m": 0, "I_e": 0, "I": 0}})
+        self.intn.set({"soma": {"V_m": 0, "I_e": 0, "I": 0},
+                       "basal": {"V_m": 0, "I_e": 0, "I": 0},
+                       "apical_lat": {"V_m": 0, "I_e": 0, "I": 0}})
 
         # TODO: reset urbanczik History?
 
@@ -107,7 +111,9 @@ class NestOutputLayer(AbstractLayer):
         '''
         Reset all potentials and to zero.
         '''
-        self.pyr.set({"soma": {"V_m": 0, "I_e": 0}, "basal": {"V_m": 0, "I_e": 0}, "apical_lat": {"V_m": 0, "I_e": 0}})
+        self.pyr.set({"soma": {"V_m": 0, "I_e": 0, "I": 0},
+                      "basal": {"V_m": 0, "I_e": 0, "I": 0},
+                      "apical_lat": {"V_m": 0, "I_e": 0, "I": 0}})
 
         # TODO: reset urbanczik History?
 

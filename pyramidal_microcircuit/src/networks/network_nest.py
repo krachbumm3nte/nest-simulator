@@ -231,8 +231,9 @@ class NestNetwork(Network):
         return weights
 
     def reset(self):
-        self.input_neurons.set({"soma": {"V_m": 0, "I_e": 0}, "basal": {
-                               "V_m": 0, "I_e": 0}, "apical_lat": {"V_m": 0, "I_e": 0}})
+        self.input_neurons.set({"soma": {"V_m": 0, "I_e": 0, "I": 0},
+                                "basal": {"V_m": 0, "I_e": 0, "I": 0},
+                                "apical_lat": {"V_m": 0, "I_e": 0, "I": 0}})
         for layer in self.layers:
             layer.reset()
         self.mm.n_events = 0
