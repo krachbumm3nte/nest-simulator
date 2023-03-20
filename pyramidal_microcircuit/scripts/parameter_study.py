@@ -45,7 +45,7 @@ for i, config in enumerate(all_configs):
         continue
 
     config_name = os.path.split(config)[-1].split(".")[0]
-    root_dir, imgdir, datadir = utils.setup_directories(name=config_name, type=args.network)
+    root_dir, imgdir, datadir = utils.setup_directories(name=config_name, type=args.network, root=args.target_dir)
     if not root_dir:
         print("\ta simulation of that name already exists, skipping.\n")
         continue
