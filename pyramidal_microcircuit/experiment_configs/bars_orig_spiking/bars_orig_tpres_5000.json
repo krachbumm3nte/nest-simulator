@@ -1,0 +1,26 @@
+{
+    "sim_time": 500,
+    "out_lag": 250.0,
+    "tau_delta": 1,
+    "tau_m": 2,
+    "latent_equilibrium": false,
+    "eta": {
+        "ip": [
+            4e-05,
+            0.0
+        ],
+        "pi": [
+            0.0,
+            0.0
+        ],
+        "up": [
+            0.0001,
+            2e-05
+        ],
+        "down": [
+            0.0,
+            0.0
+        ]
+    },
+    "record_interval": 5.0
+}

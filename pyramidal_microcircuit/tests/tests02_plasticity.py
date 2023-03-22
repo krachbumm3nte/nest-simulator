@@ -393,7 +393,7 @@ class NetworkPlasticity(TestClass):
         self.ip_0 = []
         self.down_0 = []
         self.up_1 = []
-        for i in range(1):
+        for i in range(4):
             input_currents = np.random.random(self.dims[0])
             target_currents = np.random.random(self.dims[-1])
             self.nest_net.set_input(input_currents)
