@@ -29,7 +29,8 @@ for le in [False, True]:
             "eta": eta,
             "record_interval": max(0.1, round(0.01*t, 1)),
             "weight_scale": 1000,
-            "test_interval" : -1
+            "test_interval" : -1,
+            "tau_x": 1,
         }
 
         config_name = f"bars_{'le' if le else 'orig'}_tpres_{int(10*t)}.json"
