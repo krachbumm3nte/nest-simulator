@@ -1,5 +1,5 @@
 from src.test_utils import *
-from tests01_neuron_dynamics import *
+from .tests01_neuron_dynamics import *
 
 
 class PlasticityYH(DynamicsYH):
@@ -380,8 +380,6 @@ class NetworkPlasticity(TestClass):
         super().__init__(params, record_weights=True, **kwargs)
         self.numpy_net = NumpyNetwork(deepcopy(params))
         self.nest_net = NestNetwork(deepcopy(params))
-        print(self.nest_net.layers[0].eta)
-        print(self.numpy_net.layers[0].eta)
         self.numpy_net.set_all_weights(self.nest_net.get_weight_dict())
 
     def run(self):

@@ -32,7 +32,7 @@ def run_simulations(net, params, root_dir, imgdir, datadir, plot_interval=0, pro
             t_epoch = time() - t_start_epoch
             simulation_times.append(t_epoch)
 
-            if epoch % params.test_interval == 0:
+            if epoch % params.test_interval == 0 and params.test_interval > 0:
                 # if spiking:
                 #     sr.set({"start": 0, "stop": 8*params.sim_time, "origin": nest.biological_time, "n_events": 0})
                 net.test_epoch()
@@ -61,14 +61,7 @@ def run_simulations(net, params, root_dir, imgdir, datadir, plot_interval=0, pro
             if epoch % progress_interval == 0:
                 print("storing progress...", end="")
                 utils.store_synaptic_weights(net, datadir, f"weights_{epoch}.json")
-                progress = {
-                    "test_acc": net.test_acc,
-                    "test_loss": net.test_loss,
-                    "train_loss": net.train_loss,
-                    "epochs_completed": epoch
-                }
-                with open(os.path.join(datadir, f"progress_{epoch}.json"), "w") as f:
-                    json.dump(progress, f, indent=4)
+                # utils.store_progress(net, datadir, epoch)
                 print("done.")
 
             if epoch % 50 == 0:
@@ -82,14 +75,7 @@ ETA: {timedelta(seconds=np.round(t_epoch * (params.n_epochs-epoch)))}\n")
     finally:
         utils.store_synaptic_weights(net, root_dir)
         print("Weights stored to disk.")
-        progress = {
-            "test_acc": net.test_acc,
-            "test_loss": net.test_loss,
-            "train_loss": net.train_loss,
-            "epochs_completed": epoch
-        }
-        with open(os.path.join(root_dir, "progress.json"), "w") as f:
-            json.dump(progress, f, indent=4)
+        utils.store_progress(net, root_dir, epoch)
         print("progress stored to disk, exiting.")
 
 
@@ -105,7 +91,7 @@ if __name__ == "__main__":
     #                     help="which dataset to train on")
     parser.add_argument("--network",
                         type=str, choices=["numpy", "rnest", "snest"],
-                        default="rnest",
+                        default="snest",
                         help="""Type of network to train. Choice between exact mathematical simulation ('numpy') \
 and NEST simulations with rate- or spiking neurons ('rnest', 'snest')""")
     parser.add_argument("--cont",
@@ -197,4 +183,4 @@ and NEST simulations with rate- or spiking neurons ('rnest', 'snest')""")
 
     print("setup complete, running simulations...")
     plot_interval = args.plot
-    run_simulations(net, params, root_dir, imgdir, datadir, plot_interval, 100, epoch_offset)
+    run_simulations(net, params, root_dir, imgdir, datadir, plot_interval, args.progress, epoch_offset)
