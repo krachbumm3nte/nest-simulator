@@ -173,9 +173,7 @@ nest::PyrArchivingNode< pyr_parameters >::clear_history()
 {
   for ( int n = 0; n < pyr_parameters::NCOMP - 1; n++ )
   {
-    std::cout << pyr_history_[n].size() << std::endl;
     pyr_history_[ n ].clear();
-    std::cout << pyr_history_[n].size() << std::endl;
   }
 }
 
