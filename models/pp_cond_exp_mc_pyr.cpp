@@ -354,6 +354,8 @@ nest::pp_cond_exp_mc_pyr::Parameters_::get( DictionaryDatum& d ) const
 void
 nest::pp_cond_exp_mc_pyr::Parameters_::set( const DictionaryDatum& d )
 {
+
+
   // allow setting the membrane potential
   updateValue< double >( d, names::t_ref, t_ref );
   updateValue< double >( d, names::phi_max, pyr_params.phi_max );
@@ -430,6 +432,7 @@ nest::pp_cond_exp_mc_pyr::State_::get( DictionaryDatum& d ) const
 void
 nest::pp_cond_exp_mc_pyr::State_::set( const DictionaryDatum& d, const Parameters_& )
 {
+
   // extract from sub-dictionaries
   for ( size_t n = 0; n < NCOMP; ++n )
   {

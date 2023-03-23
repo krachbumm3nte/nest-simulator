@@ -116,6 +116,7 @@ protected:
    * Writes the history for compartment comp into the buffers.
    */
   void write_urbanczik_history( Time const& t_sp, double V_W, double V_SOM, int comp );
+  void clear_history();
 
   pyr_parameters* pyr_params;
 
@@ -151,7 +152,7 @@ template < class pyr_parameters >
 inline double
 PyrArchivingNode< pyr_parameters >::get_tau_L( int comp )
 {
-  //TODO: what to do with this
+  // TODO: what to do with this
   return 1 / pyr_params->g_L[ comp ];
 }
 

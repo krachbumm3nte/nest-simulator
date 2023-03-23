@@ -151,10 +151,11 @@ class NestNetwork(Network):
 
         self.train_loss.append((self.epoch, np.mean(loss)))
 
-    def test_batch(self, x_batch, y_batch):
+    def test_batch_old(self, x_batch, y_batch):
         acc = []
         loss_mse = []
         # set all learning rates to zero
+
         self.disable_learning()
 
         for x_test, y_actual in zip(x_batch, y_batch):
@@ -183,6 +184,19 @@ class NestNetwork(Network):
 
         self.enable_learning()
         return np.mean(acc), np.mean(loss_mse)
+
+    def test_batch(self, x_batch, y_batch):
+        acc = []
+        loss_mse = []
+
+        for x_test, y_actual in zip(x_batch, y_batch):
+            wgts = self.get_weight_dict()
+            y_pred = self.phi( self.p.g_d / (self.p.g_d + self.p.g_l) * wgts[1]["up"] @  self.phi(self.p.g_d / (self.p.g_d + self.p.g_l + self.p.g_a) * wgts[0]["up"] @ x_test))
+            loss_mse.append(mse(y_actual, y_pred))
+            acc.append(np.argmax(y_actual) == np.argmax(y_pred))
+    
+        return np.mean(acc), np.mean(loss_mse)
+
 
     def disable_learning(self):
         nest.GetConnections(synapse_model=self.p.syn_model).set({"eta": 0})
@@ -233,7 +247,8 @@ class NestNetwork(Network):
     def reset(self):
         self.input_neurons.set({"soma": {"V_m": 0, "I_e": 0, "I": 0},
                                 "basal": {"V_m": 0, "I_e": 0, "I": 0},
-                                "apical_lat": {"V_m": 0, "I_e": 0, "I": 0}})
+                                "apical_lat": {"V_m": 0, "I_e": 0, "I": 0},
+                                "clear": True})
         for layer in self.layers:
             layer.reset()
         self.mm.n_events = 0

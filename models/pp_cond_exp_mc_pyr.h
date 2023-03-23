@@ -680,7 +680,7 @@ pp_cond_exp_mc_pyr::set_status( const DictionaryDatum& d )
   // the properties to be set in the parent class are internally
   // consistent.
   PyrArchivingNode< pp_cond_exp_mc_pyr_parameters >::set_status( d );
-
+  PyrArchivingNode< pp_cond_exp_mc_pyr_parameters >::clear_history();
   // if we get here, temporaries contain consistent set of properties
   P_ = ptmp;
   S_ = stmp;

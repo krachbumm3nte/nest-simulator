@@ -50,6 +50,30 @@ def store_synaptic_weights(network: Network, dirname, filename="weights.json"):
         json.dump(weights, f, indent=4)
 
 
+def store_progress(net: Network, dirname, epoch, filename="progress.json"):
+    progress = {
+        "test_acc": net.test_acc,
+        "test_loss": net.test_loss,
+        "train_loss": net.train_loss,
+        "epochs_completed": epoch
+    }
+    with open(os.path.join(dirname, filename), "w") as f:
+        json.dump(progress, f, indent=4)
+
+
+def store_state(net: Network, dirname, filename="state.json"):
+
+    state = {
+        # "mm": net.mm.get(),
+        "in": net.input_neurons.get(),
+        "p0": net.layers[0].pyr.get(),
+        "i0": net.layers[0].intn.get(),
+        "out": net.layers[-1].pyr.get()
+    }
+    with open(os.path.join(dirname, filename), "w") as f:
+        json.dump(state, f, indent=4)
+
+
 def read_mm(device_id, path, it_min=None, it_max=None):
     device_pattern = re.compile(fr"/it(?P<iteration>\d+)_(.+)-{device_id}-(.+)dat")
     files = glob.glob(path + "/*")

@@ -435,6 +435,8 @@ nest::rate_neuron_pyr::State_::set( const DictionaryDatum& d, const Parameters_&
     {
       DictionaryDatum dd = getValue< DictionaryDatum >( d, comp_names_[ n ] );
       updateValue< double >( dd, names::V_m, y_[ idx( n, V_M ) ] );
+      updateValue< double >( dd, names::I, y_[ idx( n, I ) ] );
+
     }
   }
 }

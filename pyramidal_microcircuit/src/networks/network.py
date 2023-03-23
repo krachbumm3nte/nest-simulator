@@ -142,11 +142,12 @@ class Network:
         x_batch, y_batch = self.get_test_data(self.test_samples)
 
         acc, loss = self.test_batch(x_batch, y_batch)
+        acc_2, loss_2 = self.test_batch_old(x_batch, y_batch)
 
+
+        print(f"acc n/o: {acc:.3f}, {acc_2:.3f}, loss: {loss:.3f}, {loss_2:.3f}")
         self.test_acc.append([self.epoch, acc])
         self.test_loss.append([self.epoch, loss])
-
-        self.reset()
 
     def validate_epoch(self):
         x_batch, y_batch = self.get_val_data(self.val_samples)

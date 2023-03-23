@@ -162,7 +162,20 @@ nest::PyrArchivingNode< pyr_parameters >::write_urbanczik_history( Time const& t
       }
     }
 
-    pyr_history_[ comp - 1 ].push_back( histentry_extended( t_ms, comp_deviation * Time::get_resolution().get_ms(), 0 ) );
+    pyr_history_[ comp - 1 ].push_back(
+      histentry_extended( t_ms, comp_deviation * Time::get_resolution().get_ms(), 0 ) );
+  }
+}
+
+template < class pyr_parameters >
+void
+nest::PyrArchivingNode< pyr_parameters >::clear_history()
+{
+  for ( int n = 0; n < pyr_parameters::NCOMP - 1; n++ )
+  {
+    std::cout << pyr_history_[n].size() << std::endl;
+    pyr_history_[ n ].clear();
+    std::cout << pyr_history_[n].size() << std::endl;
   }
 }
 
