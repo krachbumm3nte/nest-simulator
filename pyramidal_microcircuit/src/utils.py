@@ -12,7 +12,7 @@ import nest
 import sys
 
 
-def setup_directories(type, name="default", root=os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), "..", "results")):
+def setup_directories(type, name="default", root=os.path.join(*[os.path.dirname(os.path.realpath(sys.argv[0])), "..", "results"])):
     print(root)
     root = os.path.join(root, f"{name}_{type}")  # _{datetime.now().strftime('%Y_%m_%d-%H_%M_%S')}")
 
