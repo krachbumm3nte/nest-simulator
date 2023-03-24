@@ -159,9 +159,11 @@ class NestNetwork(Network):
         self.disable_learning()
 
         for x_test, y_actual in zip(x_batch, y_batch):
+            print("batch")
             self.set_input(x_test)
-            self.mm.set({"start": self.p.out_lag, 'stop': self.sim_time, 'origin': nest.biological_time})
-            self.simulate(self.sim_time)
+            # self.mm.set({"start": self.p.out_lag, 'stop': self.sim_time, 'origin': nest.biological_time})
+            self.mm.set({"start": 25, 'stop': 50, 'origin': nest.biological_time})
+            self.simulate(50) # self.sim_time)
             mm_data = pd.DataFrame.from_dict(self.mm.events)
             U_Y = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]
             y_pred = np.mean(U_Y, axis=1)
@@ -261,7 +263,11 @@ class NestNetwork(Network):
                 target = nest.GetNodes({"global_id": target_id})
                 nest.GetConnections(source, target).set({"weight": weights[j][i]})
 
-    def set_all_weights(self, weight_dict):
+    def set_all_weights(self, weight_dict, normalized=True):
+        if normalized:
+            for i, layer in enumerate(weight_dict):
+                for k, v in layer.items():
+                    weight_dict[i][k] = np.asarray(v) / self.weight_scale
         for i, layer in enumerate(self.layers[:-1]):
             self.set_weights_from_syn(weight_dict[i]["up"], layer.up)
             self.set_weights_from_syn(weight_dict[i]["ip"], layer.ip)
