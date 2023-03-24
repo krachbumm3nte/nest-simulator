@@ -141,7 +141,7 @@ class Network:
     def test_epoch(self):
         x_batch, y_batch = self.get_test_data(self.test_samples)
 
-        acc, loss = self.test_batch_old(x_batch, y_batch)
+        acc, loss = self.test_batch(x_batch, y_batch)
         # acc_2, loss_2 = self.test_batch_old(x_batch, y_batch)
 
 

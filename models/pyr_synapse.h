@@ -323,6 +323,8 @@ pyr_synapse< targetidentifierT >::set_status( const DictionaryDatum& d, Connecto
   updateValue< double >( d, names::Wmax, Wmax_ );
 
   init_weight_ = weight_;
+  PI_exp_integral_ = 0.0;
+  PI_integral_ = 0.0;
 }
 
 } // of namespace nest

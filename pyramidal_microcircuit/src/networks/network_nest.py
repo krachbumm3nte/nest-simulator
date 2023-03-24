@@ -151,7 +151,7 @@ class NestNetwork(Network):
 
         self.train_loss.append((self.epoch, np.mean(loss)))
 
-    def test_batch_old(self, x_batch, y_batch):
+    def test_batch(self, x_batch, y_batch):
         acc = []
         loss_mse = []
         # set all learning rates to zero
@@ -159,11 +159,10 @@ class NestNetwork(Network):
         self.disable_learning()
 
         for x_test, y_actual in zip(x_batch, y_batch):
-            print("batch")
             self.set_input(x_test)
             # self.mm.set({"start": self.p.out_lag, 'stop': self.sim_time, 'origin': nest.biological_time})
-            self.mm.set({"start": 25, 'stop': 50, 'origin': nest.biological_time})
-            self.simulate(50) # self.sim_time)
+            self.mm.set({"start": self.p.test_delay, 'stop': self.p.test_time, 'origin': nest.biological_time})
+            self.simulate(self.p.test_time) # self.sim_time)
             mm_data = pd.DataFrame.from_dict(self.mm.events)
             U_Y = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]
             y_pred = np.mean(U_Y, axis=1)
@@ -187,7 +186,7 @@ class NestNetwork(Network):
         self.enable_learning()
         return np.mean(acc), np.mean(loss_mse)
 
-    def test_batch(self, x_batch, y_batch):
+    def test_batch_static(self, x_batch, y_batch):
         acc = []
         loss_mse = []
 
