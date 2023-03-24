@@ -48,6 +48,8 @@ class Params:
         self.theta = 0
 
         # parameters for synaptic connections
+        self.wmin_init = -1
+        self.wmax_init = 1
         self.Wmin = -4
         self.Wmax = 4
         self.tau_delta = 1.  # weight change filter time constant
@@ -62,7 +64,7 @@ class Params:
 
         # parameters that regard only simulations in NEST
         self.record_weights = False  # flag to record weights in NEST using a 'weight_recorder'
-        self.weight_scale = 1000  # weight scaling factor # TODO: rename this
+        self.weight_scale = 500  # weight scaling factor # TODO: rename this
         self.spiking = True  # flag to enable simulation with spiking neurons
 
         # if a config file is provided, read the file and change all specified values
