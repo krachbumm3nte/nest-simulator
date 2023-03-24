@@ -18,19 +18,19 @@ eta_default = {
 for le in [False, True]:
     for t in t_pres:
         # scales all learning rates. longer t_pres->smaller eta
-        eta = {k: [lr/t * 0.1 for lr in v] for k, v in eta_default.items()}
+        eta = {k: [(lr/t) * 0.1 for lr in v] for k, v in eta_default.items()}
 
         config = {
             "sim_time": t,
-            "out_lag": round(0.5*t, 1),
+            "out_lag": round(0.6*t, 1),
             "tau_delta": 1,
             "tau_m": 1,
             "latent_equilibrium": le,
             "eta": eta,
             "record_interval": max(0.1, round(0.01*t, 1)),
-            "weight_scale": 1000,
-            "test_interval" : -1,
+            "test_interval": 10,
             "tau_x": 1,
+            "weight_scale": 250,
         }
 
         config_name = f"bars_{'le' if le else 'orig'}_tpres_{int(10*t)}.json"

@@ -6,5 +6,23 @@
     "tau_x": 1,
     "latent_equilibrium": true,
     "record_interval": 0.1,
-    "weight_scale": 2
+    "weight_scale": 10,
+    "eta": {
+        "ip": [
+            0.0002,
+            0.0
+        ],
+        "pi": [
+            0.0,
+            0.0
+        ],
+        "up": [
+            0.0005,
+            0.0001
+        ],
+        "down": [
+            0.0,
+            0.0
+        ]
+    }
 }
