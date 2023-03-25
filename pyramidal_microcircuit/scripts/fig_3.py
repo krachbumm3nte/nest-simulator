@@ -44,16 +44,16 @@ if __name__ == "__main__":
         t_pres = params["sim_time"] / tau_eff
         acc = progress["test_acc"]
 
-        final_acc = np.mean([datapoint[1] for datapoint in acc[-1:]])  # average over last 10 accuracy readings
+        final_acc = np.mean([datapoint[1] for datapoint in acc[-10:]])  # average over last 10 accuracy readings
         orig_data_1.append((t_pres, final_acc))
 
         if params["sim_time"] in [500, 50, 5]:
             times = [entry[0] for entry in acc]
             acc = [1-entry[1] for entry in acc]
-            # ax0.plot(times, utils.rolling_avg(acc, filter_window),
-            #          label=r"$t_{{pres}}={} \tau_{{eff}}$".format(round(t_pres)), color="orange", linestyle=linestyles[params["sim_time"]])
-            ax0.plot(times, acc,
+            ax0.plot(times, utils.rolling_avg(acc, filter_window),
                      label=r"$t_{{pres}}={} \tau_{{eff}}$".format(round(t_pres)), color="orange", linestyle=linestyles[params["sim_time"]])
+            # ax0.plot(times, acc,
+                    #  label=r"$t_{{pres}}={} \tau_{{eff}}$".format(round(t_pres)), color="orange", linestyle=linestyles[params["sim_time"]])
 
     for config in configs_le:
 
