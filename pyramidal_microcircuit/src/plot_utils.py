@@ -20,15 +20,7 @@ def setup_plt():
     # plt.rcParams['font'] = font
 
 
-def plot_pre_training(epoch, net, imgdir):
-    print(f"Ep {epoch}: generating plot...", end="")
-
-    cmap_1 = plt.cm.get_cmap('hsv', net.dims[1]+1)
-    cmap_2 = plt.cm.get_cmap('hsv', net.dims[2]+1)
-
-    fig, axes = plt.subplots(3, 2, constrained_layout=True)
-    [ax0, ax1, ax2, ax3, ax4, ax5] = axes.flatten()
-
+def calculate_weight_errors(net, epoch):
     # Synaptic weights
     # notice that all weights are scaled up again to ensure that derived metrics are comparible between simulations
     weights = net.get_weight_dict()
@@ -38,15 +30,25 @@ def plot_pre_training(epoch, net, imgdir):
     WYH = weights[-1]["up"]
 
     fb_error_now = mse(WHY.flatten(), -WHI.flatten())
-    fb_error.append([epoch, fb_error_now])
+    net.fb_error.append([epoch, fb_error_now])
 
     ff_error_now = mse(WYH.flatten(), WIH.flatten())
-    ff_error.append([epoch, ff_error_now])
+    net.ff_error.append([epoch, ff_error_now])
 
-    # ax2.plot(*zip(*fb_error), label=f"FB error: {fb_error_now:.3f}")
-    ax0.plot(*zip(*fb_error), label=f"FB error: {fb_error_now:.3f}")
+    return WHI, WHY, WIH, WYH
 
-    ax1.plot(*zip(*ff_error), label=f"FF error: {ff_error_now:.3f}")
+
+def plot_pre_training(epoch, net, imgdir):
+    print(f"Ep {epoch}: generating plot...", end="")
+
+    cmap_2 = plt.cm.get_cmap('hsv', net.dims[2]+1)
+
+    fig, axes = plt.subplots(3, 2, constrained_layout=True)
+    [ax0, ax1, ax2, ax3, ax4, ax5] = axes.flatten()
+
+    WHI, WHY, WIH, WYH = calculate_weight_errors(net, epoch)
+    ax0.plot(*zip(*net.fb_error))
+    ax1.plot(*zip(*net.ff_error))
 
     # plot synaptic weights
     for i in range(net.dims[2]):
@@ -96,20 +98,10 @@ def plot_training_progress(epoch, net, imgdir):
 
     # Synaptic weights
     # notice that all weights are scaled up again to ensure that derived metrics are comparible between simulations
-    weights = net.get_weight_dict()
-    WHI = weights[-2]["pi"]
-    WHY = weights[-2]["down"]
-    WIH = weights[-2]["ip"]
-    WYH = weights[-1]["up"]
-
-    fb_error_now = mse(WHY.flatten(), -WHI.flatten())
-    fb_error.append([epoch, fb_error_now])
-
-    ff_error_now = mse(WYH.flatten(), WIH.flatten())
-    ff_error.append([epoch, ff_error_now])
+    WHI, WHY, WIH, WYH = calculate_weight_errors(net, epoch)
 
     ax0.plot(*zip(*net.train_loss))
-    ax1.plot(*zip(*ff_error), label=f"FF error: {ff_error_now:.3f}")
+    ax1.plot(*zip(*ff_error))
 
     # plot synaptic weights
     for i in range(net.dims[2]):

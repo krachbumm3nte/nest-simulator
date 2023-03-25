@@ -107,6 +107,8 @@ class Network:
         self.test_acc = []
         self.apical_error = []
         self.intn_error = []
+        self.ff_error = []
+        self.fb_error = []
 
     def gen_weights(self, n_in, n_out, wmin=None, wmax=None):
         if not wmin:

@@ -59,6 +59,8 @@ def store_progress(net: Network, dirname, epoch, filename="progress.json"):
         "train_loss": net.train_loss,
         "apical_error": net.apical_error,
         "intn_error": net.intn_error,
+        "ff_error": net.ff_error,
+        "fb_error": net.fb_error,
         "epochs_completed": epoch
     }
     with open(os.path.join(dirname, filename), "w") as f:
