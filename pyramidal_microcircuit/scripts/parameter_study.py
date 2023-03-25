@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 import time
 from datetime import timedelta
 
@@ -44,22 +45,29 @@ for i, config in enumerate(all_configs):
         print(f"skipping file {config}")
         continue
 
+    params = Params(os.path.join(args.config_dir, config))
+    print("created params")
+    if not params.network_type and not args.network:
+        print("no network type specified, aborting.")
+        sys.exit()
+    if params.network_type and args.network and args.network != params.network_type:
+        print(
+            f"both input file and script parameters specify different network types ({params.network_type}/{args.network}).")
+        print(f"overwriting with argument and using {args.network} network type")
+        params.network_type = args.network
+        
+    spiking = params.network_type == "snest"
+    params.spiking = spiking
+    params.threads = args.threads
+
+    use_nest = params.network_type != "numpy"
+
     config_name = os.path.split(config)[-1].split(".")[0]
     root_dir, imgdir, datadir = utils.setup_directories(name=config_name, type=args.network)
     if not root_dir:
         print("\ta simulation of that name already exists, skipping.\n")
         continue
     print(f"created dirs: {root_dir}")
-
-    params = Params(os.path.join(args.config_dir, config))
-    print("created params")
-    spiking = args.network == "snest"
-    params.network_type = args.network
-    params.timestamp = root_dir.split(os.path.sep)[-1]
-    params.spiking = spiking
-    params.threads = args.threads
-
-    use_nest = params.network_type != "numpy"
 
     if not use_nest:
         net = NumpyNetwork(params)

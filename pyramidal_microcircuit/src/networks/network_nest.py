@@ -135,16 +135,22 @@ class NestNetwork(Network):
             self.reset()
             self.set_input(x)
             self.set_target(y)
-            self.simulate(self.sim_time)
+            self.mm.set({"start": self.p.out_lag, 'stop': self.sim_time, 'origin': nest.biological_time})
 
-            y_pred = [pyr.get("soma")["V_m"] for pyr in self.layers[-1].pyr]
+            self.simulate(self.sim_time)
+            mm_data = pd.DataFrame.from_dict(self.mm.events)
+            U_Y = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]
+            y_pred = np.mean(U_Y, axis=1)
+
             loss.append(mse(y_pred, y))
 
         if self.p.store_errors:
-            U_I = [intn.get("soma")["V_m"] for intn in self.layers[-2].intn]
-            V_ah = [pyr.get("apical_lat")["V_m"] for pyr in self.layers[-2].pyr]
-            self.apical_error.append([self.epoch, np.linalg.norm(V_ah)])
-            self.intn_error.append([self.epoch, mse(U_I, y_pred)])
+            U_I = [mm_data[mm_data["senders"] == intn_id]["V_m.s"] for intn_id in self.layers[0].intn.global_id]
+            U_I = np.mean(U_I, axis=1)
+            V_ah = [mm_data[mm_data["senders"] == hidden_id]["V_m.a_lat"] for hidden_id in self.layers[0].pyr.global_id]
+            V_ah = np.mean(V_ah, axis=1)
+            self.apical_error.append((self.epoch, np.linalg.norm(V_ah)))
+            self.intn_error.append([self.epoch, mse(self.phi(y_pred), self.phi(U_I))])
 
         return np.mean(loss)
 
