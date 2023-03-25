@@ -70,11 +70,6 @@ class NestNetwork(Network):
             nest.Connect(self.mm, self.layers[0].pyr)
             nest.Connect(self.mm, self.layers[0].intn)
             nest.Connect(self.mm, self.layers[-1].pyr)
-        # TODO: keep both ways of storage?
-        self.U_y_record = np.zeros((1, self.dims[-1]))
-        self.V_ah_record = np.zeros((1, self.dims[1]))
-        self.U_h_record = np.zeros((1, self.dims[1]))
-        self.U_i_record = np.zeros((1, self.dims[-1]))
 
         # step generators for enabling batch training
         self.sgx = nest.Create("step_current_generator", self.dims[0])
@@ -137,19 +132,21 @@ class NestNetwork(Network):
     def train_batch(self, x_batch, y_batch):
         loss = []
         for i, (x, y) in enumerate(zip(x_batch, y_batch)):
+            self.reset()
             self.set_input(x)
             self.set_target(y)
-            self.mm.set({"start": self.p.out_lag, 'stop': self.sim_time, 'origin': nest.biological_time})
-
             self.simulate(self.sim_time)
-            mm_data = pd.DataFrame.from_dict(self.mm.events)
-            U_Y = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]
-            y_pred = np.mean(U_Y, axis=1)
 
+            y_pred = [pyr.get("soma")["V_m"] for pyr in self.layers[-1].pyr]
             loss.append(mse(y_pred, y))
-            self.reset()
 
-        self.train_loss.append((self.epoch, np.mean(loss)))
+        if self.p.store_errors:
+            U_I = [intn.get("soma")["V_m"] for intn in self.layers[-2].intn]
+            V_ah = [pyr.get("apical_lat")["V_m"] for pyr in self.layers[-2].pyr]
+            self.apical_error.append([self.epoch, np.linalg.norm(V_ah)])
+            self.intn_error.append([self.epoch, mse(U_I, y_pred)])
+
+        return np.mean(loss)
 
     def test_batch(self, x_batch, y_batch):
         acc = []
@@ -162,7 +159,7 @@ class NestNetwork(Network):
             self.set_input(x_test)
             # self.mm.set({"start": self.p.out_lag, 'stop': self.sim_time, 'origin': nest.biological_time})
             self.mm.set({"start": self.p.test_delay, 'stop': self.p.test_time, 'origin': nest.biological_time})
-            self.simulate(self.p.test_time) # self.sim_time)
+            self.simulate(self.p.test_time)  # self.sim_time)
             mm_data = pd.DataFrame.from_dict(self.mm.events)
             U_Y = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]
             y_pred = np.mean(U_Y, axis=1)
@@ -192,12 +189,12 @@ class NestNetwork(Network):
 
         for x_test, y_actual in zip(x_batch, y_batch):
             wgts = self.get_weight_dict()
-            y_pred = self.phi( self.p.g_d / (self.p.g_d + self.p.g_l) * wgts[1]["up"] @  self.phi(self.p.g_d / (self.p.g_d + self.p.g_l + self.p.g_a) * wgts[0]["up"] @ x_test))
+            y_pred = self.phi(self.p.g_d / (self.p.g_d + self.p.g_l) * wgts[1]["up"] @  self.phi(
+                self.p.g_d / (self.p.g_d + self.p.g_l + self.p.g_a) * wgts[0]["up"] @ x_test))
             loss_mse.append(mse(y_actual, y_pred))
             acc.append(np.argmax(y_actual) == np.argmax(y_pred))
-    
-        return np.mean(acc), np.mean(loss_mse)
 
+        return np.mean(acc), np.mean(loss_mse)
 
     def disable_learning(self):
         nest.GetConnections(synapse_model=self.p.syn_model).set({"eta": 0})

@@ -11,17 +11,13 @@ import src.utils as utils
 from src.networks.network_nest import NestNetwork
 from src.networks.network_numpy import NumpyNetwork
 from src.params import Params
-from src.plot_utils import plot_progress
+from src.plot_utils import plot_training_progress, plot_pre_training
 
 warnings.simplefilter('error', RuntimeWarning)
 
 
 def run_simulations(net, params, root_dir, imgdir, datadir, plot_interval=0, progress_interval=200, epoch_offset=0):
     simulation_times = []
-
-    # if spiking:
-    #     sr = nest.Create("spike_recorder")
-    #     nest.Connect(nest.GetNodes({"model": params.neuron_model}), sr)
 
     try:  # catches KeyboardInterruptException to ensure proper cleanup and storage of progress
         t_start_training = time()
@@ -33,30 +29,21 @@ def run_simulations(net, params, root_dir, imgdir, datadir, plot_interval=0, pro
             simulation_times.append(t_epoch)
 
             if epoch % params.test_interval == 0 and params.test_interval > 0:
-                # if spiking:
-                #     sr.set({"start": 0, "stop": 8*params.sim_time, "origin": nest.biological_time, "n_events": 0})
                 net.test_epoch()
-                # if spiking:
-                #     spikes = pd.DataFrame.from_dict(sr.events).groupby("senders")
-                #     n_spikes_avg = spikes.count()["times"].mean()
-                #     rate = 1000 * n_spikes_avg / (8*params.sim_time)
-                #     print(f"neurons firing at {rate:.1f}Hz")
 
-                # print(f"Ep {epoch}: test completed, acc: {net.test_acc[-1][1]:.3f}, loss: {net.test_loss[-1][1]:.3f}")
                 if epoch > 0:
-                    t_processed = time() - t_start_training
-                    t_epoch = t_processed / epoch
-
                     current_loss = net.test_loss[-1][1]
                     if current_loss > 10:
                         print("-------------------------------")
                         print(f"extreme output loss recorded ({current_loss}), aborting training progress!")
                         print("-------------------------------\n")
-
                         break
 
-            if plot_interval > 0 and epoch % plot_interval == 0:
-                plot_progress(epoch, net, imgdir)
+            if plot_interval > 0 and epoch % plot_interval == 0 and epoch > 0:
+                if net.mode == "self-pred":
+                    plot_pre_training(epoch, net, imgdir)
+                else:
+                    plot_training_progress(epoch, net, imgdir)
 
             if epoch % progress_interval == 0:
                 print("storing progress...", end="")

@@ -26,6 +26,7 @@ class Params:
         self.sigma = 0.3  # standard deviation for membrane potential noise
         self.noise_factor = np.sqrt(self.delta_t) * self.sigma  # constant noise factor (arb. units)
         self.mode = "bars"  # Which dataset to train on. Default: Bars dataset from Haider (2021)
+        self.store_errors = False  # compute and store apical and interneuron errors during traininng
 
         # parameters regarding neurons
         self.g_l = 0.03  # somatic leakage conductance

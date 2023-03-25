@@ -77,8 +77,15 @@ class NumpyNetwork(Network):
             self.target_seq = y_train
             for i in range(int(self.sim_time/self.dt)):
                 self.simulate(self.target_filtered)
-            self.train_loss.append([self.epoch, mse(self.u_target, self.layers[- 1].u_pyr["soma"])])
             self.reset()
+
+        U_Y = self.layers[-1].u_pyr["soma"]
+        if self.p.store_errors:
+            self.apical_error.append([self.epoch, np.linalg.norm(self.layers[-2].u_pyr["apical"])])
+            U_I = self.layers[-2].u_intn["soma"]
+            self.intn_error.append([self.epoch, mse(U_I, U_Y)])
+
+        return mse(self.u_target, U_Y)
 
     def test_batch(self, x_batch, y_batch):
         acc = []
