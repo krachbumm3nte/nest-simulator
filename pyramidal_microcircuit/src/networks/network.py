@@ -17,7 +17,9 @@ class Network:
             in which each output neuron represents horizontal, vertical or diagonal alignment respectively
             of the 3x3 input square.
             """
-            self.dims = [9, 30, 3]
+            self.dims = p.dims
+            if p.dims[0] != 9 or p.dims[-1] != 3:
+                raise ValueError(f"For training on the bar Dataset, network must have exactly 9 input and 3 output neurons, dims are: {p.dims}")
             self.train_samples = 3
             self.val_samples = 1
             self.test_samples = 1
@@ -30,7 +32,7 @@ class Network:
             Network is trained on the MNIST dataset. Kinda self-explanatory?
             """
             self.classes = 2
-            self.dims = [784, 100, 25, self.classes]
+            self.dims = p.dims
             self.train_samples = 25
             self.val_samples = 8
             self.test_samples = 8
