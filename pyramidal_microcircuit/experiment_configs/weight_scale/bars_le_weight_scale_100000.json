@@ -23,9 +23,5 @@
         ]
     },
     "record_interval": 0.5,
-    "dims": [
-        9,
-        1000,
-        3
-    ]
+    "weight_scale": 1000
 }
