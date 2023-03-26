@@ -23,5 +23,6 @@
         ]
     },
     "record_interval": 0.5,
-    "weight_scale": 100
+    "weight_scale": 100,
+    "network_type": "snest"
 }
