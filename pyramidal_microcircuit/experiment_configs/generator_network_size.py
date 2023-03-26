@@ -16,6 +16,7 @@ with open(base_file, "r") as f:
 os.mkdir(target_dir)
 for n in n_hidden:
     config["dims"] = [9, n, 3]
+    config["network_type"] = "snest"
     config_name = f"bars_le_n_hidden_{n}.json"
     with open(os.path.join(target_dir, config_name), "w") as f:
         json.dump(config, f, indent=4)
