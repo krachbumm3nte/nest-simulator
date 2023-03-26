@@ -62,7 +62,7 @@ if __name__ == "__main__":
         use_nest = params.network_type != "numpy"
 
         config_name = os.path.split(config)[-1].split(".")[0]
-        root_dir, imgdir, datadir = utils.setup_directories(name=config_name, type=params.network)
+        root_dir, imgdir, datadir = utils.setup_directories(name=config_name, type=params.network_type)
         if not root_dir:
             print("\ta simulation of that name already exists, skipping.\n")
             continue
