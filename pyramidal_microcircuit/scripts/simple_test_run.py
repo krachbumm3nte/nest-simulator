@@ -10,7 +10,7 @@ import src.utils as utils
 from src.networks.network_nest import NestNetwork
 from src.networks.network_numpy import NumpyNetwork
 from src.params import Params
-from src.plot_utils import plot_progress
+from src.plot_utils import plot_training_progress
 
 
 args = sys.argv[1:]

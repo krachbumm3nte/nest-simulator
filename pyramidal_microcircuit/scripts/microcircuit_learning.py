@@ -68,19 +68,10 @@ ETA: {timedelta(seconds=np.round(t_epoch * (params.n_epochs-epoch)))}\n")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    # parser.add_argument("--le",
-    #                     action="store_true",
-    #                     help="""Use latent equilibrium in activation and plasticity."""
-    #                     )
-    # parser.add_argument("--mode",
-    #                     type=str,
-    #                     default="bars",
-    #                     help="which dataset to train on")
     parser.add_argument("--network",
                         type=str, choices=["numpy", "rnest", "snest"],
-                        default="snest",
-                        help="""Type of network to train. Choice between exact mathematical simulation ('numpy') \
-and NEST simulations with rate- or spiking neurons ('rnest', 'snest')""")
+                        help="""Type of network to train. Choice between exact mathematical simulation ('numpy') and \
+    NEST simulations with rate- or spiking neurons ('rnest', 'snest')""")
     parser.add_argument("--cont",
                         type=str,
                         help="""continue training from a previous simulation""")
@@ -121,8 +112,16 @@ and NEST simulations with rate- or spiking neurons ('rnest', 'snest')""")
         else:
             params = Params()
             config_name = "default_config"
-
-        root_dir, imgdir, datadir = utils.setup_directories(name=config_name, type=args.network)
+        print("created params")
+        if not params.network_type and not args.network:
+            print("no network type specified, aborting.")
+            sys.exit()
+        if params.network_type and args.network and args.network != params.network_type:
+            print(
+                f"both input file and script parameters specify different network types ({params.network_type}/{args.network}).")
+            print(f"overwriting with argument and using {args.network} network type")
+            params.network_type = args.network
+        root_dir, imgdir, datadir = utils.setup_directories(name=config_name, type=params.network_type)
         if not root_dir:
             print("a simulation of that name already exists, exiting.")
             sys.exit()
@@ -150,17 +149,12 @@ and NEST simulations with rate- or spiking neurons ('rnest', 'snest')""")
         net.test_acc = progress["test_acc"]
         net.test_loss = progress["test_loss"]
         net.train_loss = progress["train_loss"]
-        # net.V_ah_record = np.array(progress["V_ah_record"])
-        # net.U_y_record = np.array(progress["U_y_record"])
-        # net.U_i_record = np.array(progress["U_i_record"])
-        # ff_error = progress["ff_error"]
-        # fb_error = progress["fb_error"]
+        net.ff_error = progress["ff_error"]
+        net.fb_error = progress["fb_error"]
         epoch_offset = progress["epochs_completed"]
         net.epoch = epoch_offset
         print(f"continuing training from epoch {epoch_offset}")
     else:
-        ff_error = []
-        fb_error = []
         epoch_offset = 0
 
     if not args.cont:
