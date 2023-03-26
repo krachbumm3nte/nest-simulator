@@ -23,6 +23,11 @@
         ]
     },
     "record_interval": 0.5,
+    "dims": [
+        9,
+        30,
+        3
+    ],
     "weight_scale": 0.25,
     "network_type": "snest"
 }
