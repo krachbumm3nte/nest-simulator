@@ -24,6 +24,8 @@ class Network:
             self.val_samples = 1
             self.test_samples = 1
             self.bar_dataset = BarDataset()
+
+            # since the dataset only contains 8 datapoints, all subsets draw from the same function.
             self.get_training_data = self.bar_dataset.get_samples
             self.get_val_data = self.bar_dataset.get_samples
             self.get_test_data = self.bar_dataset.get_samples
@@ -31,22 +33,23 @@ class Network:
             """
             Network is trained on the MNIST dataset. Kinda self-explanatory?
             """
-            self.classes = 2
+            self.n_classes = p.n_classes
             self.dims = p.dims
-            self.train_samples = 25
-            self.val_samples = 8
-            self.test_samples = 8
+
+            self.train_samples = 10
+            self.val_samples = 2
+            self.test_samples = 2
 
             print("Preparing MNIST train images...", end=" ")
-            self.train_dataset = MnistDataset('train', self.classes)
+            self.train_dataset = MnistDataset('train', self.n_classes)
             print("...Done.")
 
             print("Preparing MNIST validation images...", end=" ")
-            self.val_dataset = MnistDataset('val', self.classes)
+            self.val_dataset = MnistDataset('val', self.n_classes)
             print("...Done.")
 
             print("Preparing MNIST test images...", end=" ")
-            self.test_dataset = MnistDataset('test', self.classes)
+            self.test_dataset = MnistDataset('test', self.n_classes)
             print("...Done.")
 
             print("Shuffling MNIST train, validation & test images...", end=" ")
@@ -56,8 +59,8 @@ class Network:
             self.get_training_data = self.train_dataset.get_samples
             self.get_val_data = self.val_dataset.get_samples
             self.get_test_data = self.test_dataset.get_samples
-
             print("...Done.")
+
         elif self.mode == "teacher":
             """
             Network learns to match the input-output relation of a separate, randomly initialized, teacher
