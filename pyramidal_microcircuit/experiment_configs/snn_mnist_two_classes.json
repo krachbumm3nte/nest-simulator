@@ -8,7 +8,8 @@
         784,
         200,
         2
-    ], 
+    ],
+    "network_type": "snest", 
     "n_classes": 2,
     "eta": {
         "ip": [
