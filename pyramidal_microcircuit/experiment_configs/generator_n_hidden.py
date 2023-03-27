@@ -7,7 +7,7 @@ root_dir = os.path.dirname(os.path.realpath(__file__))
 base_file = os.path.join(root_dir, "bars_le/bars_le_tpres_500.json")
 
 target_dir = os.path.join(root_dir, "n_hidden")
-n_hidden = [5, 10, 20, 30, 40, 50, 75, 100, 200]
+n_hidden = [2, 3, 4, 5, 10, 20, 30, 40, 50, 75, 100, 200]
 
 with open(base_file, "r") as f:
     config = json.load(f)

@@ -12,6 +12,7 @@
         10,
         3
     ],
+    "n_epochs": 5000,
     "store_errors": true,
     "eta": {
         "ip": [
