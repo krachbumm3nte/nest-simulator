@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 import time
+import json
 from datetime import timedelta
 
 import numpy as np
@@ -32,6 +33,10 @@ if __name__ == "__main__":
                         type=int,
                         default=8,
                         help="number of threads to allocate. Only has an effect when simulating with NEST.")
+    parser.add_argument("--weights",
+                        type=str,
+                        help="Set of initial weights to be used for all simulations.")
+
 
     args = parser.parse_args()
 
@@ -73,6 +78,13 @@ if __name__ == "__main__":
         else:
             utils.setup_nest(params, datadir)
             net = NestNetwork(params)
+
+        if args.weights:
+            with open(args.weights, "r") as f:
+                weight_dict = json.load(f)
+            print(f"setting network weights from file: {args.weights}")
+            net.set_all_weights(weight_dict)
+
 
         simulation_times = []
 
