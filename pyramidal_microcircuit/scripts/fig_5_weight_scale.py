@@ -42,26 +42,24 @@ if __name__ == "__main__":
 
         final_performance.append([weight_scale, final_acc])
 
-        if not np.any(acc[:,1] == 1.0):
+        if not np.any(acc[:, 1] == 1.0):
             t_success = 10000
         else:
             t_success = np.where(acc[:, 1] < 1.0)[0]
             t_success = acc[t_success[-1], 0]
-        
 
         training_duration.append([weight_scale, t_success])
 
         if weight_scale in [1, 100, 1000]:
             times = [entry[0] for entry in acc]
             acc = [1-entry[1] for entry in acc]
-            ax0.plot(times, utils.rolling_avg(acc, filter_window), label=r"weight scale={}".format(weight_scale), color="orange", linestyle=linestyles[weight_scale])
-
-
+            ax0.plot(times, utils.rolling_avg(acc, filter_window), label=r"weight scale={}".format(
+                weight_scale), color="orange", linestyle=linestyles[weight_scale])
 
     ax1.set_xscale("log")
     ax2.set_xscale("log")
     ax1.plot(*zip(*sorted(final_performance)))
-    
+
     ax2.plot(*zip(*sorted(training_duration)))
 
     ax0.set_ylim(0, 1)
@@ -74,7 +72,6 @@ if __name__ == "__main__":
     ax1.set_ylabel("final test error")
     ax2.set_ylabel("training duration [epochs]")
     ax0.legend()
-
 
     # plt.show()
 

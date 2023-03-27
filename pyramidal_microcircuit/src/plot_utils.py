@@ -9,6 +9,12 @@ ff_error = []
 fb_error = []
 
 
+colors = {
+    "numpy": "orange",
+    "rnest": "green",
+    "snest": "blue",
+}
+
 def setup_plt():
     plt.rcParams['savefig.dpi'] = 300
     plt.rcParams['figure.constrained_layout.use'] = True
