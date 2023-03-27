@@ -12,8 +12,10 @@ import nest
 import sys
 
 
-def setup_directories(type, name="default", root=os.path.join(*[os.path.dirname(os.path.realpath(sys.argv[0])), "..", "results"])):
-    print(root)
+def setup_directories(type, name="default", root=None):
+    if root is None:
+        root = os.path.join(*[os.path.dirname(os.path.realpath(sys.argv[0])), "..", "results"])
+
     root = os.path.join(root, f"{name}_{type}")  # _{datetime.now().strftime('%Y_%m_%d-%H_%M_%S')}")
 
     imgdir = os.path.join(root, "plots")
