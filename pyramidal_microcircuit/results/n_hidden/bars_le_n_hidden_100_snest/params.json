@@ -10,7 +10,7 @@
         "soma_curr": 5,
         "soma": 1
     },
-    "config_file": "experiment_configs/n_hidden/bars_le_n_hidden_100.json",
+    "config_file": "/home/johannes/nest-simulator/pyramidal_microcircuit/experiment_configs/n_hidden/bars_le_n_hidden_100.json",
     "delta_t": 0.1,
     "dims": [
         9,
@@ -149,8 +149,7 @@
     "test_interval": 10,
     "test_time": 50,
     "theta": 0,
-    "threads": 10,
-    "timestamp": "bars_le_n_hidden_100_snest",
+    "threads": 8,
     "weight_scale": 500,
     "wmax_init": 1,
     "wmin_init": -1
