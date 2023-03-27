@@ -113,7 +113,7 @@ if __name__ == "__main__":
             params = Params()
             config_name = "default_config"
         print("created params")
-        if not params.network_type and not args.network:
+        if not args.network and not params.network_type:
             print("no network type specified, aborting.")
             sys.exit()
         if params.network_type and args.network and args.network != params.network_type:
