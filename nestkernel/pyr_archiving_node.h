@@ -62,7 +62,7 @@ public:
   PyrArchivingNode( const PyrArchivingNode& );
 
   bool
-  supports_urbanczik_archiving() const
+  supports_urbanczik_archiving() const override
   {
     return true;
   }
@@ -78,37 +78,37 @@ public:
     double t2,
     std::deque< histentry_extended >::iterator* start,
     std::deque< histentry_extended >::iterator* finish,
-    int comp );
+    int comp ) override;
 
   /**
    * \fn double get_C_m( int comp )
    * Returns membrane capacitance
    */
-  double get_C_m( int comp );
+  double get_C_m( int comp ) override;
 
   /**
    * \fn double get_g_L( int comp )
    * Returns leak conductance g_L
    */
-  double get_g_L( int comp );
+  double get_g_L( int comp ) override;
 
   /**
    * \fn double get_g( int comp )
    * Returns conductance g connecting compartments
    */
-  double get_g( int comp );
+  double get_g( int comp ) override;
 
   /**
    * \fn double get_tau_L( int comp )
    * Returns time constant tau_L
    */
-  double get_tau_L( int comp );
+  double get_tau_L( int comp ) override;
 
   /**
    * \fn double get_tau_s()
    * Returns synaptic time constant tau_m
    */
-  double get_tau_s( int comp );
+  double get_tau_s( int comp ) override;
 
 protected:
   /**
@@ -120,8 +120,8 @@ protected:
 
   pyr_parameters* pyr_params;
 
-  void get_status( DictionaryDatum& d ) const;
-  void set_status( const DictionaryDatum& d );
+  void get_status( DictionaryDatum& d ) const override;
+  void set_status( const DictionaryDatum& d ) override;
 
 private:
   std::deque< histentry_extended > pyr_history_[ pyr_parameters::NCOMP - 1 ];
@@ -162,7 +162,6 @@ PyrArchivingNode< pyr_parameters >::get_tau_s( int comp )
 {
   return pyr_params->tau_m;
 }
-
 
 } // of namespace
 #endif

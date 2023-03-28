@@ -168,6 +168,12 @@ public:
     {
       return invalid_port;
     }
+
+    port
+    handles_test_event( DSSpikeEvent&, rport ) override
+    {
+      return invalid_port;
+    }
   };
 
   void
@@ -204,7 +210,6 @@ private:
 
 template < typename targetidentifierT >
 constexpr ConnectionModelProperties pyr_synapse< targetidentifierT >::properties;
-
 
 /**
  * Send an event to the receiver of this connection.
@@ -337,4 +342,4 @@ pyr_synapse< targetidentifierT >::set_status( const DictionaryDatum& d, Connecto
 
 } // of namespace nest
 
-#endif // of #ifndef URBANCZIK_SYNAPSE_H
+#endif // of #ifndef PYR_SYNAPSE_H

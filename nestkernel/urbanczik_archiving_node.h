@@ -1,6 +1,7 @@
 /*
  *  urbanczik_archiving_node.h
- *
+ *  PyrArchivingNode< pp_cond_exp_mc_pyr_parameters >::clear_history();
+
  *  This file is part of NEST.
  *
  *  Copyright (C) 2004 The NEST Initiative

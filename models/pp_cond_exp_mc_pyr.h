@@ -269,23 +269,23 @@ public:
   using Node::handle;
   using Node::handles_test_event;
 
-  port send_test_event( Node&, rport, synindex, bool );
+  port send_test_event( Node&, rport, synindex, bool ) override;
 
-  void handle( SpikeEvent& );
-  void handle( CurrentEvent& );
-  void handle( DataLoggingRequest& );
+  void handle( SpikeEvent& ) override;
+  void handle( CurrentEvent& ) override;
+  void handle( DataLoggingRequest& ) override;
 
-  port handles_test_event( SpikeEvent&, rport );
-  port handles_test_event( CurrentEvent&, rport );
-  port handles_test_event( DataLoggingRequest&, rport );
+  port handles_test_event( SpikeEvent&, rport ) override;
+  port handles_test_event( CurrentEvent&, rport ) override;
+  port handles_test_event( DataLoggingRequest&, rport ) override;
 
-  void get_status( DictionaryDatum& ) const;
-  void set_status( const DictionaryDatum& );
+  void get_status( DictionaryDatum& ) const override;
+  void set_status( const DictionaryDatum& ) override;
 
 private:
-  void init_buffers_();
-  void pre_run_hook();
-  void update( Time const&, const long, const long );
+  void init_buffers_() override;
+  void pre_run_hook() override;
+  void update( Time const&, const long, const long ) override;
 
   // Enumerations and constants specifying structure and properties ----
 
@@ -384,7 +384,7 @@ private:
     Parameters_& operator=( const Parameters_& ); //!< needed to copy C-arrays
 
     void get( DictionaryDatum& ) const; //!< Store current values in dictionary
-    void set( const DictionaryDatum& ); //!< Set values from dicitonary
+    void set( const DictionaryDatum& ); //!< Set values from dictionary
   };
 
 
@@ -588,9 +588,9 @@ pp_cond_exp_mc_pyr::send_test_event( Node& target, rport receptor_type, synindex
 inline port
 pp_cond_exp_mc_pyr::handles_test_event( SpikeEvent&, rport receptor_type )
 {
-  if ( receptor_type < MIN_SPIKE_RECEPTOR || receptor_type >= SUP_SPIKE_RECEPTOR )
+  if ( receptor_type < MIN_SPIKE_RECEPTOR or receptor_type >= SUP_SPIKE_RECEPTOR )
   {
-    if ( receptor_type < 0 || receptor_type >= SUP_CURR_RECEPTOR )
+    if ( receptor_type < 0 or receptor_type >= SUP_CURR_RECEPTOR )
     {
       throw UnknownReceptorType( receptor_type, get_name() );
     }
@@ -601,7 +601,6 @@ pp_cond_exp_mc_pyr::handles_test_event( SpikeEvent&, rport receptor_type )
   }
   return receptor_type - MIN_SPIKE_RECEPTOR;
 }
-
 
 inline port
 pp_cond_exp_mc_pyr::handles_test_event( CurrentEvent&, rport receptor_type )

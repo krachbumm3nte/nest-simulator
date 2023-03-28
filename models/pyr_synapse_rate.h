@@ -133,6 +133,7 @@ public:
   {
   }
 
+  SecondaryEvent* get_secondary_event();
 
   /**
    * Copy constructor.
@@ -315,6 +316,13 @@ pyr_synapse_rate< targetidentifierT >::set_status( const DictionaryDatum& d, Con
   updateValue< double >( d, names::Wmax, Wmax_ );
 
   init_weight_ = weight_;
+}
+
+template < typename targetidentifierT >
+SecondaryEvent*
+pyr_synapse_rate< targetidentifierT >::get_secondary_event()
+{
+  return new DelayedRateConnectionEvent();
 }
 
 } // of namespace nest

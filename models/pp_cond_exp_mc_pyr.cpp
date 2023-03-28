@@ -216,7 +216,6 @@ nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_( const Parameters_& p )
   pyr_params.latent_equilibrium = p.pyr_params.latent_equilibrium;
 
   // copy C-arrays
-
   for ( size_t n = 0; n < NCOMP; ++n )
   {
     pyr_params.g_conn[ n ] = p.pyr_params.g_conn[ n ];
@@ -440,7 +439,6 @@ nest::pp_cond_exp_mc_pyr::State_::get( DictionaryDatum& d ) const
 void
 nest::pp_cond_exp_mc_pyr::State_::set( const DictionaryDatum& d, const Parameters_& )
 {
-
   // extract from sub-dictionaries
   for ( size_t n = 0; n < NCOMP; ++n )
   {
@@ -655,7 +653,6 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       V_som_forward = S_.y_[ S::idx( SOMA, S::V_forw ) ];
     }
 
-
     // Declaration outside if statement because we need it later
     unsigned long n_spikes = 0;
 
@@ -756,7 +753,6 @@ nest::pp_cond_exp_mc_pyr::handle( SpikeEvent& e )
   B_.spikes_[ e.get_rport() ].add_value(
     e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), e.get_weight() * e.get_multiplicity() );
 }
-
 
 void
 nest::pp_cond_exp_mc_pyr::handle( CurrentEvent& e )

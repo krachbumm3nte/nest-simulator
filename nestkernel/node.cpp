@@ -317,7 +317,7 @@ Node::handles_test_event( DoubleDataEvent&, rport )
 port
 Node::handles_test_event( DSSpikeEvent&, rport )
 {
-  throw IllegalConnection( "The target node or synapse model does not support spike input." );
+  throw IllegalConnection( "The target node or synapse model does not support DS spike input." );
 }
 
 port

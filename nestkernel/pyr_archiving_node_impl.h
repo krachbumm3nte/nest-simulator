@@ -30,7 +30,6 @@
 
 // Includes from sli:
 #include "dictutils.h"
-#include "stdio.h"
 
 namespace nest
 {
