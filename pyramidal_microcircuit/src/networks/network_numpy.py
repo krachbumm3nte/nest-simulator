@@ -82,7 +82,7 @@ class NumpyNetwork(Network):
         U_Y = self.layers[-1].u_pyr["soma"]
         if self.p.store_errors:
             self.apical_error.append([self.epoch, np.linalg.norm(self.layers[-2].u_pyr["apical"])])
-            U_I = self.layers[-2].u_intn["soma"]
+            U_I = self.layers[-2].u_inn["soma"]
             self.intn_error.append([self.epoch, mse(self.phi(U_I), self.phi(U_Y))])
 
         return mse(self.u_target, U_Y)

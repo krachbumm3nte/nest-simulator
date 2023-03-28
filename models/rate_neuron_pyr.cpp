@@ -635,8 +635,6 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
 
     const double delta_V_som = (-I_L + I_conn_d_s + B_.I_stim_[ SOMA ] + P_.I_e[ SOMA ]) / pyr_params -> C_m[ SOMA ];
     S_.y_[ S::idx( SOMA, S::V_M ) ] += B_.step_ * delta_V_som;
-    // std::cout << V_som_old << " + " << delta_V_som << " - " << I_L << "(*)" << pyr_params->g_conn[ SOMA ] << " = " <<
-    // S_.y_[ S::idx( SOMA, S::V_M ) ] << std::endl;
     S_.y_[ S::idx( SOMA, S::V_forw ) ] = V_som_old + delta_V_som * (pyr_params->C_m[ SOMA ]/ pyr_params->g_conn[ SOMA ]);
 
 
@@ -677,6 +675,7 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
       ce.set_sender( *this );
       ce.set_stamp( Time::step( origin.get_steps() + lag + 1 ) );
       ce.set_weight( pyr_params->lambda_curr );
+      ce.set_delay_steps(1);
       ce();
     }
   }

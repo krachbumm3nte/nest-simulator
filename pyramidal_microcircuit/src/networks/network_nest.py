@@ -110,6 +110,13 @@ class NestNetwork(Network):
         nest.Simulate(T)
         self.iteration += 1
 
+    def disable_learning(self):
+        nest.GetConnections(synapse_model=self.p.syn_model).set({"eta": 0})
+
+    def enable_learning(self):
+        for layer in self.layers:
+            layer.enable_learning()
+
     def set_input(self, input_currents):
         """Inject a constant current into all neurons in the input layer.
 
@@ -121,11 +128,25 @@ class NestNetwork(Network):
         """
         self.input_currents = input_currents
         for i in range(self.dims[0]):
+            print(self.weight_scale, i)
             if self.spiking:
-                self.input_neurons[i].rate = self.weight_scale * i * 1000
+                self.input_neurons[i].rate = self.weight_scale * input_currents[i] * 1000
             else:
                 self.input_neurons[i].set({"amplitude_times": [nest.biological_time + self.dt],
-                                           "amplitude_values": [i]})
+                                           "amplitude_values": [input_currents[i]]})
+
+    def set_target(self, target_currents):
+        """Inject a constant current into all neurons in the output layer.
+
+        @note: Before injection, currents are attenuated by the output neuron
+        nudging conductance in order to match the simulation exactly.
+
+        Arguments:
+            target_currents -- Iterable of length equal to the output dimension.
+        """
+        self.target_curr = target_currents
+        for i in range(self.dims[-1]):
+            self.layers[-1].pyr[i].set({"soma": {"I_e": target_currents[i] * self.p.g_som}})
 
     def train_batch(self, x_batch, y_batch):
         loss = []
@@ -199,26 +220,6 @@ class NestNetwork(Network):
             acc.append(np.argmax(y_actual) == np.argmax(y_pred))
 
         return np.mean(acc), np.mean(loss_mse)
-
-    def disable_learning(self):
-        nest.GetConnections(synapse_model=self.p.syn_model).set({"eta": 0})
-
-    def enable_learning(self):
-        for layer in self.layers:
-            layer.enable_learning()
-
-    def set_target(self, target_currents):
-        """Inject a constant current into all neurons in the output layer.
-
-        @note: Before injection, currents are attenuated by the output neuron
-        nudging conductance in order to match the simulation exactly.
-
-        Arguments:
-            target_currents -- Iterable of length equal to the output dimension.
-        """
-        self.target_curr = target_currents
-        for i in range(self.dims[-1]):
-            self.layers[-1].pyr[i].set({"soma": {"I_e": target_currents[i] * self.p.g_som}})
 
     def get_weight_array(self, source, target, normalized=False):
         weight_df = pd.DataFrame.from_dict(nest.GetConnections(source=source, target=target).get())
