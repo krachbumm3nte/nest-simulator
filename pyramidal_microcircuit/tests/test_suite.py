@@ -8,8 +8,8 @@ from itertools import permutations
 import matplotlib.pyplot as plt
 import src.utils as utils
 from src.params import Params
-from tests01_neuron_dynamics import *
-from tests02_plasticity import *
+from tests.tests01_neuron_dynamics import *
+from tests.tests02_plasticity import *
 
 import nest
 

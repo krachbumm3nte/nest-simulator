@@ -36,7 +36,10 @@ class NestNetwork(Network):
 
         self.p.setup_nest_configs()
         # Create input layer neurons
-        self.input_neurons = nest.Create(self.p.neuron_model, self.dims[0], self.p.input_params)
+        if self.spiking:
+            self.input_neurons = nest.Create("poisson_generator", self.dims[0])
+        else:
+            self.input_neurons = nest.Create("step_rate_generator", self.dims[0])
 
         pyr_prev = self.input_neurons
         intn_prev = None
@@ -66,18 +69,9 @@ class NestNetwork(Network):
                                                     'record_from': ["V_m.a_lat", "V_m.s", "V_m.b"],
                                                     'stop': 0.0  # disables multimeter by default
                                                     })
-            nest.Connect(self.mm, self.input_neurons)
             nest.Connect(self.mm, self.layers[0].pyr)
             nest.Connect(self.mm, self.layers[0].intn)
             nest.Connect(self.mm, self.layers[-1].pyr)
-
-        # step generators for enabling batch training
-        self.sgx = nest.Create("step_current_generator", self.dims[0])
-        nest.Connect(self.sgx, self.input_neurons, conn_spec='one_to_one',
-                     syn_spec={"receptor_type": self.p.compartments["soma_curr"]})
-        self.sgy = nest.Create("step_current_generator", self.dims[-1])
-        nest.Connect(self.sgy, self.layers[-1].pyr, conn_spec='one_to_one',
-                     syn_spec={"receptor_type": self.p.compartments["soma_curr"]})
 
         pyr_prev = self.input_neurons
         intn_prev = None
@@ -127,7 +121,11 @@ class NestNetwork(Network):
         """
         self.input_currents = input_currents
         for i in range(self.dims[0]):
-            self.input_neurons[i].set({"soma": {"I_e": input_currents[i] / self.p.tau_x}})
+            if self.spiking:
+                self.input_neurons[i].rate = self.weight_scale * i * 1000
+            else:
+                self.input_neurons[i].set({"amplitude_times": [nest.biological_time + self.dt],
+                                           "amplitude_values": [i]})
 
     def train_batch(self, x_batch, y_batch):
         loss = []

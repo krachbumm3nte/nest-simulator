@@ -90,8 +90,9 @@ class Network:
             self.get_training_data = self.generate_selfpred_data
             self.get_val_data = self.generate_selfpred_data
             self.get_test_data = self.generate_selfpred_data
+        else:
+            self.dims = p.dims
 
-        self.p.dims = self.dims
         self.sim_time = self.p.sim_time
         self.dt = self.p.delta_t
         self.sigma_noise = self.p.sigma
