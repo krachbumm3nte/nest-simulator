@@ -27,6 +27,8 @@ class Params:
         self.noise_factor = np.sqrt(self.delta_t) * self.sigma  # constant noise factor (arb. units)
         self.mode = "bars"  # Which dataset to train on. Default: Bars dataset from Haider (2021)
         self.store_errors = False  # compute and store apical and interneuron errors during traininng
+        self.network_type = None
+
 
         # parameters regarding neurons
         self.g_l = 0.03  # somatic leakage conductance
@@ -37,6 +39,9 @@ class Params:
         self.tau_x = 0.1  # input filtering time constant
         self.tau_m = 1  # membrane time constant for pyramidal and interneurons
         self.g_lk_dnd = self.delta_t  # dendritic leakage
+        self.C_m_som = 1 # membrane capacitance of somatic compartment in pF
+        self.C_m_bas = 1 # membrane capacitance of basal compartment in pF
+        self.C_m_api = 1 # membrane capacitance of apical compartment in pF
 
         # Useful constants for scaling learning rates
         self.lambda_ah = self.g_a / (self.g_d + self.g_a + self.g_l)
@@ -85,17 +90,19 @@ class Params:
                 # misappropriation of somatic conductance. this is the effective somatic leakage conductance now!
                 # TODO: create a separate parameter in the neuron model for this
                 'g': self.g_l_eff,
+                'C_m': self.C_m_som
             },
             'basal': {
                 'g_L': self.g_lk_dnd if self.spiking else 1,
                 'g': self.g_d,
+                'C_m': self.C_m_bas
             },
             'apical_lat': {
                 'g_L': self.g_lk_dnd if self.spiking else 1,
                 'g': self.g_a,
+                'C_m': self.C_m_api
             },
             'tau_m': self.tau_m,  # Membrane time constant
-            'C_m': 1.0,  # Membrane capacitance
             'lambda': self.g_som,  # Interneuron nudging conductance
             'gamma': self.gamma,
             'beta': self.beta,
