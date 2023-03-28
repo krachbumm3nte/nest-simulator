@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     ax1.plot(*zip(*sorted(final_performance)))
     ax2.plot(*zip(*sorted(training_duration)))
-
+    ax2.set_ylim(-5, 1000)
     ax0.set_xlabel("epoch")
     ax0.set_ylabel("test loss")
     ax1.set_ylabel("training duration")
