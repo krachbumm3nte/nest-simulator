@@ -55,7 +55,6 @@ for i in i_e:
 
 
 fig, [ax0, ax1] = plt.subplots(2, 1)
-print(mm1.events)
 ax0.plot(mm1.events["times"], mm1.events["V_m.b"], color="blue")
 ax0.plot(mm2.events["times"], mm2.events["V_m.b"], color="orange")
 ax1.plot(mm1.events["times"], mm1.events["V_m.s"], color="blue")

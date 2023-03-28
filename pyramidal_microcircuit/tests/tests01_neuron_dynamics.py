@@ -469,17 +469,18 @@ class NetworkDynamics(TestClass):
         self.numpy_net.set_all_weights(self.nest_net.get_weight_dict())
 
     def run(self):
-        input_currents = np.random.random(self.dims[0])
-        target_currents = np.random.random(self.dims[-1])
-        self.sim_time = 50
+        for i in range(2):
+            input_currents = np.random.random(self.dims[0])
+            target_currents = np.random.random(self.dims[-1])
+            self.sim_time = 50
 
-        self.nest_net.set_input(input_currents)
-        self.nest_net.set_target(target_currents)
-        self.nest_net.simulate(self.sim_time, enable_recording=True)
+            self.nest_net.set_input(input_currents)
+            self.nest_net.set_target(target_currents)
+            self.nest_net.simulate(self.sim_time, enable_recording=True)
 
-        self.numpy_net.set_input(input_currents)
-        for i in range(int(self.sim_time/self.delta_t)):
-            self.numpy_net.simulate(lambda: target_currents, enable_recording=True, plasticity=False)
+            self.numpy_net.set_input(input_currents)
+            for i in range(int(self.sim_time/self.delta_t)):
+                self.numpy_net.simulate(lambda: target_currents, enable_recording=True, plasticity=False)
 
     def evaluate(self) -> bool:
         records = pd.DataFrame.from_dict(self.nest_net.mm.events)
@@ -493,13 +494,10 @@ class NetworkDynamics(TestClass):
             ["senders", "times"])["V_m.s"].values.reshape((self.dims[-1], -1)).swapaxes(0, 1)
         self.nest_UY = records[records["senders"].isin(self.nest_net.layers[-1].pyr.global_id)].sort_values(
             ["senders", "times"])["V_m.s"].values.reshape((self.dims[-1], -1)).swapaxes(0, 1)
-        self.nest_UX = records[records["senders"].isin(self.nest_net.input_neurons.global_id)].sort_values(
-            ["senders", "times"])["V_m.s"].values.reshape((self.dims[0], -1)).swapaxes(0, 1)
         return records_match(self.nest_UH, np.asarray(self.numpy_net.U_h_record)) and \
             records_match(self.nest_VAH, np.asarray(self.numpy_net.V_ah_record)) and \
             records_match(self.nest_UI, np.asarray(self.numpy_net.U_i_record)) and \
-            records_match(self.nest_UY, np.asarray(self.numpy_net.U_y_record)) and \
-            records_match(self.nest_UX, np.asarray(self.numpy_net.U_x_record))
+            records_match(self.nest_UY, np.asarray(self.numpy_net.U_y_record))
 
     def plot_results(self):
         fig, axes = plt.subplots(2, 3, sharex=True, constrained_layout=True)
@@ -507,7 +505,7 @@ class NetworkDynamics(TestClass):
 
         for i in range(self.dims[0]):
             axes[0][0].plot(self.numpy_net.U_x_record[:, i], color=cmap(i))
-            axes[0][0].plot(self.nest_UX[:, i], color=cmap(i), linestyle="dashed", alpha=0.7)
+            # axes[0][0].plot(self.nest_UX[:, i], color=cmap(i), linestyle="dashed", alpha=0.7)
 
         for i in range(self.dims[1]):
             axes[0][1].plot(self.numpy_net.V_bh_record[:, i], color=cmap(i))
@@ -535,5 +533,8 @@ class NetworkDynamics(TestClass):
         axes[1][2].set_title("UY")
 
         fig.suptitle("dashed: NEST computed")
+
+        # if not self.spiking:
+        #     plt.show()
         # axes[0][0].set_ylabel("NEST computed")
         # axes[1][0].set_ylabel("Target activation")

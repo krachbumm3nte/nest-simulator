@@ -37,6 +37,9 @@ class NestLayer(AbstractLayer):
         self.synapses["ip"]["weight"] = self.gen_weights(self.N_pyr, self.N_next)
         self.synapses["down"]["weight"] = self.gen_weights(self.N_next, self.N_pyr)
 
+        print("\n", self.N_prev, self.N_pyr, self.N_next, "\n")
+        print(p.neuron_model)
+        print(p.pyr_params)
         self.pyr = nest.Create(p.neuron_model, self.N_pyr, p.pyr_params)
         self.intn = nest.Create(p.neuron_model, self.N_next, p.intn_params)
 

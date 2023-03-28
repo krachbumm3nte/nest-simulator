@@ -3,11 +3,11 @@
     "out_lag": 50,
     "n_epochs": 100,
     "latent_equilibrium": true,
-    "mode": "mnist",
+    "mode": "bars",
     "dims": [
-        784,
+        9,
         10,
-        2
+        3
     ],
     "network_type": "snest", 
     "n_classes": 2,
