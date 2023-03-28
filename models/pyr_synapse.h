@@ -254,7 +254,7 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
 
     PI_exp_integral_ = ( exp( ( t_lastspike_ - t_spike ) / tau_Delta_ ) * PI_exp_integral_ + dPI_exp_integral );
     weight_ = PI_integral_ - PI_exp_integral_;
-    weight_ = init_weight_ + weight_ * eta_;
+    weight_ = init_weight_ + weight_ * eta_; // TODO: does C_m belong here or not?
 
     if ( weight_ > Wmax_ )
     {

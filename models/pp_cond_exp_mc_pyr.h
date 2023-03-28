@@ -109,7 +109,7 @@ public:
 
   double g_conn[ NCOMP ]; //!< Conductances connecting compartments in nS
   double g_L[ NCOMP ];    //!< Leak Conductance in nS
-  double C_m;             //!< Capacity of the membrane in pF
+  double C_m[ NCOMP ];    //!< Capacity of the membrane in pF
   double E_L[ NCOMP ];    //!< Reversal Potential in mV
 };
 

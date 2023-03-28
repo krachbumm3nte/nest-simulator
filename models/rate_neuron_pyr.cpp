@@ -167,24 +167,26 @@ nest::rate_neuron_pyr::Parameters_::Parameters_()
 
   pyr_params.curr_target_id = 0;
   pyr_params.lambda_curr = 0.0;
-  pyr_params.C_m = 1.0; // pF
   pyr_params.use_phi = true;
   pyr_params.latent_equilibrium = false;
 
 
   // soma parameters
+  pyr_params.C_m[ SOMA ] = 1.0;    // pF
   pyr_params.g_conn[ SOMA ] = 0.0; // nS, soma-dendrite
   pyr_params.g_L[ SOMA ] = 1;      // nS
   pyr_params.E_L[ SOMA ] = 0.0;    // mV
   I_e[ SOMA ] = 0.0;               // pA
 
   // basal dendrite parameters
+  pyr_params.C_m[ BASAL ] = 1.0;    // pF
   pyr_params.g_conn[ BASAL ] = 1.0; // nS, dendrite-soma
   pyr_params.g_L[ BASAL ] = 0.0;
   pyr_params.E_L[ BASAL ] = 0.0; // mV
   I_e[ BASAL ] = 0.0;            // pA
 
   // proximal apical dendrite parameters
+  pyr_params.C_m[ APICAL_LAT ] = 1.0; // pF
   pyr_params.g_conn[ APICAL_LAT ] = 0.8;
   pyr_params.g_L[ APICAL_LAT ] = 0.0;
   pyr_params.E_L[ APICAL_LAT ] = 0.0; // mV
@@ -208,7 +210,6 @@ nest::rate_neuron_pyr::Parameters_::Parameters_( const Parameters_& p )
   pyr_params.curr_target_id = p.pyr_params.curr_target_id;
   pyr_params.lambda_curr = p.pyr_params.lambda_curr;
   pyr_params.tau_m = p.pyr_params.tau_m;
-  pyr_params.C_m = p.pyr_params.C_m;
   pyr_params.use_phi = p.pyr_params.use_phi;
   pyr_params.latent_equilibrium = p.pyr_params.latent_equilibrium;
 
@@ -219,6 +220,7 @@ nest::rate_neuron_pyr::Parameters_::Parameters_( const Parameters_& p )
     pyr_params.g_conn[ n ] = p.pyr_params.g_conn[ n ];
     pyr_params.g_L[ n ] = p.pyr_params.g_L[ n ];
     pyr_params.E_L[ n ] = p.pyr_params.E_L[ n ];
+    pyr_params.C_m[ n ] = p.pyr_params.C_m[ n ];
     I_e[ n ] = p.I_e[ n ];
   }
 }
@@ -241,7 +243,6 @@ nest::rate_neuron_pyr::Parameters_::operator=( const Parameters_& p )
     pyr_params.curr_target = kernel().node_manager.get_node_or_proxy( pyr_params.curr_target_id );
   }
   pyr_params.lambda_curr = p.pyr_params.lambda_curr;
-  pyr_params.C_m = p.pyr_params.C_m;
   pyr_params.use_phi = p.pyr_params.use_phi;
   pyr_params.latent_equilibrium = p.pyr_params.latent_equilibrium;
 
@@ -250,6 +251,7 @@ nest::rate_neuron_pyr::Parameters_::operator=( const Parameters_& p )
     pyr_params.g_conn[ n ] = p.pyr_params.g_conn[ n ];
     pyr_params.g_L[ n ] = p.pyr_params.g_L[ n ];
     pyr_params.E_L[ n ] = p.pyr_params.E_L[ n ];
+    pyr_params.C_m[ n ] = p.pyr_params.C_m[ n ];
     I_e[ n ] = p.I_e[ n ];
   }
 
@@ -359,7 +361,6 @@ nest::rate_neuron_pyr::Parameters_::set( const DictionaryDatum& d )
   updateValue< double >( d, names::beta, pyr_params.beta );
   updateValue< double >( d, names::theta, pyr_params.theta );
   updateValue< double >( d, names::tau_m, pyr_params.tau_m );
-  updateValue< double >( d, names::C_m, pyr_params.C_m );
 
 
   updateValue< double >( d, Name( names::g_som ), pyr_params.g_conn[ SOMA ] );
@@ -383,6 +384,7 @@ nest::rate_neuron_pyr::Parameters_::set( const DictionaryDatum& d )
       updateValue< double >( dd, names::g, pyr_params.g_conn[ n ] );
       updateValue< double >( dd, names::g_L, pyr_params.g_L[ n ] );
       updateValue< double >( dd, names::I_e, I_e[ n ] );
+      updateValue< double >( dd, names::C_m, pyr_params.C_m[ n ] );
     }
   }
   if ( pyr_params.gamma < 0 )
@@ -400,14 +402,18 @@ nest::rate_neuron_pyr::Parameters_::set( const DictionaryDatum& d )
     throw BadProperty( "Refractory time cannot be negative." );
   }
 
-  if ( pyr_params.C_m <= 0 )
-  {
-    throw BadProperty( "Capacitance must be strictly positive." );
-  }
-
   if ( pyr_params.tau_m <= 0 )
   {
     throw BadProperty( "Membrane time constant must be strictly positive." );
+  }
+
+  // apply checks compartment-wise
+  for ( size_t n = 0; n < NCOMP; ++n )
+  {
+    if ( pyr_params.C_m[ n ] <= 0 )
+    {
+      throw BadProperty( "Capacitance must be strictly positive." );
+    }
   }
 }
 
@@ -436,7 +442,6 @@ nest::rate_neuron_pyr::State_::set( const DictionaryDatum& d, const Parameters_&
       DictionaryDatum dd = getValue< DictionaryDatum >( d, comp_names_[ n ] );
       updateValue< double >( dd, names::V_m, y_[ idx( n, V_M ) ] );
       updateValue< double >( dd, names::I, y_[ idx( n, I ) ] );
-
     }
   }
 }
@@ -622,16 +627,17 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
 
       const double I_L_dend = pyr_params->g_L[ n ] * V_dnd;
 
-      S_.y_[ S::idx( n, S::V_M ) ] += -I_L_dend + I_dend;
+      S_.y_[ S::idx( n, S::V_M ) ] += (-I_L_dend + I_dend) / pyr_params->C_m[ n ];
 
       // derivative dendritic current
       S_.y_[ S::idx( n, S::I ) ] -= I_dend / pyr_params->tau_m;
     }
 
-    const double delta_V_som = -I_L + I_conn_d_s + B_.I_stim_[ SOMA ] + P_.I_e[ SOMA ];
+    const double delta_V_som = (-I_L + I_conn_d_s + B_.I_stim_[ SOMA ] + P_.I_e[ SOMA ]) / pyr_params -> C_m[ SOMA ];
     S_.y_[ S::idx( SOMA, S::V_M ) ] += B_.step_ * delta_V_som;
-    //std::cout << V_som_old << " + " << delta_V_som << " - " << I_L << "(*)" << pyr_params->g_conn[ SOMA ] << " = " << S_.y_[ S::idx( SOMA, S::V_M ) ] << std::endl;
-    S_.y_[ S::idx( SOMA, S::V_forw ) ] = V_som_old + delta_V_som / pyr_params->g_conn[ SOMA ];
+    // std::cout << V_som_old << " + " << delta_V_som << " - " << I_L << "(*)" << pyr_params->g_conn[ SOMA ] << " = " <<
+    // S_.y_[ S::idx( SOMA, S::V_M ) ] << std::endl;
+    S_.y_[ S::idx( SOMA, S::V_forw ) ] = V_som_old + delta_V_som * (pyr_params->C_m[ SOMA ]/ pyr_params->g_conn[ SOMA ]);
 
 
     // excitatory conductance soma
@@ -647,9 +653,9 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
 
     const size_t buffer_size = kernel().connection_manager.get_min_delay();
 
-    std::vector< double > state ( buffer_size, 0.0);
-    state[0] = pyr_params->phi( V_som_forward );
-    //std::cout << "sending: " << pyr_params->phi( V_som_forward ) << std::endl;
+    std::vector< double > state( buffer_size, 0.0 );
+    state[ 0 ] = pyr_params->phi( V_som_forward );
+    // std::cout << "sending: " << pyr_params->phi( V_som_forward ) << std::endl;
     DelayedRateConnectionEvent dlre;
     dlre.set_sender( *this );
     dlre.set_coeffarray( state );
@@ -683,8 +689,8 @@ nest::rate_neuron_pyr::handle( DelayedRateConnectionEvent& e )
   assert( 0 <= e.get_rport() and e.get_rport() < 2 * NCOMP );
 
   std::vector< unsigned int >::iterator it = e.begin();
-  B_.spikes_[ e.get_rport() ].add_value(
-    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), e.get_weight() *  e.get_coeffvalue( it ));
+  B_.spikes_[ e.get_rport() ].add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
+    e.get_weight() * e.get_coeffvalue( it ) );
 }
 
 

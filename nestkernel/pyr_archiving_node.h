@@ -131,7 +131,7 @@ template < class pyr_parameters >
 inline double
 PyrArchivingNode< pyr_parameters >::get_C_m( int comp )
 {
-  return pyr_params->C_m;
+  return pyr_params->C_m[ comp ];
 }
 
 template < class pyr_parameters >
