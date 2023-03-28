@@ -112,6 +112,8 @@ public:
   typedef Connection< targetidentifierT > ConnectionBase;
   typedef DelayedRateConnectionEvent EventType;
 
+  static constexpr ConnectionModelProperties properties = ConnectionModelProperties::HAS_DELAY;
+
   /**
    * Default Constructor.
    * Sets default values for all parameters. Needed by GenericConnectorModel.
@@ -284,6 +286,9 @@ private:
   std::vector< unsigned int >::iterator it;
 };
 
+
+template < typename targetidentifierT >
+constexpr ConnectionModelProperties pyr_synapse_rate< targetidentifierT >::properties;
 
 template < typename targetidentifierT >
 void

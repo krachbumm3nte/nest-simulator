@@ -580,8 +580,6 @@ void
 nest::rate_neuron_pyr::update( Time const& origin, const long from, const long to )
 {
   typedef nest::rate_neuron_pyr::State_ S;
-  assert( to >= 0 and ( delay ) from < kernel().connection_manager.get_min_delay() );
-  assert( from < to );
 
   for ( long lag = from; lag < to; ++lag )
   {
