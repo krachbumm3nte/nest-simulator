@@ -42,24 +42,24 @@ class Network:
 
             print("Preparing MNIST train images...", end=" ")
             self.train_dataset = MnistDataset('train', self.n_classes)
-            print("...Done.")
+            print("Done.")
 
             print("Preparing MNIST validation images...", end=" ")
             self.val_dataset = MnistDataset('val', self.n_classes)
-            print("...Done.")
+            print("Done.")
 
             print("Preparing MNIST test images...", end=" ")
             self.test_dataset = MnistDataset('test', self.n_classes)
-            print("...Done.")
+            print("Done.")
 
             print("Shuffling MNIST train, validation & test images...", end=" ")
-            np.random.shuffle(self.train_dataset)
-            np.random.shuffle(self.val_dataset)
-            np.random.shuffle(self.test_dataset)
+            self.train_dataset.shuffle()
+            self.val_dataset.shuffle()
+            self.test_dataset.shuffle()
             self.get_training_data = self.train_dataset.get_samples
             self.get_val_data = self.val_dataset.get_samples
             self.get_test_data = self.test_dataset.get_samples
-            print("...Done.")
+            print("Done.")
 
         elif self.mode == "teacher":
             """

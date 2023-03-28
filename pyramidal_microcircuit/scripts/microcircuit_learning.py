@@ -122,9 +122,6 @@ if __name__ == "__main__":
             print(f"overwriting with argument and using {args.network} network type")
             params.network_type = args.network
         root_dir, imgdir, datadir = utils.setup_directories(name=config_name, type=params.network_type)
-        if not root_dir:
-            print("a simulation of that name already exists, exiting.")
-            sys.exit()
 
         spiking = args.network == "snest"
         params.network_type = args.network

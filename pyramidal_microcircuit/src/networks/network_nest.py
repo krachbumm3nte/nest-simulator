@@ -38,6 +38,7 @@ class NestNetwork(Network):
         # Create input layer neurons
         if self.spiking:
             self.input_neurons = nest.Create("poisson_generator", self.dims[0])
+            # self.input_neurons = nest.Create(self.p.neuron_model, self.dims[0], self.p.input_params)
         else:
             self.input_neurons = nest.Create("step_rate_generator", self.dims[0])
 
@@ -198,13 +199,8 @@ class NestNetwork(Network):
         for label, guess, loss in zip(out_labels, acc, loss_mse):
             class_acc[label].append(guess)
             class_loss[label].append(loss)
-        # print([np.mean(loss) for loss in class_loss])
-
-        # print([np.mean(acc) for acc in class_acc])
-        # print()
 
         # set learning rates to their original values
-
         self.enable_learning()
         return np.mean(acc), np.mean(loss_mse)
 

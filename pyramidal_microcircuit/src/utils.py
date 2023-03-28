@@ -2,6 +2,7 @@ import glob
 import json
 import os
 import re
+import shutil
 
 import numpy as np
 import pandas as pd
@@ -21,8 +22,14 @@ def setup_directories(type, name="default", root=None):
     imgdir = os.path.join(root, "plots")
     datadir = os.path.join(root, "data")
 
+    print(f"attemting to create dir {root}")
     if os.path.exists(root):
-        return False, False, False
+        reply = input("a simulation of that name already exists, exiting. overwrite?")
+        if reply in ["y", "Y", "yes"]:
+            print(f"deleting old contents of {root}")
+            shutil.rmtree(root)
+        else:
+            sys.exit()
 
     for dir in [root, imgdir, datadir]:
         os.mkdir(dir)
@@ -33,7 +40,12 @@ def setup_directories(type, name="default", root=None):
 def setup_nest(params, datadir=os.getcwd()):
     nest.set_verbosity("M_ERROR")
     nest.resolution = params.delta_t
-    nest.SetKernelStatus({"local_num_threads": params.threads})
+    try:
+        nest.local_num_threads = params.threads
+    except:
+        print("setting 'local_num_threads' failed, trying again.")
+        nest.local_num_threads = params.threads
+    print(f"configured nest on {nest.local_num_threads} threads")
     nest.SetDefaults("multimeter", {'interval': params.record_interval})
     nest.SetKernelStatus({"data_path": datadir})
 
