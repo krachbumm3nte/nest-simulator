@@ -33,7 +33,7 @@ def run_simulations(net, params, root_dir, imgdir, datadir, plot_interval=0, pro
 
                 if epoch > 0:
                     current_loss = net.test_loss[-1][1]
-                    if current_loss > 10:
+                    if current_loss > 100:
                         print("-------------------------------")
                         print(f"extreme output loss recorded ({current_loss}), aborting training progress!")
                         print("-------------------------------\n")
