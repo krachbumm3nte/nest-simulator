@@ -6,10 +6,10 @@
     "mode": "mnist",
     "dims": [
         784,
-        50,
+        150,
         2
     ],
-    "network_type": "snest", 
+    "network_type": "rnest", 
     "n_classes": 2,
     "eta": {
         "ip": [
