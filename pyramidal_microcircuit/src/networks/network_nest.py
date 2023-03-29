@@ -24,7 +24,7 @@ class NestNetwork(Network):
         self.iteration = 0
 
     def setup_populations(self):
-
+        print("Setting up populations... ", end="")
         self.wr = None
         if self.p.record_weights:
             self.wr = nest.Create("weight_recorder", params={'record_to': "ascii", "precision": 12})
@@ -102,6 +102,8 @@ class NestNetwork(Network):
 
                 self.set_weights_from_syn(w_up * l_next.gb / (l_next.gl + l_next.ga + l_next.gb) *
                                           (l_current.gl + l_current.gd) / l_current.gd, l_current.ip)
+
+        print("Done")
 
     def simulate(self, T, enable_recording=False):
         if enable_recording:

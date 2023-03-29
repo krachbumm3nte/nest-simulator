@@ -1,12 +1,12 @@
 {
-    "sim_time": 75,
-    "out_lag": 50,
+    "sim_time": 50,
+    "out_lag": 35,
     "n_epochs": 100,
     "latent_equilibrium": true,
     "mode": "mnist",
     "dims": [
         784,
-        100,
+        50,
         2
     ],
     "network_type": "snest", 
