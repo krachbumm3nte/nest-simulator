@@ -36,9 +36,9 @@ class Network:
             self.n_classes = p.n_classes
             self.dims = p.dims
 
-            self.train_samples = 10
-            self.val_samples = 2
-            self.test_samples = 2
+            self.train_samples = 100
+            self.val_samples = 5
+            self.test_samples = 5
 
             print("Preparing MNIST train images...", end=" ")
             self.train_dataset = MnistDataset('train', self.n_classes)

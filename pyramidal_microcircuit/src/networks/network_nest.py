@@ -37,8 +37,10 @@ class NestNetwork(Network):
         self.p.setup_nest_configs()
         # Create input layer neurons
         if self.spiking:
-            self.input_neurons = nest.Create("poisson_generator", self.dims[0])
-            # self.input_neurons = nest.Create(self.p.neuron_model, self.dims[0], self.p.input_params)
+            self.poisson_generators = nest.Create("poisson_generator", self.dims[0])
+            self.input_neurons = nest.Create("parrot_neuron", self.dims[0])
+            nest.Connect(self.poisson_generators, self.input_neurons, conn_spec='one_to_one')
+            # self.input_neurons = nest.Create("poisson_generator", self.dims[0])
         else:
             self.input_neurons = nest.Create("step_rate_generator", self.dims[0])
 
@@ -131,7 +133,7 @@ class NestNetwork(Network):
         self.input_currents = input_currents
         for i in range(self.dims[0]):
             if self.spiking:
-                self.input_neurons[i].rate = self.weight_scale * input_currents[i] * 1000
+                self.poisson_generators[i].rate = self.weight_scale * input_currents[i] * 1000
             else:
                 self.input_neurons[i].set({"amplitude_times": [nest.biological_time + self.dt],
                                            "amplitude_values": [input_currents[i]]})
