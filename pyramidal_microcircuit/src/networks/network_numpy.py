@@ -88,7 +88,6 @@ class NumpyNetwork(Network):
         if self.p.store_errors:
             U_I = np.mean(self.U_i_record[-n_samples:], axis=0)
             V_ah = np.mean(self.V_ah_record[-n_samples:], axis=0)
-            print(U_I, V_ah, n_samples)
             self.apical_error.append((self.epoch, float(np.linalg.norm(V_ah))))
             self.intn_error.append([self.epoch, mse(self.phi(U_I), self.phi(U_Y))])
 
