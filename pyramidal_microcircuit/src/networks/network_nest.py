@@ -58,10 +58,10 @@ class NestNetwork(Network):
         if self.p.noise:
             # Inject Gaussian white noise into neuron somata.
             self.noise_generator = nest.Create("noise_generator", 1, {"mean": 0., "std": self.sigma_noise})
-            for l_current in self.layers[:-1]:
-                nest.Connect(self.noise_generator, l_current.pyr, syn_spec={
+            for layer in self.layers[:-1]:
+                nest.Connect(self.noise_generator, layer.pyr, syn_spec={
                              "receptor_type": self.p.compartments["soma_curr"]})
-                nest.Connect(self.noise_generator, l_current.intn, syn_spec={
+                nest.Connect(self.noise_generator, layer.intn, syn_spec={
                              "receptor_type": self.p.compartments["soma_curr"]})
             nest.Connect(self.noise_generator, self.layers[-1].pyr,
                          syn_spec={"receptor_type": self.p.compartments["soma_curr"]})
@@ -69,11 +69,11 @@ class NestNetwork(Network):
         if self.use_mm:
             self.mm = nest.Create('multimeter', 1, {'record_to': self.recording_backend,
                                                     'interval': self.p.record_interval,
-                                                    'record_from': ["V_m.a_lat", "V_m.s", "V_m.b"],
+                                                    'record_from': ["V_m.a_lat", "V_m.s"],
                                                     'stop': 0.0  # disables multimeter by default
                                                     })
-            nest.Connect(self.mm, self.layers[0].pyr)
-            nest.Connect(self.mm, self.layers[0].intn)
+            nest.Connect(self.mm, self.layers[-2].pyr)
+            nest.Connect(self.mm, self.layers[-2].intn)
             nest.Connect(self.mm, self.layers[-1].pyr)
 
         pyr_prev = self.input_neurons
@@ -93,15 +93,15 @@ class NestNetwork(Network):
         self.layers[-1].redefine_connections(pyr_prev)
 
         for i in range(len(self.layers) - 1):
-            l_current = self.layers[i]
+            layer = self.layers[i]
             l_next = self.layers[i + 1]
             if self.p.init_self_pred:
-                w_down = self.get_weight_array_from_syn(l_current.down)
-                self.set_weights_from_syn(-w_down, l_current.pi)
+                w_down = self.get_weight_array_from_syn(layer.down)
+                self.set_weights_from_syn(-w_down, layer.pi)
                 w_up = self.get_weight_array_from_syn(l_next.up)
 
                 self.set_weights_from_syn(w_up * l_next.gb / (l_next.gl + l_next.ga + l_next.gb) *
-                                          (l_current.gl + l_current.gd) / l_current.gd, l_current.ip)
+                                          (layer.gl + layer.gd) / layer.gd, layer.ip)
 
         print("Done")
 
@@ -155,26 +155,23 @@ class NestNetwork(Network):
 
     def train_batch(self, x_batch, y_batch):
         loss = []
-        for i, (x, y) in enumerate(zip(x_batch, y_batch)):
+        for x, y in zip(x_batch, y_batch):
             self.reset()
             self.set_input(x)
             self.set_target(y)
-            self.mm.set({"start": self.p.out_lag, 'stop': self.sim_time, 'origin': nest.biological_time})
-
-            self.simulate(self.sim_time)
+            self.simulate(self.sim_time, enable_recording=True)
             mm_data = pd.DataFrame.from_dict(self.mm.events)
             U_Y = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]
-            y_pred = np.mean(U_Y, axis=1)
-
-            loss.append(mse(y_pred, y))
+            U_Y = np.mean(U_Y, axis=1)
+            loss.append(mse(U_Y, y))
 
         if self.p.store_errors:
             U_I = [mm_data[mm_data["senders"] == intn_id]["V_m.s"] for intn_id in self.layers[0].intn.global_id]
             U_I = np.mean(U_I, axis=1)
             V_ah = [mm_data[mm_data["senders"] == hidden_id]["V_m.a_lat"] for hidden_id in self.layers[0].pyr.global_id]
             V_ah = np.mean(V_ah, axis=1)
-            self.apical_error.append((self.epoch, np.linalg.norm(V_ah)))
-            self.intn_error.append([self.epoch, mse(self.phi(y_pred), self.phi(U_I))])
+            self.apical_error.append((self.epoch, float(np.linalg.norm(V_ah))))
+            self.intn_error.append([self.epoch, mse(self.phi(U_I), self.phi(U_Y))])
 
         return np.mean(loss)
 
