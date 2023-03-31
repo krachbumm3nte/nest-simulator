@@ -18,7 +18,7 @@ class Params:
         self.out_lag = 400  # lag in ms before recording output neuron voltage during testing
         self.test_interval = 10  # test the network every N epochs
         self.test_time = 50  # stimulus presentation time during testing in ms
-        self.test_delay = 40  # output layer recording delay during testing in ms
+        self.test_delay = 25  # output layer recording delay during testing in ms
         self.latent_equilibrium = True  # flag for whether to use latent equilibrium
         self.dims = [9, 30, 3]  # network dimensions, i.e. neurons per layer
         self.init_self_pred = True  # flag to initialize weights to self-predicting state
@@ -29,7 +29,6 @@ class Params:
         self.store_errors = True  # compute and store apical and interneuron errors during traininng
         self.network_type = None
 
-
         # parameters regarding neurons
         self.g_l = 0.03  # somatic leakage conductance
         self.g_a = 0.06  # apical compartment coupling conductance
@@ -39,9 +38,9 @@ class Params:
         self.tau_x = 0.1  # input filtering time constant
         self.tau_m = 1  # membrane time constant for pyramidal and interneurons
         self.g_lk_dnd = self.delta_t  # dendritic leakage
-        self.C_m_som = 1 # membrane capacitance of somatic compartment in pF
-        self.C_m_bas = 1 # membrane capacitance of basal compartment in pF
-        self.C_m_api = 1 # membrane capacitance of apical compartment in pF
+        self.C_m_som = 1  # membrane capacitance of somatic compartment in pF
+        self.C_m_bas = 1  # membrane capacitance of basal compartment in pF
+        self.C_m_api = 1  # membrane capacitance of apical compartment in pF
 
         # Useful constants for scaling learning rates
         self.lambda_ah = self.g_a / (self.g_d + self.g_a + self.g_l)

@@ -42,7 +42,8 @@ class NestNetwork(Network):
             nest.Connect(self.poisson_generators, self.input_neurons, conn_spec='one_to_one')
             # self.input_neurons = nest.Create("poisson_generator", self.dims[0])
         else:
-            self.input_neurons = nest.Create("step_rate_generator", self.dims[0])
+            # self.input_neurons = nest.Create("step_rate_generator", self.dims[0])
+            self.input_neurons = nest.Create(self.p.neuron_model, self.dims[0], self.p.input_params)
 
         pyr_prev = self.input_neurons
         intn_prev = None
@@ -69,7 +70,7 @@ class NestNetwork(Network):
         if self.use_mm:
             self.mm = nest.Create('multimeter', 1, {'record_to': self.recording_backend,
                                                     'interval': self.p.record_interval,
-                                                    'record_from': ["V_m.a_lat", "V_m.s"],
+                                                    'record_from': ["V_m.a_lat", "V_m.s", "V_m.b"],
                                                     'stop': 0.0  # disables multimeter by default
                                                     })
             nest.Connect(self.mm, self.layers[-2].pyr)
@@ -105,10 +106,10 @@ class NestNetwork(Network):
 
         print("Done")
 
-    def simulate(self, T, enable_recording=False):
+    def simulate(self, T, enable_recording=False, with_delay=True):
         if enable_recording:
             # TODO: record with out_lag aswell?
-            self.mm.set({"start": 0, 'stop': self.sim_time, 'origin': nest.biological_time})
+            self.mm.set({"start": self.p.out_lag if with_delay else 0, 'stop': self.sim_time, 'origin': nest.biological_time})
             if self.recording_backend == "ascii":
                 nest.SetKernelStatus({"data_prefix": f"it{str(self.iteration).zfill(8)}_"})
 
@@ -137,8 +138,9 @@ class NestNetwork(Network):
             if self.spiking:
                 self.poisson_generators[i].rate = self.weight_scale * input_currents[i] * 1000
             else:
-                self.input_neurons[i].set({"amplitude_times": [nest.biological_time + self.dt],
-                                           "amplitude_values": [input_currents[i]]})
+                self.input_neurons[i].set({"soma": {"I_e": input_currents[i] / self.p.tau_x}})
+                # self.input_neurons[i].set({"amplitude_times": [nest.biological_time + self.dt],
+                #                            "amplitude_values": [input_currents[i]]})
 
     def set_target(self, target_currents):
         """Inject a constant current into all neurons in the output layer.
@@ -193,13 +195,6 @@ class NestNetwork(Network):
             loss_mse.append(mse(y_actual, y_pred))
             acc.append(np.argmax(y_actual) == np.argmax(y_pred))
             self.reset()
-
-        class_acc = [[]for i in range(3)]
-        class_loss = [[]for i in range(3)]
-        out_labels = np.argmax(y_batch, axis=1)
-        for label, guess, loss in zip(out_labels, acc, loss_mse):
-            class_acc[label].append(guess)
-            class_loss[label].append(loss)
 
         # set learning rates to their original values
         self.enable_learning()

@@ -144,9 +144,11 @@ class Layer(AbstractLayer):
         # apply weight updates
         if plasticity:
             self.W_up += self.dt * self.eta["up"] * self.Delta_up
-            self.W_up = np.clip(self.W_up, self.Wmin, self.Wmax)
             self.W_ip += self.dt * self.eta["ip"] * self.Delta_ip
             self.W_pi += self.dt * self.eta["pi"] * self.Delta_pi
+            self.W_up = np.clip(self.W_up, self.Wmin, self.Wmax)
+            self.W_ip = np.clip(self.W_ip, self.Wmin, self.Wmax)
+            self.W_pi = np.clip(self.W_pi, self.Wmin, self.Wmax)
 
     def reset(self, reset_weights=False):
         '''

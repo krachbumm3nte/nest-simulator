@@ -176,6 +176,8 @@ class Network:
     def train_epoch(self):
         x_batch, y_batch = self.get_training_data(self.train_samples)
         loss = self.train_batch(x_batch, y_batch)
+        if loss > 1e4:
+            print(f"absurd train loss ({loss})")
         self.train_loss.append((self.epoch, loss))
         self.reset()
         self.epoch += 1

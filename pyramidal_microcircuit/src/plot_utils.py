@@ -15,6 +15,7 @@ colors = {
     "snest": "blue",
 }
 
+
 def setup_plt():
     plt.rcParams['savefig.dpi'] = 300
     plt.rcParams['figure.constrained_layout.use'] = True
@@ -26,14 +27,14 @@ def setup_plt():
     # plt.rcParams['font'] = font
 
 
-def calculate_weight_errors(net, epoch):
+def calculate_weight_errors(net, epoch, layer_offset=0):
     # Synaptic weights
     # notice that all weights are scaled up again to ensure that derived metrics are comparible between simulations
     weights = net.get_weight_dict()
-    WHI = weights[-2]["pi"]
-    WHY = weights[-2]["down"]
-    WIH = weights[-2]["ip"]
-    WYH = weights[-1]["up"]
+    WHI = weights[-(layer_offset + 2)]["pi"]
+    WHY = weights[-(layer_offset + 2)]["down"]
+    WIH = weights[-(layer_offset + 2)]["ip"]
+    WYH = weights[-(layer_offset + 1)]["up"]
 
     fb_error_now = mse(WHY.flatten(), -WHI.flatten())
     net.fb_error.append([epoch, fb_error_now])
@@ -57,14 +58,14 @@ def plot_pre_training(epoch, net, imgdir):
     ax1.plot(*zip(*net.ff_error))
 
     # plot synaptic weights
-    for i in range(net.dims[2]):
+    for i in range(net.dims[-1]):
         col = cmap_2(i)
-        for j in range(net.dims[1]):
+        for j in range(net.dims[-2]):
             ax2.plot(j, -WHY[j, i], ".", color=col, label=f"to {i}")
             ax2.plot(j, WHI[j, i], "x", color=col, label=f"from {i}")
 
-    for i in range(net.dims[1]):
-        for j in range(net.dims[2]):
+    for i in range(net.dims[-2]):
+        for j in range(net.dims[-1]):
             col = cmap_2(j)
             ax3.plot(i, WYH[j, i], ".", color=col, label=f"to {i}")
             ax3.plot(i, WIH[j, i], "x", color=col, label=f"from {i}")
@@ -75,14 +76,11 @@ def plot_pre_training(epoch, net, imgdir):
     ax5.plot(apical_error[:, 0] * net.train_samples, utils.rolling_avg(apical_error[:, 1], 5))
 
     ax0.set_title("Feedback error")
-    ax1.set_title("Feedforward error")
     ax2.set_title("Feedback weights")
     ax3.set_title("Feedforward weights")
     ax4.set_title("Interneuron error")
     ax5.set_title("Apical error")
 
-    ax0.set_ylim(bottom=0)
-    ax1.set_ylim(bottom=0)
     ax0.set_ylim(bottom=0)
     ax1.set_ylim(bottom=0)
     ax4.set_ylim(bottom=0)
@@ -122,6 +120,16 @@ def plot_training_progress(epoch, net, imgdir):
             ax3.plot(i, WYH[j, i], ".", color=col, label=f"to {i}")
             ax3.plot(i, WIH[j, i], "x", color=col, label=f"from {i}")
 
+    if len(net.dims) > 3:
+        WHI, WHY, WIH, WYH = calculate_weight_errors(net, epoch, 1)
+
+        for i in range(net.dims[-3]):
+            for j in range(net.dims[-2]):
+                col = cmap_2(j)
+                ax1.plot(i, WYH[j, i], ".", color=col, label=f"to {i}")
+                ax1.plot(i, WIH[j, i], "x", color=col, label=f"from {i}")
+        ax1.set_title("Feedforward weights 0")
+
     ax4.plot(*zip(*net.test_acc))
     ax5.plot(*zip(*net.test_loss))
 
@@ -133,9 +141,6 @@ def plot_training_progress(epoch, net, imgdir):
     ax5.set_title("Test Loss")
 
     ax0.set_ylim(bottom=0)
-    ax1.set_ylim(bottom=0)
-    ax0.set_ylim(bottom=0)
-    ax1.set_ylim(bottom=0)
     ax4.set_ylim(0, 1)
     ax5.set_ylim(0, 1)
 
