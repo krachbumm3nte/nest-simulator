@@ -98,8 +98,8 @@ class NestNetwork(Network):
             if self.p.init_self_pred:
                 w_down = self.get_weight_array_from_syn(layer.down)
                 self.set_weights_from_syn(-w_down, layer.pi)
-                w_up = self.get_weight_array_from_syn(l_next.up)
 
+                w_up = self.get_weight_array_from_syn(l_next.up)
                 self.set_weights_from_syn(w_up * l_next.gb / (l_next.gl + l_next.ga + l_next.gb) *
                                           (layer.gl + layer.gd) / layer.gd, layer.ip)
 
@@ -166,9 +166,9 @@ class NestNetwork(Network):
             loss.append(mse(U_Y, y))
 
         if self.p.store_errors:
-            U_I = [mm_data[mm_data["senders"] == intn_id]["V_m.s"] for intn_id in self.layers[0].intn.global_id]
+            U_I = [mm_data[mm_data["senders"] == intn_id]["V_m.s"] for intn_id in self.layers[-2].intn.global_id]
             U_I = np.mean(U_I, axis=1)
-            V_ah = [mm_data[mm_data["senders"] == hidden_id]["V_m.a_lat"] for hidden_id in self.layers[0].pyr.global_id]
+            V_ah = [mm_data[mm_data["senders"] == hidden_id]["V_m.a_lat"] for hidden_id in self.layers[-2].pyr.global_id]
             V_ah = np.mean(V_ah, axis=1)
             self.apical_error.append((self.epoch, float(np.linalg.norm(V_ah))))
             self.intn_error.append([self.epoch, mse(self.phi(U_I), self.phi(U_Y))])
@@ -205,19 +205,6 @@ class NestNetwork(Network):
         self.enable_learning()
         return np.mean(acc), np.mean(loss_mse)
 
-    def test_batch_static(self, x_batch, y_batch):
-        acc = []
-        loss_mse = []
-
-        for x_test, y_actual in zip(x_batch, y_batch):
-            wgts = self.get_weight_dict()
-            y_pred = self.phi(self.p.g_d / (self.p.g_d + self.p.g_l) * wgts[1]["up"] @  self.phi(
-                self.p.g_d / (self.p.g_d + self.p.g_l + self.p.g_a) * wgts[0]["up"] @ x_test))
-            loss_mse.append(mse(y_actual, y_pred))
-            acc.append(np.argmax(y_actual) == np.argmax(y_pred))
-
-        return np.mean(acc), np.mean(loss_mse)
-
     def get_weight_array(self, source, target, normalized=False):
         weight_df = pd.DataFrame.from_dict(nest.GetConnections(source=source, target=target).get())
         weight_array = weight_df.sort_values(["target", "source"]).weight.values.reshape((len(target), len(source)))
@@ -246,6 +233,7 @@ class NestNetwork(Network):
 
     def reset(self):
         self.set_input(np.zeros(self.dims[0]))
+        self.set_target(np.zeros(self.dims[-1]))
 
         for layer in self.layers:
             layer.reset()

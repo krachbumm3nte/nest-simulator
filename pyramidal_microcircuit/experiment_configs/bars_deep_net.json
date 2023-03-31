@@ -1,34 +1,37 @@
 {
     "sim_time": 50,
-    "out_lag": 35,
-    "n_epochs": 1000,
+    "out_lag": 2.5,
+    "tau_delta": 1,
+    "tau_m": 1,
     "latent_equilibrium": true,
-    "mode": "mnist",
+    "mode": "bars",
     "dims": [
-        784,
-        150,
-        2
+        9,
+        20,
+        10,
+        3
     ],
-    "network_type": "rnest", 
-    "n_classes": 2,
     "eta": {
         "ip": [
-            0.001,
+            0.0001,
+            0.0001,
             0.0
         ],
         "pi": [
             0.0,
+            0.0,
             0.0
         ],
         "up": [
-            0.0025,
-            0.0005
+            0.004,
+            0.004,
+            0.002
         ],
         "down": [
+            0.0,
             0.0,
             0.0
         ]
     },
-    "record_interval": 1,
-    "weight_scale": 500
+    "record_interval": 0.1
 }

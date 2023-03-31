@@ -19,7 +19,8 @@ class Network:
             """
             self.dims = p.dims
             if p.dims[0] != 9 or p.dims[-1] != 3:
-                raise ValueError(f"For training on the bar Dataset, network must have exactly 9 input and 3 output neurons, dims are: {p.dims}")
+                raise ValueError(
+                    f"For training on the bar Dataset, network must have exactly 9 input and 3 output neurons, dims are: {p.dims}")
             self.train_samples = 3
             self.val_samples = 1
             self.test_samples = 1
@@ -36,9 +37,9 @@ class Network:
             self.n_classes = p.n_classes
             self.dims = p.dims
 
-            self.train_samples = 25
-            self.val_samples = 5
-            self.test_samples = 5
+            self.train_samples = 50
+            self.val_samples = 50
+            self.test_samples = 10
 
             print("Preparing MNIST train images...", end=" ")
             self.train_dataset = MnistDataset('train', self.n_classes)
@@ -143,8 +144,13 @@ class Network:
     def test_batch(self, x_batch, y_batch):
         pass
 
-    def phi(self, x):
-        return self.gamma * np.log(1 + np.exp(self.beta * (x - self.theta)))
+    def phi(self, x, thresh=15):
+
+        res = x.copy()
+        ind = np.abs(x) < thresh
+        res[x < -thresh] = 0
+        res[ind] = self.gamma * np.log(1 + np.exp(self.beta * (x[ind] - self.theta)))
+        return res
 
     def phi_constant(self, x):
         return np.log(1.0 + np.exp(x))

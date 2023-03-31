@@ -110,14 +110,14 @@ def plot_training_progress(epoch, net, imgdir):
     ax1.plot(*zip(*ff_error))
 
     # plot synaptic weights
-    for i in range(net.dims[2]):
+    for i in range(net.dims[-1]):
         col = cmap_2(i)
-        for j in range(net.dims[1]):
+        for j in range(net.dims[-2]):
             ax2.plot(j, -WHY[j, i], ".", color=col, label=f"to {i}")
             ax2.plot(j, WHI[j, i], "x", color=col, label=f"from {i}")
 
-    for i in range(net.dims[1]):
-        for j in range(net.dims[2]):
+    for i in range(net.dims[-2]):
+        for j in range(net.dims[-1]):
             col = cmap_2(j)
             ax3.plot(i, WYH[j, i], ".", color=col, label=f"to {i}")
             ax3.plot(i, WIH[j, i], "x", color=col, label=f"from {i}")
