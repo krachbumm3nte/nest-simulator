@@ -67,6 +67,7 @@ public:
     return true;
   }
 
+
   /**
    * \fn void get_urbanczik_history( double t1, double t2,
    * std::deque<Archiver::histentry>::iterator* start,
@@ -125,6 +126,9 @@ protected:
 
 private:
   std::deque< histentry_extended > pyr_history_[ pyr_parameters::NCOMP - 1 ];
+
+public:
+  size_t n_incoming_arr[ pyr_parameters::NCOMP - 1 ] = { 0 };
 };
 
 template < class pyr_parameters >

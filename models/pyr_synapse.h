@@ -184,6 +184,10 @@ public:
     ConnectionBase::check_connection_( dummy_target, s, t, receptor_type );
 
     t.register_stdp_connection( t_lastspike_ - get_delay(), get_delay() );
+    // In order to manage urbanczik history with multiple compartments, connections need to 
+    // be 'registered' a second time here.
+    nest::pp_cond_exp_mc_pyr& t_arch = static_cast< nest::pp_cond_exp_mc_pyr& >( t );
+    t_arch.n_incoming_arr[ receptor_type - 2 ] += 1;
   }
 
   void
@@ -231,21 +235,12 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
   std::deque< histentry_extended >::iterator finish;
 
   int rport = get_rport();
-
-  if ( rport < 1 or rport > 2 )
-  {
-    std::cout << "connection on port " << rport << " to neuron ";
-    std::cout << e.retrieve_sender_node_id_from_source_table() << "\n";
-    throw IllegalConnection( "Urbanczik synapse can only connect to dendrites!" );
-  }
-
   if ( eta_ > 0 )
   {
     target->get_urbanczik_history( t_lastspike_ - dendritic_delay, t_spike - dendritic_delay, &start, &finish, rport );
     double dPI_exp_integral = 0.0;
     double PI;
-    // std::cout << target->get_node_id() << ": " << t_lastspike_ << " to " << t_spike << ", " << dendritic_delay << ",
-    // " << start->t_ << " to " << finish->t_ << std::endl;
+
     while ( start != finish )
     {
       double const t_up = start->t_ + dendritic_delay;     // from t_lastspike to t_spike
@@ -287,7 +282,6 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
   e();
 
   // compute the trace of the presynaptic spike train
-  // tau_L_trace_ = tau_L_trace_ * std::exp( ( t_lastspike_ - t_spike ) / tau_L ) + 1.0;
   tau_s_trace_ = tau_s_trace_ * std::exp( ( t_lastspike_ - t_spike ) / tau_Delta_ ) + 1.0;
 
   t_lastspike_ = t_spike;
