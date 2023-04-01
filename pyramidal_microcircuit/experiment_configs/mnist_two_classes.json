@@ -1,6 +1,6 @@
 {
-    "sim_time": 50,
-    "out_lag": 35,
+    "sim_time": 5,
+    "out_lag": 3,
     "n_epochs": 1000,
     "latent_equilibrium": true,
     "mode": "mnist",
@@ -9,7 +9,6 @@
         150,
         2
     ],
-    "network_type": "rnest", 
     "n_classes": 2,
     "eta": {
         "ip": [
