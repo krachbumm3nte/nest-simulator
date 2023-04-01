@@ -673,7 +673,6 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
       ce.set_sender( *this );
       ce.set_stamp( Time::step( origin.get_steps() + lag + 1 ) );
       ce.set_weight( pyr_params->lambda_curr );
-      ce.set_delay_steps(1);
       ce();
     }
   }
