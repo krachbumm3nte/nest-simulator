@@ -181,14 +181,13 @@ public:
   void
   check_connection( Node& s, Node& t, rport receptor_type, const CommonPropertiesType& )
   {
-    EventType ge;
+    DelayedRateConnectionEvent ge;
     s.sends_secondary_event( ge );
     ge.set_sender( s );
 
     Connection< targetidentifierT >::target_.set_rport( t.handles_test_event( ge, receptor_type ) );
     Connection< targetidentifierT >::target_.set_target( &t );
     t.register_stdp_connection( -1 - get_delay(), get_delay() );
-
   }
 
   void
@@ -209,7 +208,7 @@ public:
   {
     Node* target = get_target( t );
     nest::rate_neuron_pyr* target_pyr = static_cast< nest::rate_neuron_pyr* >( target );
-    
+
     nest::DelayedRateConnectionEvent& del_event = static_cast< nest::DelayedRateConnectionEvent& >( e );
     int rport = get_rport();
     double delta_tilde_w;
@@ -217,7 +216,7 @@ public:
     double V_W_star = 0;
 
     u_target = target->get_V_m( 0 );
-    //std::cout << "u_tgt: " << u_target << ", w: " << weight_ << std::endl;
+    // std::cout << "u_tgt: " << u_target << ", w: " << weight_ << std::endl;
     if ( rport == 1 )
     {
       double const g_L = target->get_g_L( 0 );
@@ -256,15 +255,11 @@ public:
       weight_ = Wmin_;
     }
     it = del_event.begin();
-    //std::cout << r_in << std::endl;
+    // std::cout << r_in << std::endl;
     r_in = del_event.get_coeffvalue( it );
     it--;
     v_dend_target = target->get_V_m( rport );
-    //const size_t buffer_size = kernel().connection_manager.get_min_delay();
 
-    //std::vector< double > rate_vec( buffer_size, 0.0 );
-    //rate_vec[ 0 ] = r_in;
-    //del_event.set_coeffarray( rate_vec );
     del_event.set_receiver( *target );
     del_event.set_delay_steps( get_delay_steps() );
     del_event.set_weight( weight_ );
