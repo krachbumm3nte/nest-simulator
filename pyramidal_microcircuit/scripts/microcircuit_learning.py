@@ -51,7 +51,7 @@ def run_simulations(net, params, root_dir, imgdir, datadir, plot_interval=0, pro
                 # utils.store_progress(net, datadir, epoch)
                 print("done.")
 
-            if epoch % 50 == 0:
+            if epoch % 25 == 0:
                 print(f"Epoch {epoch} completed: test acc: {net.test_acc[-1][1]:.3f}, loss: {net.test_loss[-1][1]:.3f}")
                 print(
                     f"\t epoch time: {np.mean(simulation_times[-50:]):.2f}s, \

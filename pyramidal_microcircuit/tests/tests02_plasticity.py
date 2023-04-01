@@ -401,11 +401,11 @@ class NetworkPlasticity(TestClass):
                 self.numpy_net.simulate(lambda: target_currents, True)
                 self.nest_net.simulate(self.delta_t)
                 wgts = self.nest_net.get_weight_dict(True)
-                self.up_0.append(wgts[0]["up"])
-                self.up_1.append(wgts[1]["up"])
-                self.pi_0.append(wgts[0]["pi"])
-                self.ip_0.append(wgts[0]["ip"])
-                self.down_0.append(wgts[0]["down"])
+                self.up_0.append(wgts[-2]["up"])
+                self.up_1.append(wgts[-1]["up"])
+                self.pi_0.append(wgts[-2]["pi"])
+                self.ip_0.append(wgts[-2]["ip"])
+                self.down_0.append(wgts[-2]["down"])
 
     def evaluate(self) -> bool:
         self.up_0 = np.array(self.up_0)
@@ -413,11 +413,11 @@ class NetworkPlasticity(TestClass):
         self.ip_0 = np.array(self.ip_0)
         self.down_0 = np.array(self.down_0)
         self.up_1 = np.array(self.up_1)
-        return records_match(self.up_0.flatten(), self.numpy_net.weight_record[0]["up"].flatten()) \
-            and records_match(self.pi_0.flatten(), self.numpy_net.weight_record[0]["pi"].flatten()) \
-            and records_match(self.ip_0.flatten(), self.numpy_net.weight_record[0]["ip"].flatten()) \
+        return records_match(self.up_0.flatten(), self.numpy_net.weight_record[-2]["up"].flatten()) \
+            and records_match(self.pi_0.flatten(), self.numpy_net.weight_record[-2]["pi"].flatten()) \
+            and records_match(self.ip_0.flatten(), self.numpy_net.weight_record[-2]["ip"].flatten()) \
             and records_match(self.up_1.flatten(), self.numpy_net.weight_record[-1]["up"].flatten()) \
-            and records_match(self.down_0.flatten(), self.numpy_net.weight_record[0]["down"].flatten())
+            and records_match(self.down_0.flatten(), self.numpy_net.weight_record[-2]["down"].flatten())
 
     def plot_results(self):
 
@@ -430,8 +430,8 @@ class NetworkPlasticity(TestClass):
             weights_nest = eval(f"self.{name}_{layer}")
             weights_numpy = self.numpy_net.weight_record[layer][name]
             axes[i//3][i % 3].set_title(name)
-            for sender in range(weights_nest.shape[2]):
-                for target in range(weights_nest.shape[1]):
+            for sender in range(weights_nest.shape[-1]):
+                for target in range(weights_nest.shape[-2]):
                     col = cmap(sender)
                     style = linestyles[target]
                     axes[i//3][i % 3].plot(weights_nest[:, target, sender], linestyle="solid", color=col)

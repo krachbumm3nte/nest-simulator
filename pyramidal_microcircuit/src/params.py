@@ -11,7 +11,7 @@ class Params:
 
         # parameters regarding the general simulation environment
         self.delta_t = 0.1  # Euler integration step in ms
-        self.threads = 10  # number of threads for parallel processing
+        self.threads = 8  # number of threads for parallel processing
         self.record_interval = 1  # interval for storing membrane potentials in ms
         self.sim_time = 500  # stimulus presentation time during training in ms
         self.n_epochs = 1000  # number of training iterations

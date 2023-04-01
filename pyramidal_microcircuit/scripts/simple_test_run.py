@@ -1,17 +1,10 @@
-import json
-import os
 import sys
-import warnings
-from datetime import timedelta
-from time import time
 
-import numpy as np
 import src.utils as utils
 from src.networks.network_nest import NestNetwork
-from src.networks.network_numpy import NumpyNetwork
 from src.params import Params
-from src.plot_utils import plot_training_progress
 
+import nest
 
 args = sys.argv[1:]
 
@@ -20,7 +13,11 @@ config = "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/experimen
 
 params = Params(config)
 utils.setup_nest(params, "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/")
-
+print(params.network_type)
+params.dims = [5,4,3]
+params.mode = "selfpred"
+params.spiking = True
 net = NestNetwork(params)
+nest.Simulate(4)
 
-net.test_epoch()
+# net.test_epoch()

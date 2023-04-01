@@ -476,7 +476,7 @@ class NetworkDynamics(TestClass):
 
             self.nest_net.set_input(input_currents)
             self.nest_net.set_target(target_currents)
-            self.nest_net.simulate(self.sim_time, enable_recording=True)
+            self.nest_net.simulate(self.sim_time, enable_recording=True, with_delay=False)
 
             self.numpy_net.set_input(input_currents)
             for i in range(int(self.sim_time/self.delta_t)):
@@ -484,13 +484,13 @@ class NetworkDynamics(TestClass):
 
     def evaluate(self) -> bool:
         records = pd.DataFrame.from_dict(self.nest_net.mm.events)
-        self.nest_UH = records[records["senders"].isin(self.nest_net.layers[0].pyr.global_id)].sort_values(
-            ["senders", "times"])["V_m.s"].values.reshape((self.dims[1], -1)).swapaxes(0, 1)
-        self.nest_VAH = records[records["senders"].isin(self.nest_net.layers[0].pyr.global_id)].sort_values(
-            ["senders", "times"])["V_m.a_lat"].values.reshape((self.dims[1], -1)).swapaxes(0, 1)
-        self.nest_VBH = records[records["senders"].isin(self.nest_net.layers[0].pyr.global_id)].sort_values(
-            ["senders", "times"])["V_m.b"].values.reshape((self.dims[1], -1)).swapaxes(0, 1)
-        self.nest_UI = records[records["senders"].isin(self.nest_net.layers[0].intn.global_id)].sort_values(
+        self.nest_UH = records[records["senders"].isin(self.nest_net.layers[-2].pyr.global_id)].sort_values(
+            ["senders", "times"])["V_m.s"].values.reshape((self.dims[-2], -1)).swapaxes(0, 1)
+        self.nest_VAH = records[records["senders"].isin(self.nest_net.layers[-2].pyr.global_id)].sort_values(
+            ["senders", "times"])["V_m.a_lat"].values.reshape((self.dims[-2], -1)).swapaxes(0, 1)
+        self.nest_VBH = records[records["senders"].isin(self.nest_net.layers[-2].pyr.global_id)].sort_values(
+            ["senders", "times"])["V_m.b"].values.reshape((self.dims[-2], -1)).swapaxes(0, 1)
+        self.nest_UI = records[records["senders"].isin(self.nest_net.layers[-2].intn.global_id)].sort_values(
             ["senders", "times"])["V_m.s"].values.reshape((self.dims[-1], -1)).swapaxes(0, 1)
         self.nest_UY = records[records["senders"].isin(self.nest_net.layers[-1].pyr.global_id)].sort_values(
             ["senders", "times"])["V_m.s"].values.reshape((self.dims[-1], -1)).swapaxes(0, 1)
@@ -507,7 +507,7 @@ class NetworkDynamics(TestClass):
             axes[0][0].plot(self.numpy_net.U_x_record[:, i], color=cmap(i))
             # axes[0][0].plot(self.nest_UX[:, i], color=cmap(i), linestyle="dashed", alpha=0.7)
 
-        for i in range(self.dims[1]):
+        for i in range(self.dims[-2]):
             axes[0][1].plot(self.numpy_net.V_bh_record[:, i], color=cmap(i))
             axes[0][1].plot(self.nest_VBH[:, i], color=cmap(i), linestyle="dashed", alpha=0.7)
 
@@ -517,7 +517,7 @@ class NetworkDynamics(TestClass):
             axes[1][0].plot(self.numpy_net.V_ah_record[:, i], color=cmap(i))
             axes[1][0].plot(self.nest_VAH[:, i], color=cmap(i), linestyle="dashed", alpha=0.7)
 
-        for i in range(self.dims[2]):
+        for i in range(self.dims[-1]):
 
             axes[1][1].plot(self.numpy_net.U_i_record[:, i], color=cmap(i))
             axes[1][1].plot(self.nest_UI[:, i], color=cmap(i), linestyle="dashed", alpha=0.7)
