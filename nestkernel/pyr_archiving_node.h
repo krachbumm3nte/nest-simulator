@@ -62,10 +62,11 @@ public:
   PyrArchivingNode( const PyrArchivingNode& );
 
   bool
-  supports_urbanczik_archiving() const
+  supports_urbanczik_archiving() const override
   {
     return true;
   }
+
 
   /**
    * \fn void get_urbanczik_history( double t1, double t2,
@@ -78,37 +79,37 @@ public:
     double t2,
     std::deque< histentry_extended >::iterator* start,
     std::deque< histentry_extended >::iterator* finish,
-    int comp );
+    int comp ) override;
 
   /**
    * \fn double get_C_m( int comp )
    * Returns membrane capacitance
    */
-  double get_C_m( int comp );
+  double get_C_m( int comp ) override;
 
   /**
    * \fn double get_g_L( int comp )
    * Returns leak conductance g_L
    */
-  double get_g_L( int comp );
+  double get_g_L( int comp ) override;
 
   /**
    * \fn double get_g( int comp )
    * Returns conductance g connecting compartments
    */
-  double get_g( int comp );
+  double get_g( int comp ) override;
 
   /**
    * \fn double get_tau_L( int comp )
    * Returns time constant tau_L
    */
-  double get_tau_L( int comp );
+  double get_tau_L( int comp ) override;
 
   /**
    * \fn double get_tau_s()
    * Returns synaptic time constant tau_m
    */
-  double get_tau_s( int comp );
+  double get_tau_s( int comp ) override;
 
 protected:
   /**
@@ -116,21 +117,25 @@ protected:
    * Writes the history for compartment comp into the buffers.
    */
   void write_urbanczik_history( Time const& t_sp, double V_W, double V_SOM, int comp );
+  void clear_history();
 
   pyr_parameters* pyr_params;
 
-  void get_status( DictionaryDatum& d ) const;
-  void set_status( const DictionaryDatum& d );
+  void get_status( DictionaryDatum& d ) const override;
+  void set_status( const DictionaryDatum& d ) override;
 
 private:
   std::deque< histentry_extended > pyr_history_[ pyr_parameters::NCOMP - 1 ];
+
+public:
+  size_t n_incoming_arr[ pyr_parameters::NCOMP - 1 ] = { 0 };
 };
 
 template < class pyr_parameters >
 inline double
 PyrArchivingNode< pyr_parameters >::get_C_m( int comp )
 {
-  return pyr_params->C_m;
+  return pyr_params->C_m[ comp ];
 }
 
 template < class pyr_parameters >
@@ -151,7 +156,7 @@ template < class pyr_parameters >
 inline double
 PyrArchivingNode< pyr_parameters >::get_tau_L( int comp )
 {
-  //TODO: what to do with this
+  // TODO: what to do with this
   return 1 / pyr_params->g_L[ comp ];
 }
 
@@ -161,7 +166,6 @@ PyrArchivingNode< pyr_parameters >::get_tau_s( int comp )
 {
   return pyr_params->tau_m;
 }
-
 
 } // of namespace
 #endif

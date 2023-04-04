@@ -111,6 +111,11 @@ public:
   typedef CommonSynapseProperties CommonPropertiesType;
   typedef Connection< targetidentifierT > ConnectionBase;
 
+  static constexpr ConnectionModelProperties properties = ConnectionModelProperties::HAS_DELAY
+    | ConnectionModelProperties::IS_PRIMARY | ConnectionModelProperties::REQUIRES_URBANCZIK_ARCHIVING
+    | ConnectionModelProperties::SUPPORTS_HPC | ConnectionModelProperties::SUPPORTS_LBL
+    | ConnectionModelProperties::SUPPORTS_WFR;
+
   /**
    * Default Constructor.
    * Sets default values for all parameters. Needed by GenericConnectorModel.
@@ -163,6 +168,12 @@ public:
     {
       return invalid_port;
     }
+
+    port
+    handles_test_event( DSSpikeEvent&, rport ) override
+    {
+      return invalid_port;
+    }
   };
 
   void
@@ -173,6 +184,10 @@ public:
     ConnectionBase::check_connection_( dummy_target, s, t, receptor_type );
 
     t.register_stdp_connection( t_lastspike_ - get_delay(), get_delay() );
+    // In order to manage urbanczik history with multiple compartments, connections need to 
+    // be 'registered' a second time here.
+    nest::pp_cond_exp_mc_pyr& t_arch = static_cast< nest::pp_cond_exp_mc_pyr& >( t );
+    t_arch.n_incoming_arr[ receptor_type - 2 ] += 1;
   }
 
   void
@@ -197,6 +212,8 @@ private:
   double t_lastspike_;
 };
 
+template < typename targetidentifierT >
+constexpr ConnectionModelProperties pyr_synapse< targetidentifierT >::properties;
 
 /**
  * Send an event to the receiver of this connection.
@@ -218,48 +235,43 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
   std::deque< histentry_extended >::iterator finish;
 
   int rport = get_rport();
-
-  if ( rport < 1 or rport > 2 )
+  if ( eta_ > 0 )
   {
-    std::cout << "connection on port " << rport << " to neuron ";
-    std::cout << e.retrieve_sender_node_id_from_source_table() << "\n";
-    throw IllegalConnection("Urbanczik synapse can only connect to dendrites!");
-  }
+    target->get_urbanczik_history( t_lastspike_ - dendritic_delay, t_spike - dendritic_delay, &start, &finish, rport );
+    double dPI_exp_integral = 0.0;
+    double PI;
 
-  target->get_urbanczik_history( t_lastspike_ - dendritic_delay, t_spike - dendritic_delay, &start, &finish, rport );
-  double dPI_exp_integral = 0.0;
-  double PI;
-  //std::cout << target->get_node_id() << ": " << t_lastspike_ << " to " << t_spike << ", " << dendritic_delay << ", " << start->t_ << " to " << finish->t_ << std::endl;
-  while ( start != finish )
-  {
-    double const t_up = start->t_ + dendritic_delay;     // from t_lastspike to t_spike
-    double const minus_delta_t_up = t_lastspike_ - t_up; // from 0 to -delta t
-    double const minus_t_down = t_up - t_spike;          // from -t_spike to 0
-    double const tau_s_now = tau_s_trace_ * exp( minus_delta_t_up / tau_Delta_ );
-    // if ( rport == 3 )
-    // {
-    //   PI = (start->dw_ - target_pyr->P_.pyr_params.phi(weight_ * tau_s_now)) * tau_s_now;
-    // }
-    // else
-    // {
-    PI = tau_s_now * start->dw_;
-    // }
-    PI_integral_ += PI;
-    dPI_exp_integral += exp( minus_t_down / tau_Delta_ ) * PI;
-    ++start;
-  }
+    while ( start != finish )
+    {
+      double const t_up = start->t_ + dendritic_delay;     // from t_lastspike to t_spike
+      double const minus_delta_t_up = t_lastspike_ - t_up; // from 0 to -delta t
+      double const minus_t_down = t_up - t_spike;          // from -t_spike to 0
+      double const tau_s_now = tau_s_trace_ * exp( minus_delta_t_up / tau_Delta_ );
+      // if ( rport == 3 )
+      // {
+      //   PI = (start->dw_ - target_pyr->P_.pyr_params.phi(weight_ * tau_s_now)) * tau_s_now;
+      // }
+      // else
+      // {
+      PI = tau_s_now * start->dw_;
+      // }
+      PI_integral_ += PI;
+      dPI_exp_integral += exp( minus_t_down / tau_Delta_ ) * PI;
+      ++start;
+    }
 
-  PI_exp_integral_ = ( exp( ( t_lastspike_ - t_spike ) / tau_Delta_ ) * PI_exp_integral_ + dPI_exp_integral );
-  weight_ = PI_integral_ - PI_exp_integral_;
-  weight_ = init_weight_ + weight_ * eta_;
+    PI_exp_integral_ = ( exp( ( t_lastspike_ - t_spike ) / tau_Delta_ ) * PI_exp_integral_ + dPI_exp_integral );
+    weight_ = PI_integral_ - PI_exp_integral_;
+    weight_ = init_weight_ + weight_ * eta_; // TODO: does C_m belong here or not?
 
-  if ( weight_ > Wmax_ )
-  {
-    weight_ = Wmax_;
-  }
-  else if ( weight_ < Wmin_ )
-  {
-    weight_ = Wmin_;
+    if ( weight_ > Wmax_ )
+    {
+      weight_ = Wmax_;
+    }
+    else if ( weight_ < Wmin_ )
+    {
+      weight_ = Wmin_;
+    }
   }
 
   e.set_receiver( *target );
@@ -270,7 +282,6 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
   e();
 
   // compute the trace of the presynaptic spike train
-  // tau_L_trace_ = tau_L_trace_ * std::exp( ( t_lastspike_ - t_spike ) / tau_L ) + 1.0;
   tau_s_trace_ = tau_s_trace_ * std::exp( ( t_lastspike_ - t_spike ) / tau_Delta_ ) + 1.0;
 
   t_lastspike_ = t_spike;
@@ -319,8 +330,10 @@ pyr_synapse< targetidentifierT >::set_status( const DictionaryDatum& d, Connecto
   updateValue< double >( d, names::Wmax, Wmax_ );
 
   init_weight_ = weight_;
+  PI_exp_integral_ = 0.0;
+  PI_integral_ = 0.0;
 }
 
 } // of namespace nest
 
-#endif // of #ifndef URBANCZIK_SYNAPSE_H
+#endif // of #ifndef PYR_SYNAPSE_H

@@ -30,7 +30,6 @@
 
 // Includes from sli:
 #include "dictutils.h"
-#include "stdio.h"
 
 namespace nest
 {
@@ -103,17 +102,28 @@ nest::PyrArchivingNode< pyr_parameters >::write_urbanczik_history( Time const& t
   double V_SOM,
   int comp )
 {
-  if ( n_incoming_ )
+  if ( n_incoming_arr[ comp - 1 ] > 0 )
   {
-    const double t_ms = t_sp.get_ms();
 
+    // prune all entries from history which are no longer needed
+    // except the penultimate one. we might still need it.
+    while ( pyr_history_[ comp - 1 ].size() > 1 )
+    {
+      if ( pyr_history_[ comp - 1 ].front().access_counter_ >= n_incoming_arr[ comp - 1 ] )
+      {
+        pyr_history_[ comp - 1 ].pop_front();
+      }
+      else
+      {
+        break;
+      }
+    }
+
+
+    const double t_ms = t_sp.get_ms();
     double comp_deviation = 0.0;
 
-    if ( comp == 0 )
-    {
-      std::cout << "pyr history written for somatic compartment";
-    }
-    else if ( comp == 1 )
+    if ( comp == 1 )
     {
       // basal compartment
       const double g_b = pyr_params->g_conn[ pyr_parameters::BASAL ];
@@ -137,32 +147,18 @@ nest::PyrArchivingNode< pyr_parameters >::write_urbanczik_history( Time const& t
     }
 
 
-    // prune all entries from history which are no longer needed
-    // except the penultimate one. we might still need it.
-    while ( pyr_history_[ comp - 1 ].size() > 1 )
-    {
-      // This is a disgusting workaround for the issue that archiving_node.access_counter_ is unable to differentiate
-      // between compartments, causing the history of multi-compartment models to increase continuously.
-      size_t access_counter = 0;
-      for ( int i = 0; i < 2; i++ )
-      {
-        access_counter += pyr_history_[ i ].front().access_counter_;
-      }
+    pyr_history_[ comp - 1 ].push_back(
+      histentry_extended( t_ms, comp_deviation * Time::get_resolution().get_ms(), 0 ) );
+  }
+}
 
-      if ( access_counter >= n_incoming_ )
-      {
-        for ( int i = 0; i < 2; i++ )
-        {
-          pyr_history_[ i ].pop_front();
-        }
-      }
-      else
-      {
-        break;
-      }
-    }
-
-    pyr_history_[ comp - 1 ].push_back( histentry_extended( t_ms, comp_deviation * Time::get_resolution().get_ms(), 0 ) );
+template < class pyr_parameters >
+void
+nest::PyrArchivingNode< pyr_parameters >::clear_history()
+{
+  for ( int n = 0; n < pyr_parameters::NCOMP - 1; n++ )
+  {
+    pyr_history_[ n ].clear();
   }
 }
 
