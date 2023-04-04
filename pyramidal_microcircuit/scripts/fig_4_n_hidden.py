@@ -1,6 +1,5 @@
 import json
 import os
-import re
 import sys
 
 import matplotlib.pyplot as plt
@@ -8,9 +7,9 @@ import numpy as np
 import src.plot_utils as plot_utils
 import src.utils as utils
 
-linestyles = {1: "solid",
-              100: "dashed",
-              1000: "dotted"}
+linestyles = {10: "solid",
+              30: "dashed",
+              100: "dotted"}
 
 filter_window = 4
 if __name__ == "__main__":
@@ -35,12 +34,12 @@ if __name__ == "__main__":
         with open(os.path.join(dirname, config, "params.json")) as f:
             params = json.load(f)
 
-        weight_scale = params["weight_scale"]
+        n_hidden = params["dims"][1]
         acc = np.array(progress["test_acc"])
 
         final_acc = np.mean(acc[-5:, 1])  # average over last 10 accuracy readings
 
-        final_performance.append([weight_scale, final_acc])
+        final_performance.append([n_hidden, final_acc])
 
         if not np.any(acc[:, 1] == 1.0):
             t_success = 10000
@@ -48,31 +47,24 @@ if __name__ == "__main__":
             t_success = np.where(acc[:, 1] < 1.0)[0]
             t_success = acc[t_success[-1], 0]
 
-        training_duration.append([weight_scale, t_success])
+        training_duration.append([n_hidden, t_success])
 
-        if weight_scale in [1, 100, 1000]:
+        if n_hidden in [10, 30, 100]:
             times = [entry[0] for entry in acc]
             acc = [1-entry[1] for entry in acc]
-            ax0.plot(times, utils.rolling_avg(acc, filter_window), label=r"weight scale={}".format(
-                weight_scale), color="orange", linestyle=linestyles[weight_scale])
+            ax0.plot(times, utils.rolling_avg(acc, filter_window), label=r"$n_{{hidden}}={}$".format(
+                n_hidden), color="orange", linestyle=linestyles[n_hidden])
 
-    ax1.set_xscale("log")
-    ax2.set_xscale("log")
     ax1.plot(*zip(*sorted(final_performance)))
-
     ax2.plot(*zip(*sorted(training_duration)))
-
-    ax0.set_ylim(0, 1)
-    ax1.set_ylim(0, 1.03)
-    ax2.set_ylim(0, 1000)
+    ax2.set_ylim(-5, 1000)
+    ax0.set_ylabel("test loss")
+    ax1.set_ylabel("final accuracy")
+    ax2.set_ylabel("training duration (epochs)")
     ax0.set_xlabel("epoch")
-    ax1.set_xlabel(r'weight scale')
-    ax2.set_xlabel(r'weight scale')
-    ax0.set_ylabel("test error")
-    ax1.set_ylabel("final test error")
-    ax2.set_ylabel("training duration [epochs]")
+    ax1.set_xlabel("n hidden")
+    ax2.set_xlabel("n hidden")
     ax0.legend()
-
     # plt.show()
 
     plt.savefig(out_file)

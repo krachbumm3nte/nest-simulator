@@ -26,14 +26,14 @@ net = NestNetwork(params)
 
 for d in os.listdir(datadir):
     print(f"processing {d}")
-    if not "weights" in d:
+    if "weights" not in d:
         continue
 
     idx = int(d.split("_")[1].split(".")[0])
 
     net.epoch = idx
 
-    with open (os.path.join(datadir, d)) as f:
+    with open(os.path.join(datadir, d)) as f:
         wgts = json.load(f)
     net.set_all_weights(wgts)
 
@@ -42,15 +42,10 @@ for d in os.listdir(datadir):
     print(f"idx: {idx}, acc: {net.test_acc[-1][1]}, loss: {net.test_loss[-1][1]}")
 
 with open(os.path.join(root, "test_progress.json"), "w") as f:
-    
+
     result = {
         "test_acc": sorted(net.test_acc),
         "test_loss": sorted(net.test_loss),
     }
 
-    
     json.dump(result, f, indent=4)
-
-
-
-

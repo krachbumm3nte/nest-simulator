@@ -9,6 +9,13 @@ import src.plot_utils as plot_utils
 import src.utils as utils
 from sklearn.metrics import mean_squared_error as mse
 
+colors = {
+    "numpy": "orange",
+    "rnest": "green",
+    "snest": "blue",
+    "c_m_snest": "purple"
+}
+
 
 filter_window = 4
 if __name__ == "__main__":
@@ -28,8 +35,9 @@ if __name__ == "__main__":
 
     for config in all_configs:
 
-        network_type = config.split("_")[-2]
-        col = plot_utils.colors[network_type]
+        network_type = config.split("_")[-1]
+        network_type = config[16:]
+        col = colors[network_type]
 
         with open(os.path.join(dirname, config, "progress.json")) as f:
             progress = json.load(f)
@@ -60,8 +68,6 @@ if __name__ == "__main__":
         ax2.plot(*zip(*sorted(ff_error)), color=col, label=network_type)
         ax3.plot(*zip(*sorted(fb_error)), color=col, label=network_type)
 
-
-    
     ax2.set_xlabel("epoch")
     ax3.set_xlabel("epoch")
     ax0.set_title("apical error")
