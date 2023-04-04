@@ -28,6 +28,7 @@ if __name__ == "__main__":
     out_file = args[1]
 
     all_configs = sorted(os.listdir(dirname))
+    all_configs = ["/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/results/self_pred/self_pred_numpy_numpy"]
     fig, [[ax0, ax1], [ax2, ax3]] = plt.subplots(2, 2, sharex=True)
 
     final_performance = []
@@ -37,6 +38,7 @@ if __name__ == "__main__":
 
         network_type = config.split("_")[-1]
         network_type = config[16:]
+        network_type = "numpy"
         col = colors[network_type]
 
         with open(os.path.join(dirname, config, "progress.json")) as f:
