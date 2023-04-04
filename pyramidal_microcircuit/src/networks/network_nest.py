@@ -50,7 +50,6 @@ class NestNetwork(Network):
             # self.input_neurons = nest.Create("step_rate_generator", self.dims[0])
             self.input_neurons = nest.Create(self.p.neuron_model, self.dims[0], self.p.input_params)
 
-
         # Create hidden layers
         pyr_prev = self.input_neurons
         intn_prev = None
@@ -60,7 +59,7 @@ class NestNetwork(Network):
             pyr_prev = layer.pyr
             intn_prev = layer.intn
 
-        # output layer 
+        # output layer
         self.layers.append(NestOutputLayer(self, self.p))
 
         if self.p.noise:
