@@ -17,43 +17,50 @@ class NestNetwork(Network):
         self.spiking = p.spiking
         self.weight_scale = self.p.weight_scale if self.spiking else 1
         self.recording_backend = "memory"         # backend for NEST multimeter recordings
-        self.use_mm = True         # flag to record activity of nest neurons using multimeters
+        if self.p.record_interval <= 0:
+            print("Disabling multimeter recroding.")
+            self.use_mm = False  # flag to record activity of nest neurons using multimeters
+        else:
+            self.use_mm = True
 
         self.setup_populations()
-
-        self.iteration = 0
 
     def setup_populations(self):
         print("Setting up populations... ", end="")
         self.wr = None
         if self.p.record_weights:
+            # initialize a weight_recorder, and update all synapse models to interface with it
             self.wr = nest.Create("weight_recorder", params={'record_to': "ascii", "precision": 12})
-            # wr = nest.Create("weight_recorder")
+
             nest.CopyModel(self.p.syn_model, 'record_syn', {"weight_recorder": self.wr})
             self.p.syn_model = 'record_syn'
+
             nest.CopyModel(self.p.static_syn_model, 'static_record_syn', {"weight_recorder": self.wr})
             self.p.static_syn_model = 'static_record_syn'
 
+        # set up dictionaries for neuron and synapse initialization
         self.p.setup_nest_configs()
+
         # Create input layer neurons
         if self.spiking:
             self.poisson_generators = nest.Create("poisson_generator", self.dims[0])
             self.input_neurons = nest.Create("parrot_neuron", self.dims[0])
             nest.Connect(self.poisson_generators, self.input_neurons, conn_spec='one_to_one')
-            # self.input_neurons = nest.Create("poisson_generator", self.dims[0])
         else:
             # self.input_neurons = nest.Create("step_rate_generator", self.dims[0])
             self.input_neurons = nest.Create(self.p.neuron_model, self.dims[0], self.p.input_params)
 
+
+        # Create hidden layers
         pyr_prev = self.input_neurons
         intn_prev = None
         for i in range(len(self.dims)-2):
-
             layer = NestLayer(self, self.p, i)
             self.layers.append(layer)
             pyr_prev = layer.pyr
             intn_prev = layer.intn
 
+        # output layer 
         self.layers.append(NestOutputLayer(self, self.p))
 
         if self.p.noise:
@@ -107,9 +114,9 @@ class NestNetwork(Network):
         print("Done")
 
     def simulate(self, T, enable_recording=False, with_delay=True):
-        if enable_recording:
-            # TODO: record with out_lag aswell?
-            self.mm.set({"start": self.p.out_lag if with_delay else 0, 'stop': self.sim_time, 'origin': nest.biological_time})
+        if enable_recording and self.use_mm:
+            self.mm.set({"start": self.p.out_lag if with_delay else 0,
+                        'stop': self.sim_time, 'origin': nest.biological_time})
             if self.recording_backend == "ascii":
                 nest.SetKernelStatus({"data_prefix": f"it{str(self.iteration).zfill(8)}_"})
 
@@ -162,18 +169,22 @@ class NestNetwork(Network):
             self.set_input(x)
             self.set_target(y)
             self.simulate(self.sim_time, enable_recording=True)
-            mm_data = pd.DataFrame.from_dict(self.mm.events)
-            U_Y = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]
-            U_Y = np.mean(U_Y, axis=1)
-            loss.append(mse(U_Y, y))
+            if self.use_mm:
+                mm_data = pd.DataFrame.from_dict(self.mm.events)
+                y_pred = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]
+                y_pred = np.mean(y_pred, axis=1)
+            else:
+                y_pred = [e["V_m"] for e in self.layers[-1].pyr.get("soma")]
+            loss.append(mse(y_pred, y))
 
-        if self.p.store_errors:
+        if self.p.store_errors and self.use_mm:
             U_I = [mm_data[mm_data["senders"] == intn_id]["V_m.s"] for intn_id in self.layers[-2].intn.global_id]
             U_I = np.mean(U_I, axis=1)
-            V_ah = [mm_data[mm_data["senders"] == hidden_id]["V_m.a_lat"] for hidden_id in self.layers[-2].pyr.global_id]
+            V_ah = [mm_data[mm_data["senders"] == hidden_id]["V_m.a_lat"]
+                    for hidden_id in self.layers[-2].pyr.global_id]
             V_ah = np.mean(V_ah, axis=1)
             self.apical_error.append((self.epoch, float(np.linalg.norm(V_ah))))
-            self.intn_error.append([self.epoch, mse(self.phi(U_I), self.phi(U_Y))])
+            self.intn_error.append([self.epoch, mse(self.phi(U_I), self.phi(y_pred))])
 
         return np.mean(loss)
 
@@ -232,7 +243,8 @@ class NestNetwork(Network):
 
         for layer in self.layers:
             layer.reset()
-        self.mm.n_events = 0
+        if self.use_mm:
+            self.mm.n_events = 0
 
     def set_weights_from_syn(self, weights, synapse_collection):
         # TODO: match numpy variant

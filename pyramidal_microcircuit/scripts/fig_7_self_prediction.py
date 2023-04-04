@@ -60,12 +60,19 @@ if __name__ == "__main__":
         ax2.plot(*zip(*sorted(ff_error)), color=col, label=network_type)
         ax3.plot(*zip(*sorted(fb_error)), color=col, label=network_type)
 
-    ax2.set_xlabel(epoch)
-    ax2.set_xlabel(epoch)
+
+    
+    ax2.set_xlabel("epoch")
+    ax3.set_xlabel("epoch")
     ax0.set_title("apical error")
     ax1.set_title("interneuron error")
     ax2.set_title("feedforward weight error")
     ax3.set_title("feedback weight error")
+
+    ax0.set_ylim(bottom=0)
+    ax1.set_ylim(bottom=0)
+    ax2.set_ylim(bottom=0)
+    ax3.set_ylim(bottom=0)
 
     ax0.legend()
 
