@@ -1,4 +1,7 @@
 {
+    "C_m_api": 1,
+    "C_m_bas": 1,
+    "C_m_som": 1,
     "Wmax": 4,
     "Wmin": -4,
     "beta": 1,
@@ -10,7 +13,7 @@
         "soma_curr": 5,
         "soma": 1
     },
-    "config_file": "/home/johannes/nest-simulator/pyramidal_microcircuit/experiment_configs/self_prediction/self_pred_snest.json",
+    "config_file": "./experiment_configs/self_prediction/self_pred_snest.json",
     "delta_t": 0.1,
     "dims": [
         6,
@@ -46,18 +49,20 @@
     "input_params": {
         "soma": {
             "g_L": 0.03,
-            "g": 10.0
+            "g": 10.0,
+            "C_m": 1
         },
         "basal": {
             "g_L": 0.1,
-            "g": 0
+            "g": 0,
+            "C_m": 1
         },
         "apical_lat": {
             "g_L": 0.1,
-            "g": 0
+            "g": 0,
+            "C_m": 1
         },
         "tau_m": 1,
-        "C_m": 1.0,
         "lambda": 0.06,
         "gamma": 500,
         "beta": 1,
@@ -69,18 +74,20 @@
     "intn_params": {
         "soma": {
             "g_L": 0.03,
-            "g": 0.19
+            "g": 0.19,
+            "C_m": 1
         },
         "basal": {
             "g_L": 0.1,
-            "g": 0.1
+            "g": 0.1,
+            "C_m": 1
         },
         "apical_lat": {
             "g_L": 0.1,
-            "g": 0
+            "g": 0,
+            "C_m": 1
         },
         "tau_m": 1,
-        "C_m": 1.0,
         "lambda": 0.06,
         "gamma": 500,
         "beta": 1,
@@ -103,18 +110,20 @@
     "pyr_params": {
         "soma": {
             "g_L": 0.03,
-            "g": 0.19
+            "g": 0.19,
+            "C_m": 1
         },
         "basal": {
             "g_L": 0.1,
-            "g": 0.1
+            "g": 0.1,
+            "C_m": 1
         },
         "apical_lat": {
             "g_L": 0.1,
-            "g": 0.06
+            "g": 0.06,
+            "C_m": 1
         },
         "tau_m": 1,
-        "C_m": 1.0,
         "lambda": 0.06,
         "gamma": 500,
         "beta": 1,
@@ -145,11 +154,12 @@
     "tau_delta": 1.0,
     "tau_m": 1,
     "tau_x": 0.1,
-    "test_delay": 40,
+    "test_delay": 25,
     "test_interval": -1,
     "test_time": 50,
     "theta": 0,
     "threads": 8,
+    "timestamp": "self_pred_snest_snest",
     "weight_scale": 500,
     "wmax_init": 1,
     "wmin_init": -1
