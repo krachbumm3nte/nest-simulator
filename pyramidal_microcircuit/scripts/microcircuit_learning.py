@@ -48,7 +48,7 @@ def run_simulations(net, params, root_dir, imgdir, datadir, plot_interval=0, pro
             if epoch % progress_interval == 0:
                 print("storing progress...", end="")
                 utils.store_synaptic_weights(net, datadir, f"weights_{epoch}.json")
-                # utils.store_progress(net, datadir, epoch)
+                utils.store_progress(net, datadir, epoch)
                 print("done.")
 
             if epoch % 25 == 0:
