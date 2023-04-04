@@ -46,7 +46,8 @@ def setup_nest(params, datadir=os.getcwd()):
         print("setting 'local_num_threads' failed, trying again.")
         nest.local_num_threads = params.threads
     print(f"configured nest on {nest.local_num_threads} threads")
-    nest.SetDefaults("multimeter", {'interval': params.record_interval})
+    if params.record_interval > 0:
+        nest.SetDefaults("multimeter", {'interval': params.record_interval})
     nest.SetKernelStatus({"data_path": datadir})
 
 
