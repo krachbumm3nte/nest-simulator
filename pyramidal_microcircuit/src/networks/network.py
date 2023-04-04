@@ -91,6 +91,18 @@ class Network:
             self.get_training_data = self.generate_selfpred_data
             self.get_val_data = self.generate_selfpred_data
             self.get_test_data = self.generate_selfpred_data
+        elif self.mode == "self-pred-noise":
+            """
+            Network learns to reach the self-predicting state while being stimulated from only white noise.
+            """
+            self.dims = p.dims
+            self.train_samples = 10
+            self.test_samples = 5
+            self.val_samples = 5
+
+            self.get_training_data = lambda n: np.random.random((n, p.dims[0]))
+            self.get_val_data = lambda n: np.random.random((n, p.dims[0]))
+            self.get_test_data = lambda n: np.random.random((n, p.dims[0]))
         else:
             self.dims = p.dims
 

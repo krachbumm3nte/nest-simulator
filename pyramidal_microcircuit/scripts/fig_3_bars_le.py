@@ -53,7 +53,7 @@ if __name__ == "__main__":
             ax0.plot(times, utils.rolling_avg(acc, filter_window),
                      label=r"$t_{{pres}}={} \tau_{{eff}}$".format(round(t_pres)), color="orange", linestyle=linestyles[params["sim_time"]])
             # ax0.plot(times, acc,
-                    #  label=r"$t_{{pres}}={} \tau_{{eff}}$".format(round(t_pres)), color="orange", linestyle=linestyles[params["sim_time"]])
+            #  label=r"$t_{{pres}}={} \tau_{{eff}}$".format(round(t_pres)), color="orange", linestyle=linestyles[params["sim_time"]])
 
     for config in configs_le:
 
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     orig_data_1 = [[t, 1-acc] for [t, acc] in orig_data_1]
     ax1.set_xscale("log")
     ax1.plot(*zip(*sorted(le_data_1)), color="blue", label="with le")
-    ax1.plot(*zip(*sorted(orig_data_1)), color="orange", label="sacramento")
+    ax1.plot(*zip(*sorted(orig_data_1)), color="orange", label="Sacramento")
 
     ax0.set_ylim(0, 1)
     ax0.set_xlim(0, 1000)
@@ -95,8 +95,16 @@ if __name__ == "__main__":
 
     lines = ax0.get_lines()
 
+    ax0.annotate("A", xy=(0.02, 0.985), xycoords='figure fraction',
+                 horizontalalignment='left', verticalalignment='top',
+                 fontsize=20)
+    
+    ax0.annotate("B", xy=(0.02, 0.485), xycoords='figure fraction',
+                 horizontalalignment='left', verticalalignment='top',
+                 fontsize=20)
+
     legend1 = ax0.legend(lines[:3], [r"$t_{{pres}}={} \tau_{{eff}}$".format(t) for t in [100, 10, 1]], loc=1)
-    legend2 = ax0.legend(lines[2::3], ["sacramento", "LE"], loc=4)
+    legend2 = ax0.legend(lines[2::3], ["Sacramento", "Latent Equilibrium"], loc=4)
     ax0.add_artist(legend1)
 
     # plt.show()
