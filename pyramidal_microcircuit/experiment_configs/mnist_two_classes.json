@@ -28,6 +28,6 @@
             0.0
         ]
     },
-    "record_interval": 1,
+    "record_interval": -1,
     "weight_scale": 500
 }
