@@ -1,0 +1,33 @@
+{
+    "sim_time": 5,
+    "out_lag": 3,
+    "n_epochs": 1000,
+    "latent_equilibrium": true,
+    "mode": "mnist",
+    "dims": [
+        784,
+        150,
+        2
+    ],
+    "n_classes": 2,
+    "eta": {
+        "ip": [
+            0.0004,
+            0.0
+        ],
+        "pi": [
+            0.0,
+            0.0
+        ],
+        "up": [
+            0.001,
+            0.0002
+        ],
+        "down": [
+            0.0,
+            0.0
+        ]
+    },
+    "record_interval": 1,
+    "weight_scale": 500
+}

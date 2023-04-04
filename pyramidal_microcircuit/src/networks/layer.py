@@ -54,10 +54,10 @@ class AbstractLayer():
         pass
 
     def gen_weights(self, n_in, n_out, wmin=None, wmax=None):
-        if not wmin:
-            wmin = -1/self.weight_scale
-        if not wmax:
-            wmax = 1/self.weight_scale
+        if wmin is None:
+            wmin = self.p.wmin_init/self.weight_scale
+        if wmax is None:
+            wmax = self.p.wmax_init/self.weight_scale
         return np.random.uniform(wmin, wmax, (n_out, n_in))
 
     def phi(self, x, thresh=15):
@@ -144,9 +144,11 @@ class Layer(AbstractLayer):
         # apply weight updates
         if plasticity:
             self.W_up += self.dt * self.eta["up"] * self.Delta_up
-            self.W_up = np.clip(self.W_up, self.Wmin, self.Wmax)
             self.W_ip += self.dt * self.eta["ip"] * self.Delta_ip
             self.W_pi += self.dt * self.eta["pi"] * self.Delta_pi
+            self.W_up = np.clip(self.W_up, self.Wmin, self.Wmax)
+            self.W_ip = np.clip(self.W_ip, self.Wmin, self.Wmax)
+            self.W_pi = np.clip(self.W_pi, self.Wmin, self.Wmax)
 
     def reset(self, reset_weights=False):
         '''

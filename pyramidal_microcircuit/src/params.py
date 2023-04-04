@@ -10,36 +10,38 @@ class Params:
     def __init__(self, config_file=None):
 
         # parameters regarding the general simulation environment
-        self.delta_t = 0.1         # Euler integration step in ms
-        self.threads = 10         # number of threads for parallel processing
-        self.record_interval = 1         # interval for storing membrane potentials in ms
-        self.sim_time = 500  # simulation time per input pattern in ms
-        self.n_epochs = 1000         # number of training iterations
-        self.out_lag = 400         # lag in ms before recording output neuron voltage during testing
-        self.test_interval = 10         # test the network every N epochs
-        # flag for whether to use latent equilibrium during training
-        self.latent_equilibrium = True
-        # network dimensions, i.e. neurons per layer
-        self.dims = [9, 30, 3]
-        # flag to initialize feedback weights to self-predicting state
-        self.init_self_pred = True
-        self.noise = False         # flag to apply noise to membrane potentials
-        self.sigma = 0.3         # standard deviation for membrane potential noise
-        # constant noise factor for numpy simulations
-        self.noise_factor = np.sqrt(self.delta_t) * self.sigma
-        # Which dataset to train on. Default: Bars dataset from Haider (2021)
-        self.mode = "bars"
+        self.delta_t = 0.1  # Euler integration step in ms
+        self.threads = 8  # number of threads for parallel processing
+        self.record_interval = 1  # interval for storing membrane potentials in ms
+        self.sim_time = 500  # stimulus presentation time during training in ms
+        self.n_epochs = 1000  # number of training iterations
+        self.out_lag = 400  # lag in ms before recording output neuron voltage during testing
+        self.test_interval = 10  # test the network every N epochs
+        self.test_time = 50  # stimulus presentation time during testing in ms
+        self.test_delay = 25  # output layer recording delay during testing in ms
+        self.latent_equilibrium = True  # flag for whether to use latent equilibrium
+        self.dims = [9, 30, 3]  # network dimensions, i.e. neurons per layer
+        self.init_self_pred = True  # flag to initialize weights to self-predicting state
+        self.noise = False  # flag to apply noise to membrane potentials
+        self.sigma = 0.3  # standard deviation for membrane potential noise
+        self.noise_factor = np.sqrt(self.delta_t) * self.sigma  # constant noise factor (arb. units)
+        self.mode = "bars"  # Which dataset to train on. Default: Bars dataset from Haider (2021)
+        self.store_errors = True  # compute and store apical and interneuron errors during traininng
+        self.network_type = None
 
         # parameters regarding neurons
-        self.g_l = 0.03         # somatic leakage conductance
-        self.g_a = 0.06         # apical compartment coupling conductance
-        self.g_d = 0.1         # basal compartment coupling conductance
-        self.g_som = 0.06         # output neuron nudging conductance
-        # effective leakage conductance
-        self.g_l_eff = self.g_l + self.g_d + self.g_a
-        self.tau_x = 0.1        # input filtering time constant
+        self.g_l = 0.03  # somatic leakage conductance
+        self.g_a = 0.06  # apical compartment coupling conductance
+        self.g_d = 0.1  # basal compartment coupling conductance
+        self.g_som = 0.06  # output neuron nudging conductance
+        self.g_l_eff = self.g_l + self.g_d + self.g_a  # effective leakage conductance
+        self.tau_x = 0.1  # input filtering time constant
         self.tau_m = 1  # membrane time constant for pyramidal and interneurons
-        self.g_lk_dnd = self.delta_t        # dendritic leakage conductance
+        self.g_lk_dnd = self.delta_t  # dendritic leakage
+        self.C_m_som = 1  # membrane capacitance of somatic compartment in pF
+        self.C_m_bas = 1  # membrane capacitance of basal compartment in pF
+        self.C_m_api = 1  # membrane capacitance of apical compartment in pF
+
         # Useful constants for scaling learning rates
         self.lambda_ah = self.g_a / (self.g_d + self.g_a + self.g_l)
         self.lambda_bh = self.g_d / (self.g_d + self.g_a + self.g_l)
@@ -51,10 +53,13 @@ class Params:
         self.theta = 0
 
         # parameters for synaptic connections
+        self.wmin_init = -1
+        self.wmax_init = 1
         self.Wmin = -4
         self.Wmax = 4
-        self.tau_delta = 1.
+        self.tau_delta = 1.  # weight change filter time constant
         self.syn_model = None,  # Synapse model (for NEST simulations only)
+        # learning rates for all populations per layer
         self.eta = {
             'ip': [0.0004, 0],
             'pi': [0, 0],
@@ -63,11 +68,11 @@ class Params:
         }
 
         # parameters that regard only simulations in NEST
-        # flag to record weights in NEST using a 'weight_recorder'
-        self.record_weights = False
-        self.weight_scale = 1000        # weight scaling factor # TODO: rename this
-        self.spiking = True        # flag to enable simulation with spiking neurons
+        self.record_weights = False  # flag to record weights in NEST using a 'weight_recorder'
+        self.weight_scale = 500  # weight scaling factor # TODO: rename this
+        self.spiking = True  # flag to enable simulation with spiking neurons
 
+        # if a config file is provided, read the file and change all specified values
         if config_file:
             self.config_file = config_file
             self.from_json(config_file)
@@ -76,8 +81,7 @@ class Params:
         self.neuron_model = 'pp_cond_exp_mc_pyr' if self.spiking else 'rate_neuron_pyr'
         self.syn_model = 'pyr_synapse' if self.spiking else 'pyr_synapse_rate'
         self.static_syn_model = 'static_synapse' if self.spiking else 'rate_connection_delayed'
-        self.compartments = nest.GetDefaults(self.neuron_model)[
-            "receptor_types"]
+        self.compartments = nest.GetDefaults(self.neuron_model)["receptor_types"]
 
         self.pyr_params = {
             'soma': {
@@ -85,23 +89,25 @@ class Params:
                 # misappropriation of somatic conductance. this is the effective somatic leakage conductance now!
                 # TODO: create a separate parameter in the neuron model for this
                 'g': self.g_l_eff,
+                'C_m': self.C_m_som
             },
             'basal': {
                 'g_L': self.g_lk_dnd if self.spiking else 1,
                 'g': self.g_d,
+                'C_m': self.C_m_bas
             },
             'apical_lat': {
                 'g_L': self.g_lk_dnd if self.spiking else 1,
                 'g': self.g_a,
+                'C_m': self.C_m_api
             },
             'tau_m': self.tau_m,  # Membrane time constant
-            'C_m': 1.0,  # Membrane capacitance
             'lambda': self.g_som,  # Interneuron nudging conductance
             'gamma': self.gamma,
             'beta': self.beta,
             'theta': self.theta,
             'use_phi': True,  # If False, membrane potentials are transmitted without use of the activation function
-            't_ref': 0.,
+            't_ref': 0.,  # refractory period in ms
             'latent_equilibrium': self.latent_equilibrium
         }
 

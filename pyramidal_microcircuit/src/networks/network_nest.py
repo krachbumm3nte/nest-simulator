@@ -24,7 +24,7 @@ class NestNetwork(Network):
         self.iteration = 0
 
     def setup_populations(self):
-
+        print("Setting up populations... ", end="")
         self.wr = None
         if self.p.record_weights:
             self.wr = nest.Create("weight_recorder", params={'record_to': "ascii", "precision": 12})
@@ -36,7 +36,14 @@ class NestNetwork(Network):
 
         self.p.setup_nest_configs()
         # Create input layer neurons
-        self.input_neurons = nest.Create(self.p.neuron_model, self.dims[0], self.p.input_params)
+        if self.spiking:
+            self.poisson_generators = nest.Create("poisson_generator", self.dims[0])
+            self.input_neurons = nest.Create("parrot_neuron", self.dims[0])
+            nest.Connect(self.poisson_generators, self.input_neurons, conn_spec='one_to_one')
+            # self.input_neurons = nest.Create("poisson_generator", self.dims[0])
+        else:
+            # self.input_neurons = nest.Create("step_rate_generator", self.dims[0])
+            self.input_neurons = nest.Create(self.p.neuron_model, self.dims[0], self.p.input_params)
 
         pyr_prev = self.input_neurons
         intn_prev = None
@@ -52,10 +59,10 @@ class NestNetwork(Network):
         if self.p.noise:
             # Inject Gaussian white noise into neuron somata.
             self.noise_generator = nest.Create("noise_generator", 1, {"mean": 0., "std": self.sigma_noise})
-            for l_current in self.layers[:-1]:
-                nest.Connect(self.noise_generator, l_current.pyr, syn_spec={
+            for layer in self.layers[:-1]:
+                nest.Connect(self.noise_generator, layer.pyr, syn_spec={
                              "receptor_type": self.p.compartments["soma_curr"]})
-                nest.Connect(self.noise_generator, l_current.intn, syn_spec={
+                nest.Connect(self.noise_generator, layer.intn, syn_spec={
                              "receptor_type": self.p.compartments["soma_curr"]})
             nest.Connect(self.noise_generator, self.layers[-1].pyr,
                          syn_spec={"receptor_type": self.p.compartments["soma_curr"]})
@@ -66,23 +73,9 @@ class NestNetwork(Network):
                                                     'record_from': ["V_m.a_lat", "V_m.s", "V_m.b"],
                                                     'stop': 0.0  # disables multimeter by default
                                                     })
-            nest.Connect(self.mm, self.input_neurons)
-            nest.Connect(self.mm, self.layers[0].pyr)
-            nest.Connect(self.mm, self.layers[0].intn)
+            nest.Connect(self.mm, self.layers[-2].pyr)
+            nest.Connect(self.mm, self.layers[-2].intn)
             nest.Connect(self.mm, self.layers[-1].pyr)
-        # TODO: keep both ways of storage?
-        self.U_y_record = np.zeros((1, self.dims[-1]))
-        self.V_ah_record = np.zeros((1, self.dims[1]))
-        self.U_h_record = np.zeros((1, self.dims[1]))
-        self.U_i_record = np.zeros((1, self.dims[-1]))
-
-        # step generators for enabling batch training
-        self.sgx = nest.Create("step_current_generator", self.dims[0])
-        nest.Connect(self.sgx, self.input_neurons, conn_spec='one_to_one',
-                     syn_spec={"receptor_type": self.p.compartments["soma_curr"]})
-        self.sgy = nest.Create("step_current_generator", self.dims[-1])
-        nest.Connect(self.sgy, self.layers[-1].pyr, conn_spec='one_to_one',
-                     syn_spec={"receptor_type": self.p.compartments["soma_curr"]})
 
         pyr_prev = self.input_neurons
         intn_prev = None
@@ -101,25 +94,34 @@ class NestNetwork(Network):
         self.layers[-1].redefine_connections(pyr_prev)
 
         for i in range(len(self.layers) - 1):
-            l_current = self.layers[i]
+            layer = self.layers[i]
             l_next = self.layers[i + 1]
             if self.p.init_self_pred:
-                w_down = self.get_weight_array_from_syn(l_current.down)
-                self.set_weights_from_syn(-w_down, l_current.pi)
+                w_down = self.get_weight_array_from_syn(layer.down)
+                self.set_weights_from_syn(-w_down, layer.pi)
+
                 w_up = self.get_weight_array_from_syn(l_next.up)
-
                 self.set_weights_from_syn(w_up * l_next.gb / (l_next.gl + l_next.ga + l_next.gb) *
-                                          (l_current.gl + l_current.gd) / l_current.gd, l_current.ip)
+                                          (layer.gl + layer.gd) / layer.gd, layer.ip)
 
-    def simulate(self, T, enable_recording=False):
+        print("Done")
+
+    def simulate(self, T, enable_recording=False, with_delay=True):
         if enable_recording:
             # TODO: record with out_lag aswell?
-            self.mm.set({"start": 0, 'stop': self.sim_time, 'origin': nest.biological_time})
+            self.mm.set({"start": self.p.out_lag if with_delay else 0, 'stop': self.sim_time, 'origin': nest.biological_time})
             if self.recording_backend == "ascii":
                 nest.SetKernelStatus({"data_prefix": f"it{str(self.iteration).zfill(8)}_"})
 
         nest.Simulate(T)
         self.iteration += 1
+
+    def disable_learning(self):
+        nest.GetConnections(synapse_model=self.p.syn_model).set({"eta": 0})
+
+    def enable_learning(self):
+        for layer in self.layers:
+            layer.enable_learning()
 
     def set_input(self, input_currents):
         """Inject a constant current into all neurons in the input layer.
@@ -130,66 +132,15 @@ class NestNetwork(Network):
         Arguments:
             input_currents -- Iterable of length equal to the input dimension.
         """
+        input_currents = np.array(input_currents)
         self.input_currents = input_currents
         for i in range(self.dims[0]):
-            self.input_neurons[i].set({"soma": {"I_e": input_currents[i] / self.p.tau_x}})
-
-    def train_batch(self, x_batch, y_batch):
-        loss = []
-        for i, (x, y) in enumerate(zip(x_batch, y_batch)):
-            self.set_input(x)
-            self.set_target(y)
-            self.mm.set({"start": self.p.out_lag, 'stop': self.sim_time, 'origin': nest.biological_time})
-
-            self.simulate(self.sim_time)
-            mm_data = pd.DataFrame.from_dict(self.mm.events)
-            U_Y = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]
-            y_pred = np.mean(U_Y, axis=1)
-
-            loss.append(mse(y_pred, y))
-            self.reset()
-
-        self.train_loss.append((self.epoch, np.mean(loss)))
-
-    def test_batch(self, x_batch, y_batch):
-        acc = []
-        loss_mse = []
-        # set all learning rates to zero
-        self.disable_learning()
-
-        for x_test, y_actual in zip(x_batch, y_batch):
-            self.set_input(x_test)
-            self.mm.set({"start": self.p.out_lag, 'stop': self.sim_time, 'origin': nest.biological_time})
-            self.simulate(self.sim_time)
-            mm_data = pd.DataFrame.from_dict(self.mm.events)
-            U_Y = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]
-            y_pred = np.mean(U_Y, axis=1)
-            loss_mse.append(mse(y_actual, y_pred))
-            acc.append(np.argmax(y_actual) == np.argmax(y_pred))
-            self.reset()
-
-        class_acc = [[]for i in range(3)]
-        class_loss = [[]for i in range(3)]
-        out_labels = np.argmax(y_batch, axis=1)
-        for label, guess, loss in zip(out_labels, acc, loss_mse):
-            class_acc[label].append(guess)
-            class_loss[label].append(loss)
-        # print([np.mean(loss) for loss in class_loss])
-
-        # print([np.mean(acc) for acc in class_acc])
-        # print()
-
-        # set learning rates to their original values
-
-        self.enable_learning()
-        return np.mean(acc), np.mean(loss_mse)
-
-    def disable_learning(self):
-        nest.GetConnections(synapse_model=self.p.syn_model).set({"eta": 0})
-
-    def enable_learning(self):
-        for layer in self.layers:
-            layer.enable_learning()
+            if self.spiking:
+                self.poisson_generators[i].rate = self.weight_scale * input_currents[i] * 1000
+            else:
+                self.input_neurons[i].set({"soma": {"I_e": input_currents[i] / self.p.tau_x}})
+                # self.input_neurons[i].set({"amplitude_times": [nest.biological_time + self.dt],
+                #                            "amplitude_values": [input_currents[i]]})
 
     def set_target(self, target_currents):
         """Inject a constant current into all neurons in the output layer.
@@ -203,6 +154,51 @@ class NestNetwork(Network):
         self.target_curr = target_currents
         for i in range(self.dims[-1]):
             self.layers[-1].pyr[i].set({"soma": {"I_e": target_currents[i] * self.p.g_som}})
+
+    def train_batch(self, x_batch, y_batch):
+        loss = []
+        for x, y in zip(x_batch, y_batch):
+            self.reset()
+            self.set_input(x)
+            self.set_target(y)
+            self.simulate(self.sim_time, enable_recording=True)
+            mm_data = pd.DataFrame.from_dict(self.mm.events)
+            U_Y = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]
+            U_Y = np.mean(U_Y, axis=1)
+            loss.append(mse(U_Y, y))
+
+        if self.p.store_errors:
+            U_I = [mm_data[mm_data["senders"] == intn_id]["V_m.s"] for intn_id in self.layers[-2].intn.global_id]
+            U_I = np.mean(U_I, axis=1)
+            V_ah = [mm_data[mm_data["senders"] == hidden_id]["V_m.a_lat"] for hidden_id in self.layers[-2].pyr.global_id]
+            V_ah = np.mean(V_ah, axis=1)
+            self.apical_error.append((self.epoch, float(np.linalg.norm(V_ah))))
+            self.intn_error.append([self.epoch, mse(self.phi(U_I), self.phi(U_Y))])
+
+        return np.mean(loss)
+
+    def test_batch(self, x_batch, y_batch):
+        acc = []
+        loss_mse = []
+        # set all learning rates to zero
+
+        self.disable_learning()
+
+        for x_test, y_actual in zip(x_batch, y_batch):
+            self.set_input(x_test)
+            # self.mm.set({"start": self.p.out_lag, 'stop': self.sim_time, 'origin': nest.biological_time})
+            self.mm.set({"start": self.p.test_delay, 'stop': self.p.test_time, 'origin': nest.biological_time})
+            self.simulate(self.p.test_time)  # self.sim_time)
+            mm_data = pd.DataFrame.from_dict(self.mm.events)
+            U_Y = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]
+            y_pred = np.mean(U_Y, axis=1)
+            loss_mse.append(mse(y_actual, y_pred))
+            acc.append(np.argmax(y_actual) == np.argmax(y_pred))
+            self.reset()
+
+        # set learning rates to their original values
+        self.enable_learning()
+        return np.mean(acc), np.mean(loss_mse)
 
     def get_weight_array(self, source, target, normalized=False):
         weight_df = pd.DataFrame.from_dict(nest.GetConnections(source=source, target=target).get())
@@ -231,9 +227,9 @@ class NestNetwork(Network):
         return weights
 
     def reset(self):
-        self.input_neurons.set({"soma": {"V_m": 0, "I_e": 0, "I": 0},
-                                "basal": {"V_m": 0, "I_e": 0, "I": 0},
-                                "apical_lat": {"V_m": 0, "I_e": 0, "I": 0}})
+        self.set_input(np.zeros(self.dims[0]))
+        self.set_target(np.zeros(self.dims[-1]))
+
         for layer in self.layers:
             layer.reset()
         self.mm.n_events = 0
@@ -246,7 +242,11 @@ class NestNetwork(Network):
                 target = nest.GetNodes({"global_id": target_id})
                 nest.GetConnections(source, target).set({"weight": weights[j][i]})
 
-    def set_all_weights(self, weight_dict):
+    def set_all_weights(self, weight_dict, normalized=True):
+        if normalized:
+            for i, layer in enumerate(weight_dict):
+                for k, v in layer.items():
+                    weight_dict[i][k] = np.asarray(v) / self.weight_scale
         for i, layer in enumerate(self.layers[:-1]):
             self.set_weights_from_syn(weight_dict[i]["up"], layer.up)
             self.set_weights_from_syn(weight_dict[i]["ip"], layer.ip)

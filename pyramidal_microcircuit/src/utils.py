@@ -2,6 +2,7 @@ import glob
 import json
 import os
 import re
+import shutil
 
 import numpy as np
 import pandas as pd
@@ -9,16 +10,26 @@ from src.networks.network import Network
 from scipy.ndimage import uniform_filter1d
 
 import nest
+import sys
 
 
-def setup_directories(type, name="default", root=os.path.join(os.getcwd(), "results"), ):
+def setup_directories(type, name="default", root=None):
+    if root is None:
+        root = os.path.join(*[os.path.dirname(os.path.realpath(sys.argv[0])), "..", "results"])
+
     root = os.path.join(root, f"{name}_{type}")  # _{datetime.now().strftime('%Y_%m_%d-%H_%M_%S')}")
 
     imgdir = os.path.join(root, "plots")
     datadir = os.path.join(root, "data")
 
+    print(f"attemting to create dir {root}")
     if os.path.exists(root):
-        return False, False, False
+        reply = input("a simulation of that name already exists, exiting. overwrite? (yes|no)\n")
+        if reply in ["y", "Y", "yes"]:
+            print(f"deleting old contents of {root}")
+            shutil.rmtree(root)
+        else:
+            sys.exit()
 
     for dir in [root, imgdir, datadir]:
         os.mkdir(dir)
@@ -29,7 +40,12 @@ def setup_directories(type, name="default", root=os.path.join(os.getcwd(), "resu
 def setup_nest(params, datadir=os.getcwd()):
     nest.set_verbosity("M_ERROR")
     nest.resolution = params.delta_t
-    nest.SetKernelStatus({"local_num_threads": params.threads})
+    try:
+        nest.local_num_threads = params.threads
+    except:
+        print("setting 'local_num_threads' failed, trying again.")
+        nest.local_num_threads = params.threads
+    print(f"configured nest on {nest.local_num_threads} threads")
     nest.SetDefaults("multimeter", {'interval': params.record_interval})
     nest.SetKernelStatus({"data_path": datadir})
 
@@ -48,6 +64,34 @@ def store_synaptic_weights(network: Network, dirname, filename="weights.json"):
 
     with open(os.path.join(dirname, filename), "w") as f:
         json.dump(weights, f, indent=4)
+
+
+def store_progress(net: Network, dirname, epoch, filename="progress.json"):
+    progress = {
+        "test_acc": net.test_acc,
+        "test_loss": net.test_loss,
+        "train_loss": net.train_loss,
+        "apical_error": net.apical_error,
+        "intn_error": net.intn_error,
+        "ff_error": net.ff_error,
+        "fb_error": net.fb_error,
+        "epochs_completed": epoch
+    }
+    with open(os.path.join(dirname, filename), "w") as f:
+        json.dump(progress, f, indent=4)
+
+
+def store_state(net: Network, dirname, filename="state.json"):
+
+    state = {
+        # "mm": net.mm.get(),
+        "in": net.input_neurons.get(),
+        "p0": net.layers[0].pyr.get(),
+        "i0": net.layers[0].intn.get(),
+        "out": net.layers[-1].pyr.get()
+    }
+    with open(os.path.join(dirname, filename), "w") as f:
+        json.dump(state, f, indent=4)
 
 
 def read_mm(device_id, path, it_min=None, it_max=None):

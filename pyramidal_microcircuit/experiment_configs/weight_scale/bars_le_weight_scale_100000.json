@@ -1,0 +1,33 @@
+{
+    "sim_time": 50,
+    "out_lag": 25.0,
+    "tau_delta": 1,
+    "tau_m": 1,
+    "latent_equilibrium": true,
+    "eta": {
+        "ip": [
+            0.004,
+            0.0
+        ],
+        "pi": [
+            0.0,
+            0.0
+        ],
+        "up": [
+            0.01,
+            0.002
+        ],
+        "down": [
+            0.0,
+            0.0
+        ]
+    },
+    "record_interval": 0.5,
+    "dims": [
+        9,
+        30,
+        3
+    ],
+    "weight_scale": 1000,
+    "network_type": "snest"
+}

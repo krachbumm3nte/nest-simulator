@@ -60,6 +60,7 @@ class MnistDataset(Dataset):
                 dat_flat = zero_at + dat_flat * (one_at - zero_at)
                 self.vals.append(dat_flat)
 
+        self.vals = [t.numpy() for t in self.vals]
         self.vals = np.array(self.vals)
         self.cs = np.array(self.cs)
 
@@ -75,6 +76,10 @@ class MnistDataset(Dataset):
     def get_samples(self, n_samples):
         indices = np.random.choice(len(self.cs), n_samples)
         return self.vals[indices], self.cs[indices]
+
+    def shuffle(self):
+        np.random.shuffle(self.vals)
+        np.random.shuffle(self.cs)
 
 
 class BarDataset(Dataset):

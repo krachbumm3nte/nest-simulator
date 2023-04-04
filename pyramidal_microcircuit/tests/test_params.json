@@ -25,5 +25,9 @@
         3,
         2
     ],
+    "C_m_api": 1,
+    "C_m_som": 1,
+    "C_m_bas": 1,
+    "weight_scale": 2500,
     "mode": "test"
 }

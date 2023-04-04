@@ -15,7 +15,7 @@ class NumpyNetwork(Network):
         self.output_loss = []
         self.r_in = np.zeros(self.dims[0])
         self.setup_populations()
-        self.reset_records()
+        self.clear_records()
 
     def setup_populations(self):
         eta = {}
@@ -37,7 +37,7 @@ class NumpyNetwork(Network):
                 layer.W_ip = l_next.W_up.copy() * l_next.gb / (l_next.gl + l_next.ga + l_next.gb) * \
                     (layer.gl + layer.gd) / layer.gd
 
-    def reset_records(self):
+    def clear_records(self):
         self.weight_record = self.copy_weights()
         for i, weight_dict in enumerate(self.weight_record):
             for key, weights in weight_dict.items():
@@ -72,13 +72,26 @@ class NumpyNetwork(Network):
         return weights
 
     def train_batch(self, x_batch, y_batch):
-        for x_train, y_train in zip(x_batch, y_batch):
-            self.set_input(x_train)
-            self.target_seq = y_train
-            for i in range(int(self.sim_time/self.dt)):
-                self.simulate(self.target_filtered)
-            self.train_loss.append([self.epoch, mse(self.u_target, self.layers[- 1].u_pyr["soma"])])
+        loss = []
+        n_samples = int((self.p.sim_time - self.p.out_lag)/self.record_interval)
+
+        for x, y in zip(x_batch, y_batch):
             self.reset()
+            self.set_input(x)
+            self.target_seq = y
+            for i in range(int(self.sim_time/self.dt)):
+                self.simulate(self.target_filtered, enable_recording=True)
+            U_Y = np.mean(self.U_y_record[-n_samples:], axis=0)
+            U_Y = self.layers[-1].u_pyr["soma"]
+            loss.append(mse(U_Y, y))
+
+        if self.p.store_errors:
+            U_I = np.mean(self.U_i_record[-n_samples:], axis=0)
+            V_ah = np.mean(self.V_ah_record[-n_samples:], axis=0)
+            self.apical_error.append((self.epoch, float(np.linalg.norm(V_ah))))
+            self.intn_error.append([self.epoch, mse(self.phi(U_I), self.phi(U_Y))])
+
+        return np.mean(loss)
 
     def test_batch(self, x_batch, y_batch):
         acc = []
@@ -91,7 +104,7 @@ class NumpyNetwork(Network):
             loss_mse.append(mse(y_actual, y_pred))
             acc.append(np.argmax(y_actual) == np.argmax(y_pred))
             self.reset()
-            self.reset_records()
+            self.clear_records()
 
         return np.mean(acc), np.mean(loss_mse)
 
@@ -129,8 +142,7 @@ class NumpyNetwork(Network):
     def record_state(self):
         U_y = self.layers[-1].u_pyr["soma"]
         self.U_y_record = np.concatenate((self.U_y_record, np.expand_dims(U_y, 0)), axis=0)
-        self.V_ah_record = np.concatenate(
-            (self.V_ah_record, np.expand_dims(self.layers[-2].u_pyr["apical"], 0)), axis=0)
+        self.V_ah_record = np.concatenate((self.V_ah_record, np.expand_dims(self.layers[-2].u_pyr["apical"], 0)), axis=0)
         self.V_bh_record = np.concatenate((self.V_bh_record, np.expand_dims(self.layers[-2].u_pyr["basal"], 0)), axis=0)
         self.U_i_record = np.concatenate((self.U_i_record, np.expand_dims(self.layers[-2].u_inn["soma"], 0)), axis=0)
         self.U_h_record = np.concatenate((self.U_h_record, np.expand_dims(self.layers[-2].u_pyr["soma"], 0)), axis=0)
@@ -162,6 +174,7 @@ class NumpyNetwork(Network):
     def reset(self):
         for layer in self.layers:
             layer.reset()
+        self.clear_records()
 
     def set_all_weights(self, weights):
         for i, w in enumerate(weights[:-1]):
@@ -171,4 +184,4 @@ class NumpyNetwork(Network):
             self.layers[i].W_ip = w["ip"].copy()
 
         self.layers[-1].W_up = weights[-1]["up"].copy()
-        self.reset_records()
+        self.clear_records()
