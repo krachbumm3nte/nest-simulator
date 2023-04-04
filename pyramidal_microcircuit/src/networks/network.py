@@ -37,7 +37,7 @@ class Network:
             self.n_classes = p.n_classes
             self.dims = p.dims
 
-            self.train_samples = 50
+            self.train_samples = 100
             self.val_samples = 50
             self.test_samples = 10
 
