@@ -4,18 +4,18 @@ import json
 root_dir = os.path.dirname(os.path.realpath(__file__))
 target_dir = os.path.join(root_dir, "c_m")
 
-weight_scale_list = [1, 5, 10]
-c_m_list = [1, 2, 5, 10]
+weight_scale_list = [1, 5, 10, 50]
+c_m_list = [1, 5, 15]
 
 
 config = {
-    "sim_time": 100,
-    "out_lag": 60.0,
+    "sim_time": 150,
+    "out_lag": 110.0,
     "latent_equilibrium": True,
     "dims": [9, 30, 3],
     "eta": {
         "ip": [
-            0.004,
+            0.001,
             0.0
         ],
         "pi": [
@@ -23,21 +23,20 @@ config = {
             0.0
         ],
         "up": [
-            0.01,
-            0.002
+            0.0025,
+            0.0005
         ],
         "down": [
             0.0,
             0.0
         ]
     },
-    "record_interval": 0.5,
+    "record_interval": 1,
     "dims": [
         9,
         30,
         3
     ],
-    "weight_scale": 0.25,
     "network_type": "snest"
 }
 
