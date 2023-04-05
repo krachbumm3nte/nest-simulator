@@ -19,7 +19,7 @@
     ],
     "eta": {
         "ip": [
-            2.962962962962963e-10,
+            8e-12,
             0.0
         ],
         "pi": [
@@ -27,8 +27,8 @@
             0.0
         ],
         "up": [
-            7.407407407407407e-10,
-            1.4814814814814814e-10
+            2.0000000000000002e-11,
+            4e-12
         ],
         "down": [
             0.0,
@@ -59,7 +59,7 @@
         "tau_m": 1,
         "C_m": 1.0,
         "lambda": 0.06,
-        "gamma": 150,
+        "gamma": 500,
         "beta": 1,
         "theta": 0,
         "use_phi": false,
@@ -82,7 +82,7 @@
         "tau_m": 1,
         "C_m": 1.0,
         "lambda": 0.06,
-        "gamma": 150,
+        "gamma": 500,
         "beta": 1,
         "theta": 0,
         "use_phi": true,
@@ -116,7 +116,7 @@
         "tau_m": 1,
         "C_m": 1.0,
         "lambda": 0.06,
-        "gamma": 150,
+        "gamma": 500,
         "beta": 1,
         "theta": 0,
         "use_phi": true,
@@ -133,8 +133,8 @@
     "syn_plastic": {
         "synapse_model": "pyr_synapse",
         "tau_Delta": 1,
-        "Wmin": -0.02666666666666667,
-        "Wmax": 0.02666666666666667,
+        "Wmin": -0.008,
+        "Wmax": 0.008,
         "delay": 0.1
     },
     "syn_static": {
@@ -144,9 +144,13 @@
     "tau_delta": 1,
     "tau_m": 1,
     "tau_x": 0.1,
+    "test_delay": 40,
     "test_interval": 10,
+    "test_time": 50,
     "theta": 0,
     "threads": 8,
     "timestamp": "bars_orig_tpres_2000_snest",
-    "weight_scale": 150
+    "weight_scale": 500,
+    "wmax_init": 1,
+    "wmin_init": -1
 }
