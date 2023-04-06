@@ -101,6 +101,11 @@ class Params:
                 'g': self.g_a,
                 'C_m': self.C_m_api
             },
+            'apical_td': {
+                'g_L': self.g_lk_dnd if self.spiking else 1,
+                'g': self.g_a,
+                'C_m': self.C_m_api
+            },
             'tau_m': self.tau_m,  # Membrane time constant
             'lambda': self.g_som,  # Interneuron nudging conductance
             'gamma': self.gamma,

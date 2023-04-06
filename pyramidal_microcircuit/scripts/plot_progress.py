@@ -39,11 +39,9 @@ if __name__ == "__main__":
     else:
         net = NestNetwork(p)
 
-    net.set_all_weights(weights)
+    # net.set_all_weights(weights)
 
-    plot_utils.plot_training_progress()
-
-    weight_scale = params.weight_scale
+    weight_scale = p.weight_scale
     acc = np.array(progress["test_acc"])
 
 

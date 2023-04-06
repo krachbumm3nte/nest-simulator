@@ -258,6 +258,7 @@ class NestNetwork(Network):
                 nest.GetConnections(source, target).set({"weight": weights[j][i]})
 
     def set_all_weights(self, weight_dict, normalized=True):
+        print("setting all network weights... ", end="")
         if normalized:
             for i, layer in enumerate(weight_dict):
                 for k, v in layer.items():
@@ -268,3 +269,4 @@ class NestNetwork(Network):
             self.set_weights_from_syn(weight_dict[i]["pi"], layer.pi)
             self.set_weights_from_syn(weight_dict[i]["down"], layer.down)
         self.set_weights_from_syn(weight_dict[-1]["up"], self.layers[-1].up)
+        print("Done")

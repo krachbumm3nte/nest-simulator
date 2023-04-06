@@ -21,11 +21,12 @@ class NestLayer(AbstractLayer):
                 self.synapses[type] = deepcopy(p.syn_static)
 
         basal_dendrite = p.compartments['basal']
-        apical_dendrite = p.compartments['apical_lat']
+        apical_distal = p.compartments['apical_td']
+        apical_proximal = p.compartments['apical_lat']
         self.synapses["up"]['receptor_type'] = basal_dendrite
         self.synapses["ip"]['receptor_type'] = basal_dendrite
-        self.synapses["pi"]['receptor_type'] = apical_dendrite
-        self.synapses["down"]['receptor_type'] = apical_dendrite
+        self.synapses["pi"]['receptor_type'] = apical_proximal
+        self.synapses["down"]['receptor_type'] = apical_distal
         # connections_l["down"]['delay'] = 2*p.delta_t
 
         self.N_prev = net.dims[layer]
@@ -60,10 +61,12 @@ class NestLayer(AbstractLayer):
         '''
         self.pyr.set({"soma": {"V_m": 0, "I_e": 0, "I": 0},
                       "basal": {"V_m": 0, "I_e": 0, "I": 0},
-                      "apical_lat": {"V_m": 0, "I_e": 0, "I": 0}})
+                      "apical_lat": {"V_m": 0, "I_e": 0, "I": 0},
+                      "apical_td": {"V_m": 0, "I_e": 0, "I": 0}})
         self.intn.set({"soma": {"V_m": 0, "I_e": 0, "I": 0},
                        "basal": {"V_m": 0, "I_e": 0, "I": 0},
-                       "apical_lat": {"V_m": 0, "I_e": 0, "I": 0}})
+                       "apical_lat": {"V_m": 0, "I_e": 0, "I": 0},
+                      "apical_td": {"V_m": 0, "I_e": 0, "I": 0}})
 
         # TODO: reset urbanczik History?
 
@@ -113,7 +116,8 @@ class NestOutputLayer(AbstractLayer):
         '''
         self.pyr.set({"soma": {"V_m": 0, "I_e": 0, "I": 0},
                       "basal": {"V_m": 0, "I_e": 0, "I": 0},
-                      "apical_lat": {"V_m": 0, "I_e": 0, "I": 0}})
+                      "apical_lat": {"V_m": 0, "I_e": 0, "I": 0},
+                      "apical_td": {"V_m": 0, "I_e": 0, "I": 0}})
 
         # TODO: reset urbanczik History?
 
