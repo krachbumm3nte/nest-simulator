@@ -23,5 +23,5 @@
         ]
     },
     "record_interval": 0.1,
-    "soft_reset": true
+    "reset": 2
 }

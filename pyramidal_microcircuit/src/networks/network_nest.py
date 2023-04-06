@@ -242,14 +242,17 @@ class NestNetwork(Network):
 
     def reset(self):
         self.set_target(np.zeros(self.dims[-1]))
-        if self.p.soft_reset:
+
+        if self.p.reset == 2:
+            # hard reset
+            for layer in self.layers:
+                layer.reset()
+        elif self.p.reset == 1:
+            # soft reset
             for i in range(5):
                 self.set_input(np.random.random(self.dims[0]))
                 nest.Simulate(0.5)
-        else:
-            for layer in self.layers:
-                layer.reset()
-    
+
         self.set_input(np.zeros(self.dims[0]))
         if self.use_mm:
             self.mm.n_events = 0
