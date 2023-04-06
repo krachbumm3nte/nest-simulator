@@ -63,7 +63,6 @@ if __name__ == "__main__":
 
         print(f"preparing simulation for network type: {params.network_type}")
 
-        sys.exit()
         spiking = params.network_type == "snest"
         params.spiking = spiking
         params.threads = args.threads
