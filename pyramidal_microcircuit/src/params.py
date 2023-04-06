@@ -28,6 +28,7 @@ class Params:
         self.mode = "bars"  # Which dataset to train on. Default: Bars dataset from Haider (2021)
         self.store_errors = True  # compute and store apical and interneuron errors during traininng
         self.network_type = None
+        self.soft_reset = False
 
         # parameters regarding neurons
         self.g_l = 0.03  # somatic leakage conductance

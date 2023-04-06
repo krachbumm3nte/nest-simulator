@@ -241,11 +241,16 @@ class NestNetwork(Network):
         return weights
 
     def reset(self):
-        self.set_input(np.zeros(self.dims[0]))
         self.set_target(np.zeros(self.dims[-1]))
-
-        for layer in self.layers:
-            layer.reset()
+        if self.p.soft_reset:
+            for i in range(5):
+                self.set_input(np.random.random(self.dims[0]))
+                nest.Simulate(0.5)
+        else:
+            for layer in self.layers:
+                layer.reset()
+    
+        self.set_input(np.zeros(self.dims[0]))
         if self.use_mm:
             self.mm.n_events = 0
 

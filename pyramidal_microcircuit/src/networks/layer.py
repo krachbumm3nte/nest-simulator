@@ -50,7 +50,7 @@ class AbstractLayer():
         pass
 
     @abstractmethod
-    def reset(self, reset_weights=False):
+    def reset(self):
         pass
 
     def gen_weights(self, n_in, n_out, wmin=None, wmax=None):
