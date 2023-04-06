@@ -22,5 +22,6 @@
             0.0
         ]
     },
-    "record_interval": 0.1
+    "record_interval": 0.1,
+    "soft_reset": true
 }
