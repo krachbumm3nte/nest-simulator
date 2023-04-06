@@ -1,18 +1,18 @@
 {
-    "sim_time": 10,
-    "out_lag": 6,
+    "sim_time": 20,
+    "out_lag": 14,
     "n_epochs": 1000,
     "latent_equilibrium": true,
     "mode": "mnist",
     "dims": [
         784,
-        250,
-        2
+        300,
+        5
     ],
-    "n_classes": 2,
+    "n_classes": 5,
     "eta": {
         "ip": [
-            0.0002,
+            0.0001,
             0.0
         ],
         "pi": [
@@ -20,8 +20,8 @@
             0.0
         ],
         "up": [
-            0.0005,
-            0.0001
+            0.00025,
+            0.00005
         ],
         "down": [
             0.0,
