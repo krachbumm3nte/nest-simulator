@@ -143,7 +143,7 @@ nest::PyrArchivingNode< pyr_parameters >::write_urbanczik_history( Time const& t
     else if ( comp == 3 )
     {
       // apical compartment for top-down pyr-pyr connections
-      comp_deviation = pyr_params->phi( V_SOM );
+      comp_deviation = pyr_params->phi( V_SOM ) - pyr_params -> phi( V_W );
     }
 
 

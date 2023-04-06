@@ -77,8 +77,8 @@ RecordablesMap< rate_neuron_pyr >::create()
   insert_( Name( "V_m.b" ), &rate_neuron_pyr::get_y_elem_< rate_neuron_pyr::State_::V_M, rate_neuron_pyr::BASAL > );
   insert_(
     Name( "V_m.a_lat" ), &rate_neuron_pyr::get_y_elem_< rate_neuron_pyr::State_::V_M, rate_neuron_pyr::APICAL_LAT > );
-  // insert_( Name( "V_m.a_td" ),
-  //   &rate_neuron_pyr::get_y_elem_< rate_neuron_pyr::State_::V_M, rate_neuron_pyr::APICAL_TD > );
+  insert_(
+    Name( "V_m.a_td" ), &rate_neuron_pyr::get_y_elem_< rate_neuron_pyr::State_::V_M, rate_neuron_pyr::APICAL_TD > );
 }
 }
 
@@ -193,10 +193,11 @@ nest::rate_neuron_pyr::Parameters_::Parameters_()
   I_e[ APICAL_LAT ] = 0.0;            // pA
 
   // distal apical dendrite parameters
-  // pyr_params.g_conn[ APICAL_TD ] = 0.8;
-  // pyr_params.g_L[ APICAL_TD ] = 0.0;
-  // pyr_params.E_L[ APICAL_TD ] = 0.0; // mV
-  // I_e[ APICAL_TD ] = 0.0;            // pA
+  pyr_params.C_m[ APICAL_TD ] = 1.0; // pF
+  pyr_params.g_conn[ APICAL_TD ] = 0.8;
+  pyr_params.g_L[ APICAL_TD ] = 0.0;
+  pyr_params.E_L[ APICAL_TD ] = 0.0; // mV
+  I_e[ APICAL_TD ] = 0.0;            // pA
 }
 
 nest::rate_neuron_pyr::Parameters_::Parameters_( const Parameters_& p )
@@ -464,7 +465,7 @@ nest::rate_neuron_pyr::rate_neuron_pyr()
   comp_names_[ SOMA ] = Name( "soma" );
   comp_names_[ BASAL ] = Name( "basal" );
   comp_names_[ APICAL_LAT ] = Name( "apical_lat" );
-  // comp_names_[ APICAL_TD ] = Name( "apical_td" );
+  comp_names_[ APICAL_TD ] = Name( "apical_td" );
   PyrArchivingNode< rate_neuron_pyr_parameters >::pyr_params = &P_.pyr_params;
 }
 
@@ -625,15 +626,16 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
 
       const double I_L_dend = pyr_params->g_L[ n ] * V_dnd;
 
-      S_.y_[ S::idx( n, S::V_M ) ] += (-I_L_dend + I_dend) / pyr_params->C_m[ n ];
+      S_.y_[ S::idx( n, S::V_M ) ] += ( -I_L_dend + I_dend ) / pyr_params->C_m[ n ];
 
       // derivative dendritic current
       S_.y_[ S::idx( n, S::I ) ] -= I_dend / pyr_params->tau_m;
     }
 
-    const double delta_V_som = (-I_L + I_conn_d_s + B_.I_stim_[ SOMA ] + P_.I_e[ SOMA ]) / pyr_params -> C_m[ SOMA ];
+    const double delta_V_som = ( -I_L + I_conn_d_s + B_.I_stim_[ SOMA ] + P_.I_e[ SOMA ] ) / pyr_params->C_m[ SOMA ];
     S_.y_[ S::idx( SOMA, S::V_M ) ] += B_.step_ * delta_V_som;
-    S_.y_[ S::idx( SOMA, S::V_forw ) ] = V_som_old + delta_V_som * (pyr_params->C_m[ SOMA ]/ pyr_params->g_conn[ SOMA ]);
+    S_.y_[ S::idx( SOMA, S::V_forw ) ] =
+      V_som_old + delta_V_som * ( pyr_params->C_m[ SOMA ] / pyr_params->g_conn[ SOMA ] );
 
 
     // excitatory conductance soma

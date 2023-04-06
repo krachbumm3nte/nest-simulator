@@ -79,8 +79,8 @@ RecordablesMap< pp_cond_exp_mc_pyr >::create()
     Name( "V_m.b" ), &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::BASAL > );
   insert_( Name( "V_m.a_lat" ),
     &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::APICAL_LAT > );
-  // insert_( Name( "V_m.a_td" ),
-  //   &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::APICAL_TD > );
+  insert_( Name( "V_m.a_td" ),
+    &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::APICAL_TD > );
 }
 }
 
@@ -195,10 +195,11 @@ nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_()
   I_e[ APICAL_LAT ] = 0.0;            // pA
 
   // distal apical dendrite parameters
-  // pyr_params.g_conn[ APICAL_TD ] = 0.8;
-  // pyr_params.g_L[ APICAL_TD ] = 0.0;
-  // pyr_params.E_L[ APICAL_TD ] = 0.0; // mV
-  // I_e[ APICAL_TD ] = 0.0;            // pA
+  pyr_params.C_m[ APICAL_TD ] = 1.0;
+  pyr_params.g_conn[ APICAL_TD ] = 0.8;
+  pyr_params.g_L[ APICAL_TD ] = 0.0;
+  pyr_params.E_L[ APICAL_TD ] = 0.0; // mV
+  I_e[ APICAL_TD ] = 0.0;            // pA
 }
 
 nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_( const Parameters_& p )
@@ -370,6 +371,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::set( const DictionaryDatum& d )
   updateValue< double >( d, Name( names::g_som ), pyr_params.g_conn[ SOMA ] );
   updateValue< double >( d, Name( names::g_b ), pyr_params.g_conn[ BASAL ] );
   updateValue< double >( d, Name( names::g_a ), pyr_params.g_conn[ APICAL_LAT ] );
+  updateValue< double >( d, Name( names::g_a ), pyr_params.g_conn[ APICAL_TD ] );
 
   updateValue< double >( d, Name( names::target ), pyr_params.curr_target_id );
   updateValue< double >( d, Name( names::lambda ), pyr_params.lambda_curr );
@@ -469,7 +471,7 @@ nest::pp_cond_exp_mc_pyr::pp_cond_exp_mc_pyr()
   comp_names_[ SOMA ] = Name( "soma" );
   comp_names_[ BASAL ] = Name( "basal" );
   comp_names_[ APICAL_LAT ] = Name( "apical_lat" );
-  // comp_names_[ APICAL_TD ] = Name( "apical_td" );
+  comp_names_[ APICAL_TD ] = Name( "apical_td" );
   PyrArchivingNode< pp_cond_exp_mc_pyr_parameters >::pyr_params = &P_.pyr_params;
 }
 
@@ -614,7 +616,7 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
     // compute dynamics for each dendritic compartment
     // computations written quite explicitly for clarity, assume compile
     // will optimized most stuff away ...
-    for ( size_t n = 1; n < NCOMP; ++n )
+    for ( size_t n = 1; n < NCOMP; n++ )
     {
       if ( pyr_params->g_conn[ n ] == 0 )
       {
@@ -624,22 +626,25 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       const double V_dnd = S_.y_[ S::idx( n, S::V_M ) ];
 
       // coupling current from dendrite to soma
-      I_conn_d_s += pyr_params->g_conn[ n ] * V_dnd;
+      if (n != APICAL_TD) {
+        I_conn_d_s += pyr_params->g_conn[ n ] * V_dnd;
+      }
 
       // dendritic current due to input
       const double I_dend = S_.y_[ S::idx( n, S::I ) ];
 
       const double I_L_dend = pyr_params->g_L[ n ] * V_dnd;
 
-      S_.y_[ S::idx( n, S::V_M ) ] += (-I_L_dend + I_dend) / pyr_params->C_m[ n ];
+      S_.y_[ S::idx( n, S::V_M ) ] += ( -I_L_dend + I_dend ) / pyr_params->C_m[ n ];
 
       // derivative dendritic current
       S_.y_[ S::idx( n, S::I ) ] -= I_dend / pyr_params->tau_m;
     }
 
-    const double delta_V_som = (-I_L + I_conn_d_s + B_.I_stim_[ SOMA ] + P_.I_e[ SOMA ]) / pyr_params->C_m[ SOMA ];
+    const double delta_V_som = ( -I_L + I_conn_d_s + B_.I_stim_[ SOMA ] + P_.I_e[ SOMA ] ) / pyr_params->C_m[ SOMA ];
     S_.y_[ S::idx( SOMA, S::V_M ) ] += B_.step_ * delta_V_som;
-    S_.y_[ S::idx( SOMA, S::V_forw ) ] = V_som_old + delta_V_som * ( pyr_params->C_m[ SOMA ] / pyr_params->g_conn[ SOMA ]);
+    S_.y_[ S::idx( SOMA, S::V_forw ) ] =
+      V_som_old + delta_V_som * ( pyr_params->C_m[ SOMA ] / pyr_params->g_conn[ SOMA ] );
 
 
     // excitatory conductance soma
@@ -706,22 +711,12 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
     }
 
 
-    // Store dendritic membrane potential for Urbanczik-Senn plasticity
-    if ( pyr_params->g_conn[ BASAL ] > 0 or pyr_params->g_conn[ APICAL_LAT ] > 0 )
-    {
-      write_urbanczik_history(
-        Time::step( origin.get_steps() + lag + 1 ), S_.y_[ S::idx( BASAL, S::V_M ) ], V_som_forward, BASAL );
-      write_urbanczik_history(
-        Time::step( origin.get_steps() + lag + 1 ), S_.y_[ S::idx( APICAL_LAT, S::V_M ) ], V_som_forward, APICAL_LAT );
-      // write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ),
-      //   S_.y_[ S::idx( BASAL, S::V_M ) ],
-      //   S_.y_[ S::idx( SOMA, S::V_M ) ],
-      //   BASAL );
-      // write_urbanczik_history( Time::step( origin.get_steps() + lag + 1 ),
-      //   S_.y_[ S::idx( APICAL_LAT, S::V_M ) ],
-      //   S_.y_[ S::idx( SOMA, S::V_M ) ],
-      //   APICAL_LAT );
-    }
+    write_urbanczik_history(
+      Time::step( origin.get_steps() + lag + 1 ), S_.y_[ S::idx( BASAL, S::V_M ) ], V_som_forward, BASAL );
+    write_urbanczik_history(
+      Time::step( origin.get_steps() + lag + 1 ), S_.y_[ S::idx( APICAL_LAT, S::V_M ) ], V_som_forward, APICAL_LAT );
+    write_urbanczik_history(
+      Time::step( origin.get_steps() + lag + 1 ), S_.y_[ S::idx( APICAL_TD, S::V_M ) ], V_som_forward, APICAL_TD );
 
     // log state data
     B_.logger_.record_data( origin.get_steps() + lag );
@@ -748,10 +743,17 @@ void
 nest::pp_cond_exp_mc_pyr::handle( SpikeEvent& e )
 {
   assert( e.get_delay_steps() > 0 );
-  assert( 0 <= e.get_rport() and e.get_rport() < 2 * NCOMP );
+  long port = e.get_rport();
+  assert( 0 <= port and port < 2 * NCOMP );
 
-  B_.spikes_[ e.get_rport() ].add_value(
+  B_.spikes_[ port ].add_value(
     e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), e.get_weight() * e.get_multiplicity() );
+
+  if ( port == S_APICAL_TD )
+  {
+    B_.spikes_[ S_APICAL_LAT ].add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
+      e.get_weight() * e.get_multiplicity() );
+  }
 }
 
 void

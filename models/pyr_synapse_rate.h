@@ -229,14 +229,7 @@ public:
     }
     else if ( rport == 3 )
     {
-      // TODO: this is unverified as of yet, but would enable learning of feedback pyr-pyr weights
-      double V_W_star = weight_ * r_in;
-      dend_error = ( target_pyr->P_.pyr_params.phi( u_target ) - target_pyr->P_.pyr_params.phi( V_W_star ) );
-      rport -= 1; // send all top-down signals to the apical compartment by changing rport
-      if ( eta_ > 0 )
-      {
-        std::cout << "plastic top-down synapse!" << std::endl;
-      }
+      dend_error = ( target_pyr->P_.pyr_params.phi( u_target ) - target_pyr->P_.pyr_params.phi( v_dend_target ) );
     }
     delta_tilde_w = -tilde_w + dend_error * r_in;
     // TODO: generalize 0.1 to delta_t
