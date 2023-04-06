@@ -37,7 +37,6 @@ if __name__ == "__main__":
                         type=str,
                         help="Set of initial weights to be used for all simulations.")
 
-
     args = parser.parse_args()
 
     all_configs = os.listdir(args.config_dir)
@@ -51,18 +50,20 @@ if __name__ == "__main__":
 
         params = Params(os.path.join(args.config_dir, config))
         print("created params")
-        if params.network_type is None and args.network is None:
+        print(args.network)
+
+        if args.network:
+            if params.network_type:
+                print(
+                    f"both input file and script parameters specify different network types ({params.network_type}/{args.network}).")
+            params.network_type = args.network
+        elif not params.network_type:
             print("no network type specified, aborting.")
             sys.exit()
-        else:
-            if params.network_type and args.network:
-                print(f"both input file and script parameters specify different network types ({params.network_type}/{args.network}).")
-                print(f"overwriting with argument and using {args.network} network type")
-                params.network_type = args.network
-            else:
-                print(f"preparing simulation for network type: {params.network_type}")
 
+        print(f"preparing simulation for network type: {params.network_type}")
 
+        sys.exit()
         spiking = params.network_type == "snest"
         params.spiking = spiking
         params.threads = args.threads
@@ -70,7 +71,8 @@ if __name__ == "__main__":
         use_nest = params.network_type != "numpy"
 
         config_name = os.path.split(config)[-1].split(".")[0]
-        root_dir, imgdir, datadir = utils.setup_directories(name=config_name, type=params.network_type, root=args.target_dir)
+        root_dir, imgdir, datadir = utils.setup_directories(
+            name=config_name, type=params.network_type, root=args.target_dir)
         if not root_dir:
             print("\ta simulation of that name already exists, skipping.\n")
             continue
@@ -87,7 +89,6 @@ if __name__ == "__main__":
                 weight_dict = json.load(f)
             print(f"setting network weights from file: {args.weights}")
             net.set_all_weights(weight_dict)
-
 
         simulation_times = []
 
