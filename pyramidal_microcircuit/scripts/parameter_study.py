@@ -54,12 +54,13 @@ if __name__ == "__main__":
         if params.network_type is None and args.network is None:
             print("no network type specified, aborting.")
             sys.exit()
-        elif params.network_type and args.network and args.network != params.network_type:
-            print(
-                f"both input file and script parameters specify different network types ({params.network_type}/{args.network}).")
-            print(f"overwriting with argument and using {args.network} network type")
-            params.network_type = args.network
-        
+        else:
+            if params.network_type and args.network:
+                print(f"both input file and script parameters specify different network types ({params.network_type}/{args.network}).")
+                print(f"overwriting with argument and using {args.network} network type")
+                params.network_type = args.network
+            else:
+                print(f"preparing simulation for network type: {params.network_type}")
 
 
         spiking = params.network_type == "snest"
