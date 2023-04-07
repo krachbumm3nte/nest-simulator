@@ -10,13 +10,13 @@ import src.utils as utils
 
 styles_weight_scale = {1: "solid",
                        5: "dashed",
-                       10: "dotted"}
+                       10: "dotted",
+                       50: "-."}
 
 
 colors_c_m = {1: "green",
-              2: "orange",
               5: "blue",
-              10: "red"}
+              15: "red"}
 
 
 filter_window = 4
@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     tau_eff = 1 / 0.19
 
-    accuracies = {c_m: [] for c_m in [1, 2, 5, 10]}
+    accuracies = {c_m: [] for c_m in [1, 5, 15]}
     for config in all_configs:
 
         with open(os.path.join(dirname, config, "progress.json")) as f:
