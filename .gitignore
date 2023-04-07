@@ -78,3 +78,4 @@ pyramidal_microcircuit/full_runs/
 pyramidal_microcircuit/tests/runs/
 pyramidal_microcircuit/tests/results/
 *.egg-info
+data/mnist/*
