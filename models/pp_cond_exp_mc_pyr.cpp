@@ -591,8 +591,6 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
 
   for ( long lag = from; lag < to; ++lag )
   {
-
-
     // add incoming spikes and injected currents to all compartmens
     for ( size_t n = 0; n < NCOMP; ++n )
     {
@@ -614,8 +612,8 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
     double I_conn_d_s = 0.0;
 
     // compute dynamics for each dendritic compartment
-    // computations written quite explicitly for clarity, assume compile
-    // will optimized most stuff away ...
+    // computations written quite explicitly for clarity, assume compiler
+    // will optimize most stuff away ...
     for ( size_t n = 1; n < NCOMP; n++ )
     {
       if ( pyr_params->g_conn[ n ] == 0 )
@@ -626,7 +624,8 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       const double V_dnd = S_.y_[ S::idx( n, S::V_M ) ];
 
       // coupling current from dendrite to soma
-      if (n != APICAL_TD) {
+      if ( n != APICAL_TD )
+      {
         I_conn_d_s += pyr_params->g_conn[ n ] * V_dnd;
       }
 
@@ -696,12 +695,6 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
           se.set_multiplicity( n_spikes );
           kernel().event_delivery_manager.send( *this, se, lag );
 
-          // TODO: dafuq?
-          // Set spike time in order to make plasticity rules work
-          // for ( unsigned int i = 0; i < n_spikes; i++ )
-          // {
-          //   set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
-          // }
         }
       } // if (rate > 0.0)
     }

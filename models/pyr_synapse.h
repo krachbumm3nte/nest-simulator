@@ -228,9 +228,9 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
   std::deque< histentry_extended >::iterator finish;
 
   int rport = get_rport();
+  target->get_urbanczik_history( t_lastspike_ - dendritic_delay, t_spike - dendritic_delay, &start, &finish, rport );
   if ( eta_ > 0 )
   {
-    target->get_urbanczik_history( t_lastspike_ - dendritic_delay, t_spike - dendritic_delay, &start, &finish, rport );
     double dPI_exp_integral = 0.0;
     double PI;
 
@@ -240,14 +240,8 @@ pyr_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseP
       double const minus_delta_t_up = t_lastspike_ - t_up; // from 0 to -delta t
       double const minus_t_down = t_up - t_spike;          // from -t_spike to 0
       double const tau_s_now = tau_s_trace_ * exp( minus_delta_t_up / tau_Delta_ );
-      // if ( rport == 3 )
-      // {
-      //   PI = (start->dw_ - target_pyr->P_.pyr_params.phi(weight_ * tau_s_now)) * tau_s_now;
-      // }
-      // else
-      // {
+
       PI = tau_s_now * start->dw_;
-      // }
       PI_integral_ += PI;
       dPI_exp_integral += exp( minus_t_down / tau_Delta_ ) * PI;
       ++start;
