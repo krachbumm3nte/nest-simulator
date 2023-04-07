@@ -243,7 +243,6 @@ class NestNetwork(Network):
     def reset(self):
         self.set_target(np.zeros(self.dims[-1]))
         self.set_input(np.zeros(self.dims[0]))
-        print([e["V_m"] for e in self.layers[-1].pyr.get("soma")])
         if self.p.reset == 2:
             # hard reset
             for layer in self.layers:
@@ -252,8 +251,6 @@ class NestNetwork(Network):
             # soft reset
             for i in range(5):
                 nest.Simulate(5)
-        print([e["V_m"] for e in self.layers[-1].pyr.get("soma")])
-        print()
         if self.use_mm:
             self.mm.n_events = 0
 
