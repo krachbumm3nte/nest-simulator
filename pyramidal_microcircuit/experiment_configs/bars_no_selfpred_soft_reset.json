@@ -25,5 +25,5 @@
     },
     "record_interval": 0.1,
     "n_epochs": 25000,
-    "reset": 10000
+    "reset": 1
 }
