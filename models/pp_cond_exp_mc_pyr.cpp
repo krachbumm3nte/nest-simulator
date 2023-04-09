@@ -694,7 +694,6 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
           SpikeEvent se;
           se.set_multiplicity( n_spikes );
           kernel().event_delivery_manager.send( *this, se, lag );
-
         }
       } // if (rate > 0.0)
     }
@@ -735,16 +734,14 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
 void
 nest::pp_cond_exp_mc_pyr::handle( SpikeEvent& e )
 {
-  assert( e.get_delay_steps() > 0 );
   long port = e.get_rport();
-  assert( 0 <= port and port < 2 * NCOMP );
 
   B_.spikes_[ port ].add_value(
     e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), e.get_weight() * e.get_multiplicity() );
 
-  if ( port == S_APICAL_TD )
+  if ( port == APICAL_TD )
   {
-    B_.spikes_[ S_APICAL_LAT ].add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
+    B_.spikes_[ APICAL_LAT ].add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
       e.get_weight() * e.get_multiplicity() );
   }
 }
@@ -754,11 +751,19 @@ nest::pp_cond_exp_mc_pyr::handle( CurrentEvent& e )
 {
   assert( e.get_delay_steps() > 0 );
   // TODO: not 100% clean, should look at MIN, SUP
-  assert( 0 <= e.get_rport() and e.get_rport() < NCOMP );
+  long port = e.get_rport();
+
+  assert( 0 <= e.get_rport() and port < NCOMP );
 
   // add weighted current; HEP 2002-10-04
-  B_.currents_[ e.get_rport() ].add_value(
+  B_.currents_[ port ].add_value(
     e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), e.get_weight() * e.get_current() );
+  
+    if ( port == I_APICAL_TD )
+  {
+    B_.currents_[ I_APICAL_LAT ].add_value(
+    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), e.get_weight() * e.get_current() );
+  }
 }
 
 void

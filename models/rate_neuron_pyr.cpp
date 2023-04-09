@@ -619,7 +619,10 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
       const double V_dnd = S_.y_[ S::idx( n, S::V_M ) ];
 
       // coupling current from dendrite to soma
-      I_conn_d_s += pyr_params->g_conn[ n ] * V_dnd;
+      if ( n != APICAL_LAT )
+      {
+        I_conn_d_s += pyr_params->g_conn[ n ] * V_dnd;
+      }
 
       // dendritic current due to input
       const double I_dend = S_.y_[ S::idx( n, S::I ) ];
@@ -683,12 +686,18 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
 void
 nest::rate_neuron_pyr::handle( DelayedRateConnectionEvent& e )
 {
-  assert( e.get_delay_steps() > 0 );
-  assert( 0 <= e.get_rport() and e.get_rport() < 2 * NCOMP );
+  long port = e.get_rport();
 
   std::vector< unsigned int >::iterator it = e.begin();
-  B_.spikes_[ e.get_rport() ].add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
-    e.get_weight() * e.get_coeffvalue( it ) );
+  double rate_value = e.get_weight() * e.get_coeffvalue( it );
+  B_.spikes_[ e.get_rport() ].add_value(
+    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), rate_value );
+  
+  if ( port == APICAL_TD )
+  {
+    B_.spikes_[ APICAL_LAT ].add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
+      rate_value );
+  }
 }
 
 
