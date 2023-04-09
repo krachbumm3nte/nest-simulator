@@ -1,0 +1,183 @@
+{
+    "C_m_api": 1,
+    "C_m_bas": 1,
+    "C_m_som": 1,
+    "Wmax": 4,
+    "Wmin": -4,
+    "beta": 1,
+    "compartments": {
+        "apical_td_curr": 8,
+        "apical_td": 4,
+        "apical_lat_curr": 7,
+        "apical_lat": 3,
+        "basal_curr": 6,
+        "basal": 2,
+        "soma_curr": 5,
+        "soma": 1
+    },
+    "config_file": "experiment_configs/par_study_reset_strategies/no_reset.json",
+    "delta_t": 0.1,
+    "dims": [
+        9,
+        30,
+        3
+    ],
+    "eta": {
+        "ip": [
+            2.56e-10,
+            0.0
+        ],
+        "pi": [
+            0.0,
+            0.0
+        ],
+        "up": [
+            6.400000000000001e-10,
+            1.28e-10
+        ],
+        "down": [
+            0.0,
+            0.0
+        ]
+    },
+    "g_a": 0.06,
+    "g_d": 0.1,
+    "g_l": 0.03,
+    "g_l_eff": 0.19,
+    "g_lk_dnd": 0.1,
+    "g_som": 0.06,
+    "gamma": 1,
+    "init_self_pred": true,
+    "input_params": {
+        "soma": {
+            "g_L": 0.03,
+            "g": 10.0,
+            "C_m": 1
+        },
+        "basal": {
+            "g_L": 0.1,
+            "g": 0,
+            "C_m": 1
+        },
+        "apical_lat": {
+            "g_L": 0.1,
+            "g": 0,
+            "C_m": 1
+        },
+        "apical_td": {
+            "g_L": 0.1,
+            "g": 0.06,
+            "C_m": 1
+        },
+        "tau_m": 1,
+        "lambda": 0.06,
+        "gamma": 250,
+        "beta": 1,
+        "theta": 0,
+        "use_phi": false,
+        "t_ref": 0.0,
+        "latent_equilibrium": true
+    },
+    "intn_params": {
+        "soma": {
+            "g_L": 0.03,
+            "g": 0.19,
+            "C_m": 1
+        },
+        "basal": {
+            "g_L": 0.1,
+            "g": 0.1,
+            "C_m": 1
+        },
+        "apical_lat": {
+            "g_L": 0.1,
+            "g": 0,
+            "C_m": 1
+        },
+        "apical_td": {
+            "g_L": 0.1,
+            "g": 0.06,
+            "C_m": 1
+        },
+        "tau_m": 1,
+        "lambda": 0.06,
+        "gamma": 250,
+        "beta": 1,
+        "theta": 0,
+        "use_phi": true,
+        "t_ref": 0.0,
+        "latent_equilibrium": true
+    },
+    "lambda_ah": 0.3157894736842105,
+    "lambda_bh": 0.5263157894736842,
+    "lambda_out": 0.7692307692307693,
+    "latent_equilibrium": true,
+    "mode": "bars",
+    "n_epochs": 1000,
+    "network_type": "snest",
+    "neuron_model": "pp_cond_exp_mc_pyr",
+    "noise": false,
+    "noise_factor": 0.09486832980505137,
+    "out_lag": 25.0,
+    "pyr_params": {
+        "soma": {
+            "g_L": 0.03,
+            "g": 0.19,
+            "C_m": 1
+        },
+        "basal": {
+            "g_L": 0.1,
+            "g": 0.1,
+            "C_m": 1
+        },
+        "apical_lat": {
+            "g_L": 0.1,
+            "g": 0.06,
+            "C_m": 1
+        },
+        "apical_td": {
+            "g_L": 0.1,
+            "g": 0.06,
+            "C_m": 1
+        },
+        "tau_m": 1,
+        "lambda": 0.06,
+        "gamma": 250,
+        "beta": 1,
+        "theta": 0,
+        "use_phi": true,
+        "t_ref": 0.0,
+        "latent_equilibrium": true
+    },
+    "record_interval": 0.1,
+    "record_weights": false,
+    "reset": 0,
+    "sigma": 0.3,
+    "sim_time": 50,
+    "spiking": true,
+    "static_syn_model": "static_synapse",
+    "store_errors": true,
+    "syn_model": "pyr_synapse",
+    "syn_plastic": {
+        "synapse_model": "pyr_synapse",
+        "tau_Delta": 1,
+        "Wmin": -0.016,
+        "Wmax": 0.016,
+        "delay": 0.1
+    },
+    "syn_static": {
+        "synapse_model": "static_synapse",
+        "delay": 0.1
+    },
+    "tau_delta": 1,
+    "tau_m": 1,
+    "tau_x": 0.1,
+    "test_delay": 25,
+    "test_interval": 10,
+    "test_time": 50,
+    "theta": 0,
+    "threads": 8,
+    "weight_scale": 250,
+    "wmax_init": 1,
+    "wmin_init": -1
+}
