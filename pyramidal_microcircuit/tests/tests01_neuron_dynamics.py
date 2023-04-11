@@ -18,14 +18,14 @@ class FilteredInputCurrent(TestClass):
     def __init__(self, params, **kwargs) -> None:
         super().__init__(params, **kwargs)
 
-        self.neuron_01 = nest.Create(self.neuron_model, 1, params.input_params)
+        self.neuron_01 = nest.Create(self.p.neuron_model, 1, params.input_params)
         self.mm_01 = nest.Create("multimeter", 1, {'record_from': ["V_m.b", "V_m.s", "V_m.a_lat"]})
         nest.Connect(self.mm_01, self.neuron_01)
 
-        self.neuron_02 = nest.Create(self.neuron_model, 1, params.input_params)
+        self.neuron_02 = nest.Create(self.p.neuron_model, 1, params.input_params)
         self.mm_02 = nest.Create("multimeter", 1, {'record_from': ["V_m.b", "V_m.s", "V_m.a_lat"]})
         nest.Connect(self.mm_02, self.neuron_02)
-        compartments = nest.GetDefaults(self.neuron_model)["receptor_types"]
+        compartments = nest.GetDefaults(self.p.neuron_model)["receptor_types"]
         self.step_generator = nest.Create("step_current_generator")
         nest.Connect(self.step_generator, self.neuron_02, syn_spec={"receptor_type": compartments["soma_curr"]})
 
@@ -159,18 +159,18 @@ class DynamicsHX(TestClass):
     def __init__(self, params, **kwargs) -> None:
 
         super().__init__(params, **kwargs)
-
-        self.weight = 1
+        params.setup_nest_configs()
+        self.weight = 1 
 
         conn_hx = self.p.syn_plastic
-        conn_hx.update({"weight": self.weight, "eta": 0, "receptor_type": self.p.compartments["basal"]})
+        conn_hx.update({"weight": self.weight/ self.weight_scale, "eta": 0, "receptor_type": self.p.compartments["basal"]})
 
         self.neuron_01 = nest.Create(params.neuron_model, 1, params.input_params)
         self.mm_01 = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
         nest.Connect(self.mm_01, self.neuron_01)
 
         self.neuron_02 = nest.Create(params.neuron_model, 1, params.pyr_params)
-        self.mm_02 = nest.Create("multimeter", 1, {'record_from': ["V_m.s", "V_m.b", "V_m.a_lat"]})
+        self.mm_02 = nest.Create("multimeter", 1, {'record_from': ["V_m.s", "V_m.b", "V_m.a_lat", "V_m.a_td"]})
         nest.Connect(self.mm_02, self.neuron_02)
         nest.Connect(self.neuron_01, self.neuron_02, syn_spec=conn_hx)
 
@@ -243,7 +243,7 @@ class DynamicsHXMulti(DynamicsHX):
         conn_hx = self.p.syn_plastic
         conn_hx["weight"] = self.weight_2 / self.weight_scale
 
-        self.neuron_03 = nest.Create(self.neuron_model, 1, self.p.input_params)
+        self.neuron_03 = nest.Create(self.p.neuron_model, 1, self.p.input_params)
         self.mm_03 = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
         nest.Connect(self.mm_03, self.neuron_03)
 
@@ -309,7 +309,7 @@ class DynamicsHXMulti(DynamicsHX):
         ax2.legend()
 
 
-class DynamicsHI(DynamicsHX):
+class DynamicsHY(DynamicsHX):
     """
     This test shows that the neuron model handles a single dendritic input exactly like the analytical
     solution if parameters are set correctly.
@@ -380,6 +380,86 @@ class DynamicsHI(DynamicsHX):
         ax1.set_title("UH")
         ax2.set_title("VAH")
 
+        ax0.legend()
+        ax1.legend()
+        ax2.legend()
+
+
+
+class DynamicsHY(DynamicsHX):
+    """
+    This test shows that the neuron model handles a single dendritic input exactly like the analytical
+    solution if parameters are set correctly.
+    """
+
+    def __init__(self, params, **kwargs) -> None:
+
+        super().__init__(params, **kwargs)
+
+        synapse = self.p.syn_plastic
+        synapse.update({"weight": self.weight / self.weight_scale, "eta": 0, "receptor_type": self.p.compartments["apical_td"]})
+
+        self.neuron_01.set(params.intn_params)
+        self.neuron_02.set(params.pyr_params)
+        nest.Disconnect(self.neuron_01, self.neuron_02, conn_spec='all_to_all',
+                        syn_spec={'synapse_model': self.p.syn_plastic["synapse_model"]})
+
+        nest.Connect(self.neuron_01, self.neuron_02, syn_spec=synapse)
+
+    def run(self):
+        U_y = 0
+        r_y = 0
+        U_h = 0
+        V_ah = 0
+        self.UY = []
+        self.UH = []
+        self.VAH = []
+
+        for T, amp in zip(self.sim_times, self.stim_amps):
+            self.neuron_01.set({"soma": {"I_e": amp}})
+            nest.Simulate(T)
+            for i in range(int(T/self.delta_t)):
+
+                delta_u_y = -self.g_l_eff * U_y + amp
+                delta_u_h = -self.g_l_eff * U_h + V_ah * self.g_a
+
+                U_y = U_y + self.delta_t * delta_u_y
+                r_y = self.phi(U_y)
+                V_ah = r_y * self.weight
+                U_h = U_h + self.delta_t * delta_u_h
+
+                self.UY.append(U_y)
+                self.UH.append(U_h)
+                self.VAH.append(V_ah)
+
+    def evaluate(self) -> bool:
+        VAH_nest = self.mm_02.events["V_m.a_lat"]
+        UH_nest = self.mm_02.events["V_m.s"]
+        if self.spiking:
+            return records_match(self.VAH, VAH_nest, 0.01) and records_match(self.UH, UH_nest, 0.01)
+        else:
+            return records_match(self.VAH, VAH_nest) and records_match(self.UH, UH_nest)
+
+    def plot_results(self):
+
+        fig, (ax0, ax1, ax2, ax3) = plt.subplots(1, 4, sharex=True, constrained_layout=True)
+
+        ax0.plot(*zip(*read_multimeter(self.mm_01, "V_m.s")), label="NEST computed")
+        ax0.plot(self.UY, label="analytical")
+
+        ax1.plot(*zip(*read_multimeter(self.mm_02, "V_m.s")), label="NEST computed")
+        ax1.plot(self.UH, label="analytical")
+
+        ax2.plot(*zip(*read_multimeter(self.mm_02, "V_m.a_lat")), label="NEST computed")
+        ax2.plot(self.VAH, label="analytical")
+
+        ax3.plot(*zip(*read_multimeter(self.mm_02, "V_m.a_td")), label="NEST computed")
+
+
+        ax0.set_title("UY")
+        ax1.set_title("UH")
+        ax2.set_title("VAH")
+        ax3.set_title("VAH distal")
         ax0.legend()
         ax1.legend()
         ax2.legend()
@@ -465,14 +545,15 @@ class NetworkDynamics(TestClass):
         super().__init__(params, **kwargs)
         self.disable_plasticity()
         self.numpy_net = NumpyNetwork(deepcopy(params))
+        params.setup_nest_configs()
         self.nest_net = NestNetwork(deepcopy(params))
         self.numpy_net.set_all_weights(self.nest_net.get_weight_dict())
 
     def run(self):
-        for i in range(2):
+        self.sim_time = 10
+        for i in range(5):
             input_currents = np.random.random(self.dims[0])
             target_currents = np.random.random(self.dims[-1])
-            self.sim_time = 50
 
             self.nest_net.set_input(input_currents)
             self.nest_net.set_target(target_currents)

@@ -18,7 +18,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         classes = [eval(arg) for arg in sys.argv[1:]]
     else:
-        classes = [FilteredInputCurrent, CurrentConnection, TargetCurrent, DynamicsHX, DynamicsHXMulti, DynamicsHI,
+        classes = [FilteredInputCurrent, CurrentConnection, TargetCurrent, DynamicsHX, DynamicsHXMulti, DynamicsHY, DynamicsHY,
                    DynamicsYH, NetworkDynamics, PlasticityHX, PlasticityHXMulti, PlasticityYH, NetworkPlasticity]
 
     test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
@@ -36,8 +36,6 @@ if __name__ == "__main__":
 
             spiking_str = 'spiking' if use_spiking_neurons else 'rate'
             le_str = '_le' if latent_equilibrium else ""
-
-            # params.setup_nest_configs()
 
             for test_class in classes:
                 test_name = test_class.__name__

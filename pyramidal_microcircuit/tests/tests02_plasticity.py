@@ -185,7 +185,7 @@ class PlasticityHXMulti(PlasticityHX):
             synapse["weight"] = self.weight2
             synapse["eta"] = self.eta
 
-        self.neuron_03 = nest.Create(self.neuron_model, 1, params.input_params)
+        self.neuron_03 = nest.Create(self.p.neuron_model, 1, params.input_params)
         self.mm_03 = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
         nest.Connect(self.mm_03, self.neuron_03)
 
@@ -295,7 +295,7 @@ class PlasticityHXMulti(PlasticityHX):
         ax5.legend()
 
 
-class PlasticityIH(DynamicsHI):
+class PlasticityHY(DynamicsHY):
     def __init__(self, params, **kwargs) -> None:
         super().__init__(params, record_weights=True, **kwargs)
         self.eta = 0.04
@@ -373,25 +373,110 @@ class PlasticityIH(DynamicsHI):
         axes[3].set_title("synaptic weight")
 
 
+class PlasticityHY(DynamicsHY):
+    def __init__(self, params, **kwargs) -> None:
+        super().__init__(params, record_weights=True, **kwargs)
+        self.eta = 0.005
+
+        self.conn = nest.GetConnections(self.neuron_01, self.neuron_02)
+        if self.spiking:
+            self.conn.eta = 2.5 * self.eta/(self.weight_scale**3 * self.tau_delta)
+            self.conn.weight = self.weight / self.weight_scale
+        else:
+            self.conn.eta = 2.5 * self.eta
+
+    def run(self):
+        U_y = 0
+        r_y = 0
+        V_ah = 0
+        U_h = 0
+        delta_tilde_w = 0
+        tilde_w = 0
+        self.UY = []
+        self.UH = []
+        self.VAH = []
+        self.weights_numpy = []
+
+        self.weights_nest = []
+
+        for i, (T, amp) in enumerate(zip(self.sim_times, self.stim_amps)):
+            self.neuron_01.set({"soma": {"I_e": amp}})
+            nest.SetKernelStatus({"data_prefix": f"it{str(i).zfill(8)}_"})
+            for i in range(int(T/self.delta_t)):
+                nest.Simulate(self.delta_t)
+                self.weights_nest.append(self.conn.weight)
+                delta_tilde_w = -tilde_w - V_ah * r_y
+
+                delta_u_i = -self.g_l_eff * U_y + amp
+                delta_u_h = -self.g_l_eff * U_h + V_ah * self.g_a
+
+                U_forw = U_y + self.delta_t / (self.p.g_l + self.p.g_d + self.p.g_som)
+                U_y = U_y + self.delta_t * delta_u_i
+                r_y = self.phi(U_forw) if self.p.latent_equilibrium else self.phi(U_y)
+                V_ah = r_y * self.weight
+                U_h = U_h + self.delta_t * delta_u_h
+
+                tilde_w = tilde_w + (self.delta_t/self.tau_delta) * delta_tilde_w
+                self.weight = self.weight + self.eta * self.delta_t * tilde_w
+                self.weights_numpy.append(self.weight)
+
+                self.UY.append(U_y)
+                self.UH.append(U_h)
+                self.VAH.append(V_ah)
+
+    def evaluate(self) -> bool:
+        if self.spiking:
+            self.weights_nest = [val*self.weight_scale for val in self.weights_nest]
+
+        return records_match(self.weights_nest, self.weights_numpy)
+
+    def plot_results(self):
+        fig, axes = plt.subplots(1, 4, sharex=True, constrained_layout=True)
+
+        axes[0].plot(*zip(*read_multimeter(self.mm_01, "V_m.s")), label="NEST")
+        axes[0].plot(self.UY, label="target")
+        axes[0].set_title("UY")
+
+        axes[1].plot(*zip(*read_multimeter(self.mm_02, "V_m.a_lat")), label="NEST")
+        axes[1].plot(self.VAH, label="target")
+        axes[1].set_title("VAH")
+
+        axes[2].plot(*zip(*read_multimeter(self.mm_02, "V_m.s")), label="NEST")
+        axes[2].plot(self.UH, label="target")
+        axes[2].set_title("UH")
+
+        axes[3].plot(self.weights_nest, label="NEST")
+        axes[3].plot(self.weights_numpy, label="target")
+        axes[3].legend()
+        axes[3].set_title("synaptic weight")
+
+
 class NetworkPlasticity(TestClass):
     def __init__(self, params, **kwargs) -> None:
-        params.dims = [4, 3, 2]
-        print(params.eta)
+        params.dims = [3, 2, 2]
         super().__init__(params, record_weights=True, **kwargs)
-        self.numpy_net = NumpyNetwork(deepcopy(params))
         self.nest_net = NestNetwork(deepcopy(params))
+        
+        self.numpy_net = NumpyNetwork(deepcopy(params))
+
+
         self.numpy_net.set_all_weights(self.nest_net.get_weight_dict())
+
+        self.numpy_net.p.to_json(f"/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/tests/params_np.json")
+        self.nest_net.p.to_json(f"/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/tests/params_nest.json")
 
     def run(self):
 
-        self.sim_time = 100
+        self.sim_time = 25
 
         self.up_0 = []
         self.pi_0 = []
         self.ip_0 = []
         self.down_0 = []
         self.up_1 = []
-        for i in range(4):
+        print(self.numpy_net.p.eta)
+        print(self.nest_net.p.eta)
+        for i in range(3):
             input_currents = np.random.random(self.dims[0])
             target_currents = np.random.random(self.dims[-1])
             self.nest_net.set_input(input_currents)
@@ -434,8 +519,8 @@ class NetworkPlasticity(TestClass):
                 for target in range(weights_nest.shape[-2]):
                     col = cmap(sender)
                     style = linestyles[target]
-                    axes[i//3][i % 3].plot(weights_nest[:, target, sender], linestyle="solid", color=col)
-                    axes[i//3][i % 3].plot(weights_numpy[:, target, sender], linestyle="dashed", color=col, alpha=0.8)
+                    axes[i//3][i % 3].plot(weights_nest[:, target, sender], linestyle="dashed", color=col)
+                    axes[i//3][i % 3].plot(weights_numpy[:, target, sender], linestyle="solid", color=col, alpha=0.8)
 
         axes[0][0].set_ylabel("NEST computed")
         axes[1][0].set_ylabel("Target activation")
