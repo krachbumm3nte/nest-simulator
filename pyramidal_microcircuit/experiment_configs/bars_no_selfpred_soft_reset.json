@@ -1,13 +1,13 @@
 {
-    "sim_time": 10,
-    "out_lag": 5.0,
+    "sim_time": 50,
+    "out_lag": 25.0,
     "tau_delta": 1,
     "tau_m": 1,
-    "init_self_pred": false,
     "latent_equilibrium": true,
+    "init_self_pred": false,
     "eta": {
         "ip": [
-            0.02,
+            0.004,
             0.0
         ],
         "pi": [
@@ -15,8 +15,8 @@
             0.0
         ],
         "up": [
-            0.05,
-            0.01
+            0.01,
+            0.002
         ],
         "down": [
             0.0,
@@ -24,6 +24,6 @@
         ]
     },
     "record_interval": 0.1,
-    "n_epochs": 25000,
+    "n_epochs": 10000,
     "reset": 1
 }
