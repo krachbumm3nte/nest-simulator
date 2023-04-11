@@ -51,13 +51,9 @@ class NestLayer(AbstractLayer):
             for i in range(len(self.pyr)):
                 self.pyr[i].target = intn_prev[i].get("global_id")
 
-    def reset(self, reset_weights=False):
+    def reset(self):
         '''
         Reset all potentials and Deltas (weight update matrices) to zero.
-        Parameters
-        ----------
-        reset_weights:  Also draw weights again from random distribution.
-
         '''
         self.pyr.set({"soma": {"V_m": 0, "I_e": 0, "I": 0},
                       "basal": {"V_m": 0, "I_e": 0, "I": 0},

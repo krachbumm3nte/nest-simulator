@@ -4,7 +4,7 @@ from src.networks.layer_NEST import NestLayer, NestOutputLayer
 from src.networks.network import Network
 from src.params import Params
 from sklearn.metrics import mean_squared_error as mse
-
+from copy import deepcopy
 import nest
 
 
@@ -42,13 +42,13 @@ class NestNetwork(Network):
         self.p.setup_nest_configs()
 
         # Create input layer neurons
-        if self.spiking:
-            self.poisson_generators = nest.Create("poisson_generator", self.dims[0])
-            self.input_neurons = nest.Create("parrot_neuron", self.dims[0])
-            nest.Connect(self.poisson_generators, self.input_neurons, conn_spec='one_to_one')
-        else:
-            # self.input_neurons = nest.Create("step_rate_generator", self.dims[0])
-            self.input_neurons = nest.Create(self.p.neuron_model, self.dims[0], self.p.input_params)
+        # if self.spiking:
+        #     self.poisson_generators = nest.Create("poisson_generator", self.dims[0])
+        #     self.input_neurons = nest.Create("parrot_neuron", self.dims[0])
+        #     nest.Connect(self.poisson_generators, self.input_neurons, conn_spec='one_to_one', syn_spec={'delay': self.p.delta_t})
+        # else:
+        #     # self.input_neurons = nest.Create("step_rate_generator", self.dims[0])
+        self.input_neurons = nest.Create(self.p.neuron_model, self.dims[0], self.p.input_params)
 
         # Create hidden layers
         pyr_prev = self.input_neurons
@@ -61,6 +61,12 @@ class NestNetwork(Network):
 
         # output layer
         self.layers.append(NestOutputLayer(self, self.p))
+
+        self.output_stimulators = nest.Create(self.p.neuron_model, self.dims[-1], self.p.input_params)
+        stim_synapse = deepcopy(self.p.syn_static)
+        stim_synapse.update({"receptor_type": self.p.compartments["soma"],
+                             "weight": self.p.g_som/self.weight_scale})
+        nest.Connect(self.output_stimulators, self.layers[-1].pyr, conn_spec="one_to_one", syn_spec=stim_synapse)
 
         if self.p.noise:
             # Inject Gaussian white noise into neuron somata.
@@ -82,6 +88,7 @@ class NestNetwork(Network):
             nest.Connect(self.mm, self.layers[-2].pyr)
             nest.Connect(self.mm, self.layers[-2].intn)
             nest.Connect(self.mm, self.layers[-1].pyr)
+            nest.Connect(self.mm, self.output_stimulators)
 
         pyr_prev = self.input_neurons
         intn_prev = None
@@ -142,9 +149,11 @@ class NestNetwork(Network):
         self.input_currents = input_currents
         for i in range(self.dims[0]):
             if self.spiking:
-                self.poisson_generators[i].rate = self.weight_scale * input_currents[i] * 1000
+                # self.poisson_generators[i].rate = self.weight_scale * input_currents[i] * 1000
+                self.input_neurons[i].set({"soma": {"I_e": input_currents[i] / self.tau_x}})
+
             else:
-                self.input_neurons[i].set({"soma": {"I_e": input_currents[i] / self.p.tau_x}})
+                self.input_neurons[i].set({"soma": {"I_e": input_currents[i] / self.tau_x}})
                 # self.input_neurons[i].set({"amplitude_times": [nest.biological_time + self.dt],
                 #                            "amplitude_values": [input_currents[i]]})
 
@@ -157,9 +166,12 @@ class NestNetwork(Network):
         Arguments:
             target_currents -- Iterable of length equal to the output dimension.
         """
-        self.target_curr = target_currents
         for i in range(self.dims[-1]):
-            self.layers[-1].pyr[i].set({"soma": {"I_e": target_currents[i] * self.p.g_som}})
+            # self.layers[-1].pyr[i].set({"soma": {"I_e": target_currents[i] * self.p.g_som}})
+            if self.spiking:
+                self.output_stimulators[i].set({"soma": {"I_e": 10 *  target_currents[i] / self.tau_x }})
+            else:
+                self.output_stimulators[i].set({"soma": {"I_e":  target_currents[i] / self.tau_x }})
 
     def train_batch(self, x_batch, y_batch):
         loss = []

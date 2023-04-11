@@ -85,6 +85,10 @@ class Params:
         self.static_syn_model = 'static_synapse' if self.spiking else 'rate_connection_delayed'
         self.compartments = nest.GetDefaults(self.neuron_model)["receptor_types"]
 
+        if self.spiking:
+            self.C_m_api = 0.6
+            self.C_m_bas = 0.4
+
         self.pyr_params = {
             'soma': {
                 'g_L': self.g_l,
@@ -140,11 +144,14 @@ class Params:
             for syn_name in ["ip", "up", "down", "pi"]:
                 lr = self.eta[syn_name]
                 if syn_name == "pi":
-                    self.eta[syn_name] = [eta / self.weight_scale **
-                                          2 * self.tau_delta for eta in lr]
+                    self.eta[syn_name] = [eta / (self.weight_scale **
+                                          2 * self.tau_delta) for eta in lr]
+                elif syn_name == "down":
+                    self.eta[syn_name] = [2.5 * eta / (self.weight_scale **  # TODO: figure out why this magic number performs so well
+                                          3 * self.tau_delta) for eta in lr]
                 else:
-                    self.eta[syn_name] = [eta / self.weight_scale **
-                                          3 * self.tau_delta for eta in lr]
+                    self.eta[syn_name] = [eta / (self.weight_scale **
+                                          3 * self.tau_delta) for eta in lr]
 
         self.syn_static = {
             "synapse_model": self.static_syn_model,

@@ -215,13 +215,12 @@ nest::rate_neuron_pyr::Parameters_::Parameters_( const Parameters_& p )
   pyr_params.latent_equilibrium = p.pyr_params.latent_equilibrium;
 
   // copy C-arrays
-
   for ( size_t n = 0; n < NCOMP; ++n )
   {
     pyr_params.g_conn[ n ] = p.pyr_params.g_conn[ n ];
     pyr_params.g_L[ n ] = p.pyr_params.g_L[ n ];
-    pyr_params.E_L[ n ] = p.pyr_params.E_L[ n ];
     pyr_params.C_m[ n ] = p.pyr_params.C_m[ n ];
+    pyr_params.E_L[ n ] = p.pyr_params.E_L[ n ];
     I_e[ n ] = p.I_e[ n ];
   }
 }
@@ -251,8 +250,8 @@ nest::rate_neuron_pyr::Parameters_::operator=( const Parameters_& p )
   {
     pyr_params.g_conn[ n ] = p.pyr_params.g_conn[ n ];
     pyr_params.g_L[ n ] = p.pyr_params.g_L[ n ];
-    pyr_params.E_L[ n ] = p.pyr_params.E_L[ n ];
     pyr_params.C_m[ n ] = p.pyr_params.C_m[ n ];
+    pyr_params.E_L[ n ] = p.pyr_params.E_L[ n ];
     I_e[ n ] = p.I_e[ n ];
   }
 
@@ -347,6 +346,7 @@ nest::rate_neuron_pyr::Parameters_::get( DictionaryDatum& d ) const
     def< double >( dd, names::g_L, pyr_params.g_L[ n ] );
     def< double >( dd, names::E_L, pyr_params.E_L[ n ] );
     def< double >( dd, names::I_e, I_e[ n ] );
+    def< double >( dd, names::C_m, pyr_params.C_m[ n ] );
 
     ( *d )[ comp_names_[ n ] ] = dd;
   }
@@ -367,6 +367,7 @@ nest::rate_neuron_pyr::Parameters_::set( const DictionaryDatum& d )
   updateValue< double >( d, Name( names::g_som ), pyr_params.g_conn[ SOMA ] );
   updateValue< double >( d, Name( names::g_b ), pyr_params.g_conn[ BASAL ] );
   updateValue< double >( d, Name( names::g_a ), pyr_params.g_conn[ APICAL_LAT ] );
+  updateValue< double >( d, Name( names::g_a ), pyr_params.g_conn[ APICAL_TD ] );
 
   updateValue< double >( d, Name( names::target ), pyr_params.curr_target_id );
   updateValue< double >( d, Name( names::lambda ), pyr_params.lambda_curr );
@@ -402,6 +403,7 @@ nest::rate_neuron_pyr::Parameters_::set( const DictionaryDatum& d )
   {
     throw BadProperty( "Refractory time cannot be negative." );
   }
+
 
   if ( pyr_params.tau_m <= 0 )
   {
@@ -584,12 +586,10 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
 
   for ( long lag = from; lag < to; ++lag )
   {
-
-
-    // add incoming spikes to all compartmens
+    // add incoming spikes and injected currents to all compartmens
     for ( size_t n = 0; n < NCOMP; ++n )
     {
-      S_.y_[ S::idx( n, S::I ) ] += B_.spikes_[ n ].get_value( lag );
+      S_.y_[ S::idx( n, S::I ) ] += B_.spikes_[ n ].get_value( lag ) / pyr_params->tau_m;
       B_.I_stim_[ n ] = B_.currents_[ n ].get_value( lag );
     }
 
@@ -607,8 +607,8 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
     double I_conn_d_s = 0.0;
 
     // compute dynamics for each dendritic compartment
-    // computations written quite explicitly for clarity, assume compile
-    // will optimized most stuff away ...
+    // computations written quite explicitly for clarity, assume compiler
+    // will optimize most stuff away ...
     for ( size_t n = 1; n < NCOMP; ++n )
     {
       if ( pyr_params->g_conn[ n ] == 0 )
@@ -619,7 +619,7 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
       const double V_dnd = S_.y_[ S::idx( n, S::V_M ) ];
 
       // coupling current from dendrite to soma
-      if ( n != APICAL_LAT )
+      if ( n != APICAL_TD )
       {
         I_conn_d_s += pyr_params->g_conn[ n ] * V_dnd;
       }
@@ -634,8 +634,9 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
       // derivative dendritic current
       S_.y_[ S::idx( n, S::I ) ] -= I_dend / pyr_params->tau_m;
     }
+    double I_som = S_.y_[ S::idx( SOMA , S::I ) ];
 
-    const double delta_V_som = ( -I_L + I_conn_d_s + B_.I_stim_[ SOMA ] + P_.I_e[ SOMA ] ) / pyr_params->C_m[ SOMA ];
+    const double delta_V_som = ( -I_L + I_conn_d_s + B_.I_stim_[ SOMA ] + P_.I_e[ SOMA ] + I_som) / pyr_params->C_m[ SOMA ];
     S_.y_[ S::idx( SOMA, S::V_M ) ] += B_.step_ * delta_V_som;
     S_.y_[ S::idx( SOMA, S::V_forw ) ] =
       V_som_old + delta_V_som * ( pyr_params->C_m[ SOMA ] / pyr_params->g_conn[ SOMA ] );
@@ -643,7 +644,7 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
 
     // excitatory conductance soma
     // TODO: we currently do not allow spikes at the soma. maybe change that?
-    S_.y_[ S::idx( SOMA, S::I ) ] -= S_.y_[ S::idx( SOMA, S::I ) ] / pyr_params->tau_m;
+    S_.y_[ S::idx( SOMA, S::I ) ] -= I_som / pyr_params->tau_m;
 
 
     double V_som_forward = S_.y_[ S::idx( SOMA, S::V_forw ) ];
@@ -671,7 +672,7 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
     if ( pyr_params->curr_target_id != 0 )
     {
       CurrentEvent ce;
-      ce.set_current( S_.y_[ S_.idx( SOMA, State_::V_M ) ] );
+      ce.set_current( V_som_forward );
       ce.set_receiver( *pyr_params->curr_target );
       ce.set_sender_node_id( this->get_node_id() );
       ce.set_rport( 0 ); // TODO: make this flexible to target not only the soma!
@@ -692,25 +693,32 @@ nest::rate_neuron_pyr::handle( DelayedRateConnectionEvent& e )
   double rate_value = e.get_weight() * e.get_coeffvalue( it );
   B_.spikes_[ e.get_rport() ].add_value(
     e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), rate_value );
-  
+
   if ( port == APICAL_TD )
   {
-    B_.spikes_[ APICAL_LAT ].add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
-      rate_value );
+    B_.spikes_[ APICAL_LAT ].add_value(
+      e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), rate_value );
   }
 }
-
 
 void
 nest::rate_neuron_pyr::handle( CurrentEvent& e )
 {
   assert( e.get_delay_steps() > 0 );
   // TODO: not 100% clean, should look at MIN, SUP
-  assert( 0 <= e.get_rport() and e.get_rport() < NCOMP );
+  long port = e.get_rport();
+
+  assert( 0 <= e.get_rport() and port < NCOMP );
 
   // add weighted current; HEP 2002-10-04
-  B_.currents_[ e.get_rport() ].add_value(
+  B_.currents_[ port ].add_value(
     e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), e.get_weight() * e.get_current() );
+
+  if ( port == I_APICAL_TD )
+  {
+    B_.currents_[ I_APICAL_LAT ].add_value(
+      e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), e.get_weight() * e.get_current() );
+  }
 }
 
 void

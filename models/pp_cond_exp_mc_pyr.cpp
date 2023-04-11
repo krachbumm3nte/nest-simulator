@@ -174,28 +174,28 @@ nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_()
 
 
   // soma parameters
-  pyr_params.C_m[ SOMA ] = 1.0;
+  pyr_params.C_m[ SOMA ] = 1.0;    // pF
   pyr_params.g_conn[ SOMA ] = 0.0; // nS, soma-dendrite
   pyr_params.g_L[ SOMA ] = 1;      // nS
   pyr_params.E_L[ SOMA ] = 0.0;    // mV
   I_e[ SOMA ] = 0.0;               // pA
 
   // basal dendrite parameters
-  pyr_params.C_m[ BASAL ] = 1.0;
+  pyr_params.C_m[ BASAL ] = 1.0;    // pF
   pyr_params.g_conn[ BASAL ] = 1.0; // nS, dendrite-soma
   pyr_params.g_L[ BASAL ] = 0.0;
   pyr_params.E_L[ BASAL ] = 0.0; // mV
   I_e[ BASAL ] = 0.0;            // pA
 
   // proximal apical dendrite parameters
-  pyr_params.C_m[ APICAL_LAT ] = 1.0;
+  pyr_params.C_m[ APICAL_LAT ] = 1.0; // pF
   pyr_params.g_conn[ APICAL_LAT ] = 0.8;
   pyr_params.g_L[ APICAL_LAT ] = 0.0;
   pyr_params.E_L[ APICAL_LAT ] = 0.0; // mV
   I_e[ APICAL_LAT ] = 0.0;            // pA
 
   // distal apical dendrite parameters
-  pyr_params.C_m[ APICAL_TD ] = 1.0;
+  pyr_params.C_m[ APICAL_TD ] = 1.0; // pF
   pyr_params.g_conn[ APICAL_TD ] = 0.8;
   pyr_params.g_L[ APICAL_TD ] = 0.0;
   pyr_params.E_L[ APICAL_TD ] = 0.0; // mV
@@ -357,8 +357,6 @@ nest::pp_cond_exp_mc_pyr::Parameters_::get( DictionaryDatum& d ) const
 void
 nest::pp_cond_exp_mc_pyr::Parameters_::set( const DictionaryDatum& d )
 {
-
-
   // allow setting the membrane potential
   updateValue< double >( d, names::t_ref, t_ref );
   updateValue< double >( d, names::phi_max, pyr_params.phi_max );
@@ -614,7 +612,7 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
     // compute dynamics for each dendritic compartment
     // computations written quite explicitly for clarity, assume compiler
     // will optimize most stuff away ...
-    for ( size_t n = 1; n < NCOMP; n++ )
+    for ( size_t n = 1; n < NCOMP; ++n )
     {
       if ( pyr_params->g_conn[ n ] == 0 )
       {
@@ -637,10 +635,17 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       S_.y_[ S::idx( n, S::V_M ) ] += ( -I_L_dend + I_dend ) / pyr_params->C_m[ n ];
 
       // derivative dendritic current
-      S_.y_[ S::idx( n, S::I ) ] -= I_dend / pyr_params->tau_m;
+      // S_.y_[ S::idx( n, S::I ) ] -= I_dend / pyr_params->tau_m;
+      S_.y_[ S::idx( n, S::I ) ] = 0;
+
     }
 
-    const double delta_V_som = ( -I_L + I_conn_d_s + B_.I_stim_[ SOMA ] + P_.I_e[ SOMA ] ) / pyr_params->C_m[ SOMA ];
+    double I_som = S_.y_[ S::idx( SOMA, S::I ) ];
+    const double delta_V_som =
+      ( -I_L + I_conn_d_s + B_.I_stim_[ SOMA ] + P_.I_e[ SOMA ] + I_som ) / pyr_params->C_m[ SOMA ];
+
+
+    S_.y_[ S::idx( SOMA, S::I ) ] -= I_som / pyr_params->tau_m;
     S_.y_[ S::idx( SOMA, S::V_M ) ] += B_.step_ * delta_V_som;
     S_.y_[ S::idx( SOMA, S::V_forw ) ] =
       V_som_old + delta_V_som * ( pyr_params->C_m[ SOMA ] / pyr_params->g_conn[ SOMA ] );
@@ -719,7 +724,7 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
     if ( pyr_params->curr_target_id != 0 )
     {
       CurrentEvent ce;
-      ce.set_current( S_.y_[ S_.idx( SOMA, State_::V_M ) ] );
+      ce.set_current( V_som_forward );
       ce.set_receiver( *pyr_params->curr_target );
       ce.set_sender_node_id( this->get_node_id() );
       ce.set_rport( 0 ); // TODO: make this flexible to target not only the soma!
@@ -758,11 +763,11 @@ nest::pp_cond_exp_mc_pyr::handle( CurrentEvent& e )
   // add weighted current; HEP 2002-10-04
   B_.currents_[ port ].add_value(
     e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), e.get_weight() * e.get_current() );
-  
-    if ( port == I_APICAL_TD )
+
+  if ( port == I_APICAL_TD )
   {
     B_.currents_[ I_APICAL_LAT ].add_value(
-    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), e.get_weight() * e.get_current() );
+      e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), e.get_weight() * e.get_current() );
   }
 }
 

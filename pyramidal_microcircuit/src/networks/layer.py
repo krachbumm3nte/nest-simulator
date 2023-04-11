@@ -93,13 +93,15 @@ class Layer(AbstractLayer):
         self.Delta_up = np.zeros((self.N_pyr, self.N_in), dtype=dtype)
         self.Delta_pi = np.zeros((self.N_pyr, self.N_next), dtype=dtype)
         self.Delta_ip = np.zeros((self.N_next, self.N_pyr), dtype=dtype)
+        self.Delta_down = np.zeros((self.N_pyr, self.N_next), dtype=dtype)
 
     def update(self, r_in, u_next, plasticity, noise_on=False):
         r_next = self.phi(u_next)
         r_pyr = self.phi(self.u_pyr["forw"]) if self.le else self.phi(self.u_pyr["soma"])
         r_inn = self.phi(self.u_inn["forw"]) if self.le else self.phi(self.u_inn["soma"])
         self.u_pyr["basal"][:] = self.W_up @ r_in  # [:] to enforce rhs to be copied to lhs
-        self.u_pyr["apical"][:] = self.W_down @ r_next + self.W_pi @ r_inn
+        v_api_dist = self.W_down @ r_next
+        self.u_pyr["apical"][:] = v_api_dist + self.W_pi @ r_inn
         self.u_inn["dendrite"][:] = self.W_ip @ r_pyr
 
         self.u_pyr["steadystate"][:] = (self.gb * self.u_pyr["basal"] + self.ga * self.u_pyr["apical"]) / (
@@ -131,6 +133,7 @@ class Layer(AbstractLayer):
             self.Delta_ip = np.outer(
                 self.phi(u_new_inn) - self.phi(self.gb / (self.gl + self.gb) * self.u_inn["dendrite"]), r_pyr)
             self.Delta_pi = np.outer(-self.u_pyr["apical"], r_inn)
+            self.Delta_down = np.outer(r_pyr - v_api_dist, r_next)
 
     def apply(self, plasticity):
         if self.le:
@@ -146,9 +149,11 @@ class Layer(AbstractLayer):
             self.W_up += self.dt * self.eta["up"] * self.Delta_up
             self.W_ip += self.dt * self.eta["ip"] * self.Delta_ip
             self.W_pi += self.dt * self.eta["pi"] * self.Delta_pi
+            self.W_down += self.dt * self.eta["down"] * self.Delta_down
             self.W_up = np.clip(self.W_up, self.Wmin, self.Wmax)
             self.W_ip = np.clip(self.W_ip, self.Wmin, self.Wmax)
             self.W_pi = np.clip(self.W_pi, self.Wmin, self.Wmax)
+            self.W_down = np.clip(self.W_down, self.Wmin, self.Wmax)
 
     def reset(self, reset_weights=False):
         '''
@@ -179,6 +184,7 @@ class Layer(AbstractLayer):
         self.Delta_up.fill(0)
         self.Delta_pi.fill(0)
         self.Delta_ip.fill(0)
+        self.Delta_down.fill(0)
 
 
 class OutputLayer(AbstractLayer):

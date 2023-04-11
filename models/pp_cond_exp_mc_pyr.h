@@ -446,12 +446,6 @@ public:
   get_V_m( int comp )
   {
     double v = S_.y_[ S_.idx( comp, State_::V_M ) ];
-    // std::cout << "vcomp: " << this->get_node_id() << ", " << comp << ", " << v << std::endl;
-    if ( std::isnan( v ) )
-    {
-      std::cout << "pyramidal neuron compartment " << comp << " voltage is NaN!" << std::endl;
-      throw KernelException( "pyramidal neuron compartment  voltage is NaN!" );
-    }
     return v;
   }
 
