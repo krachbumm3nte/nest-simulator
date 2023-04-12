@@ -46,7 +46,7 @@ for scale in weight_scale_list:
     for c_m in c_m_list:
         config["weight_scale"] = scale
         config["network_type"] = "snest"
-        config["c_m_api"] = c_m
+        config["C_m_api"] = c_m
         config_name = f"bars_le_weight_scale_{int(scale*100)}_c_m_{int(10 * c_m)}.json"
         with open(os.path.join(target_dir, config_name), "w") as f:
             json.dump(config, f, indent=4)

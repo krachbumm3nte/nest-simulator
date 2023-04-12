@@ -85,9 +85,9 @@ class Params:
         self.static_syn_model = 'static_synapse' if self.spiking else 'rate_connection_delayed'
         self.compartments = nest.GetDefaults(self.neuron_model)["receptor_types"]
 
-        if self.spiking:
-            self.C_m_api = 0.6
-            self.C_m_bas = 0.4
+        # if self.spiking:
+        #     self.C_m_api = 0.6
+        #     self.C_m_bas = 0.4
 
         self.pyr_params = {
             'soma': {

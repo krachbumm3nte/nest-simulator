@@ -28,5 +28,5 @@
     "record_interval": 1,
     "network_type": "snest",
     "weight_scale": 10,
-    "c_m_api": 5
+    "C_m_api": 5
 }
