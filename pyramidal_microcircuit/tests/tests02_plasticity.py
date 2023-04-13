@@ -450,41 +450,38 @@ class PlasticityHY(DynamicsHY):
         axes[3].legend()
         axes[3].set_title("synaptic weight")
 
-
 class NetworkPlasticity(TestClass):
+
     def __init__(self, params, **kwargs) -> None:
         params.dims = [3, 2, 2]
+        params.record_interval = 0.5
         super().__init__(params, record_weights=True, **kwargs)
-        self.nest_net = NestNetwork(deepcopy(params))
-        
         self.numpy_net = NumpyNetwork(deepcopy(params))
-
-
+        self.nest_net = NestNetwork(deepcopy(params))
         self.numpy_net.set_all_weights(self.nest_net.get_weight_dict())
-
-        self.numpy_net.p.to_json(f"/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/tests/params_np.json")
-        self.nest_net.p.to_json(f"/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/tests/params_nest.json")
 
     def run(self):
 
-        self.sim_time = 25
+        self.sim_time = 8
 
         self.up_0 = []
         self.pi_0 = []
         self.ip_0 = []
         self.down_0 = []
         self.up_1 = []
-        print(self.numpy_net.p.eta)
-        print(self.nest_net.p.eta)
-        for i in range(3):
+        n_trials = 3
+        self.nest_net.mm.set({"start": 0, 'stop': self.sim_time * n_trials, 'origin': nest.biological_time})
+        for i in range(n_trials):
             input_currents = np.random.random(self.dims[0])
             target_currents = np.random.random(self.dims[-1])
             self.nest_net.set_input(input_currents)
             self.numpy_net.set_input(input_currents)
             self.nest_net.set_target(target_currents)
-            for i in range(int(self.sim_time/self.delta_t)):
-                self.numpy_net.simulate(lambda: target_currents, True)
-                self.nest_net.simulate(self.delta_t)
+
+            for i in range(int(self.sim_time/self.p.record_interval)):
+                for j in range(int(self.p.record_interval/self.delta_t)):
+                    self.numpy_net.simulate(lambda: target_currents, True)
+                self.nest_net.simulate(self.p.record_interval, False, False)
                 wgts = self.nest_net.get_weight_dict(True)
                 self.up_0.append(wgts[-2]["up"])
                 self.up_1.append(wgts[-1]["up"])
@@ -505,12 +502,40 @@ class NetworkPlasticity(TestClass):
             and records_match(self.down_0.flatten(), self.numpy_net.weight_record[-2]["down"].flatten())
 
     def plot_results(self):
+        records = pd.DataFrame.from_dict(self.nest_net.mm.events)
+        self.nest_UH = records[records["senders"].isin(self.nest_net.layers[-2].pyr.global_id)].sort_values(
+            ["senders", "times"])["V_m.s"].values.reshape((self.dims[-2], -1)).swapaxes(0, 1)
+        self.nest_VAH = records[records["senders"].isin(self.nest_net.layers[-2].pyr.global_id)].sort_values(
+            ["senders", "times"])["V_m.a_lat"].values.reshape((self.dims[-2], -1)).swapaxes(0, 1)
+        self.nest_VAH_dist = records[records["senders"].isin(self.nest_net.layers[-2].pyr.global_id)].sort_values(
+            ["senders", "times"])["V_m.a_td"].values.reshape((self.dims[-2], -1)).swapaxes(0, 1)
+        self.nest_VBH = records[records["senders"].isin(self.nest_net.layers[-2].pyr.global_id)].sort_values(
+            ["senders", "times"])["V_m.b"].values.reshape((self.dims[-2], -1)).swapaxes(0, 1)
+        self.nest_UI = records[records["senders"].isin(self.nest_net.layers[-2].intn.global_id)].sort_values(
+            ["senders", "times"])["V_m.s"].values.reshape((self.dims[-1], -1)).swapaxes(0, 1)
+        self.nest_UY = records[records["senders"].isin(self.nest_net.layers[-1].pyr.global_id)].sort_values(
+            ["senders", "times"])["V_m.s"].values.reshape((self.dims[-1], -1)).swapaxes(0, 1)
 
-        fig, axes = plt.subplots(2, 3, sharex=True, sharey="col", constrained_layout=True)
-        cmap = plt.cm.get_cmap('hsv', max(self.dims)+1)
+        fig, axes = plt.subplots(2, 2, sharex=True, constrained_layout=True)
         linestyles = ["solid", "dotted", "dashdot", "dashed"]
+        cmap = plt.cm.get_cmap('hsv', max(self.dims)+1)
 
-        for i, (name, layer) in enumerate(zip(["up", "down", "ip", "pi", "up"], [0, 0, 0, 0, 1])):
+        for i in range(self.dims[-2]):
+            axes[0][1].plot(self.numpy_net.V_ah_dist_record[:, i], color=cmap(i))
+            axes[0][1].plot(self.nest_VAH_dist[:, i], color=cmap(i), linestyle="dashed", alpha=0.7)
+
+            axes[1][1].plot(self.numpy_net.U_h_record[:, i], color=cmap(i))
+            axes[1][1].plot(self.nest_UH[:, i], color=cmap(i), linestyle="dashed", alpha=0.7)
+
+            axes[1][0].plot(self.numpy_net.V_ah_record[:, i], color=cmap(i))
+            axes[1][0].plot(self.nest_VAH[:, i], color=cmap(i), linestyle="dashed", alpha=0.7)
+
+
+        # fig, axes = plt.subplots(2, 3, sharex=True, sharey="col", constrained_layout=True)
+        # linestyles = ["solid", "dotted", "dashdot", "dashed"]
+
+        # for i, (name, layer) in enumerate(zip(["up", "down", "ip", "pi", "up"], [0, 0, 0, 0, 1])):
+        for i, (name, layer) in enumerate(zip(["down"], [0])):
 
             weights_nest = eval(f"self.{name}_{layer}")
             weights_numpy = self.numpy_net.weight_record[layer][name]
@@ -522,5 +547,7 @@ class NetworkPlasticity(TestClass):
                     axes[i//3][i % 3].plot(weights_nest[:, target, sender], linestyle="dashed", color=col)
                     axes[i//3][i % 3].plot(weights_numpy[:, target, sender], linestyle="solid", color=col, alpha=0.8)
 
-        axes[0][0].set_ylabel("NEST computed")
-        axes[1][0].set_ylabel("Target activation")
+        axes[0][0].set_title("fb weights")
+        axes[0][1].set_title("api dist")
+        axes[1][0].set_title("api")
+        axes[1][1].set_title("som")
