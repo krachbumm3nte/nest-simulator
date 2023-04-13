@@ -1,11 +1,10 @@
 {
     "C_m_api": 0.6,
-    "C_m_bas": 0.4,
+    "C_m_bas": 1,
     "C_m_som": 1,
     "Wmax": 4,
     "Wmin": -4,
     "beta": 1,
-    "c_m_api": 0.6,
     "compartments": {
         "apical_td_curr": 8,
         "apical_td": 4,
@@ -58,7 +57,7 @@
         "basal": {
             "g_L": 0.1,
             "g": 0,
-            "C_m": 0.4
+            "C_m": 1
         },
         "apical_lat": {
             "g_L": 0.1,
@@ -88,7 +87,7 @@
         "basal": {
             "g_L": 0.1,
             "g": 0.1,
-            "C_m": 0.4
+            "C_m": 1
         },
         "apical_lat": {
             "g_L": 0.1,
@@ -129,7 +128,7 @@
         "basal": {
             "g_L": 0.1,
             "g": 0.1,
-            "C_m": 0.4
+            "C_m": 1
         },
         "apical_lat": {
             "g_L": 0.1,

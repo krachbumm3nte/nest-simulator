@@ -6,6 +6,8 @@
     "Wmin": -4,
     "beta": 1,
     "compartments": {
+        "apical_td_curr": 8,
+        "apical_td": 4,
         "apical_lat_curr": 7,
         "apical_lat": 3,
         "basal_curr": 6,
@@ -13,16 +15,16 @@
         "soma_curr": 5,
         "soma": 1
     },
-    "config_file": "experiment_configs/mnist_two_classes.json",
+    "config_file": "./experiment_configs/mnist_two_classes.json",
     "delta_t": 0.1,
     "dims": [
         784,
-        250,
+        300,
         2
     ],
     "eta": {
         "ip": [
-            0.0002,
+            0.004,
             0.0
         ],
         "pi": [
@@ -30,8 +32,8 @@
             0.0
         ],
         "up": [
-            0.0005,
-            0.0001
+            0.01,
+            0.002
         ],
         "down": [
             0.0,
@@ -62,6 +64,11 @@
             "g": 0,
             "C_m": 1
         },
+        "apical_td": {
+            "g_L": 1,
+            "g": 0.06,
+            "C_m": 1
+        },
         "tau_m": 1,
         "lambda": 0.06,
         "gamma": 1,
@@ -87,6 +94,11 @@
             "g": 0,
             "C_m": 1
         },
+        "apical_td": {
+            "g_L": 1,
+            "g": 0.06,
+            "C_m": 1
+        },
         "tau_m": 1,
         "lambda": 0.06,
         "gamma": 1,
@@ -107,7 +119,7 @@
     "neuron_model": "rate_neuron_pyr",
     "noise": false,
     "noise_factor": 0.09486832980505137,
-    "out_lag": 6,
+    "out_lag": 35.0,
     "pyr_params": {
         "soma": {
             "g_L": 0.03,
@@ -124,6 +136,11 @@
             "g": 0.06,
             "C_m": 1
         },
+        "apical_td": {
+            "g_L": 1,
+            "g": 0.06,
+            "C_m": 1
+        },
         "tau_m": 1,
         "lambda": 0.06,
         "gamma": 1,
@@ -133,10 +150,11 @@
         "t_ref": 0.0,
         "latent_equilibrium": true
     },
-    "record_interval": -1,
+    "record_interval": 0.5,
     "record_weights": false,
+    "reset": 2,
     "sigma": 0.3,
-    "sim_time": 10,
+    "sim_time": 50,
     "spiking": false,
     "static_syn_model": "rate_connection_delayed",
     "store_errors": true,
