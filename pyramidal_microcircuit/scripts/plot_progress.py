@@ -21,7 +21,6 @@ if __name__ == "__main__":
     dirname = args[0]
     target_dir = args[1]
 
-    all_configs = sorted(os.listdir(dirname))
     fig, [ax0, ax1, ax2] = plt.subplots(3, 1)
 
     final_performance = []

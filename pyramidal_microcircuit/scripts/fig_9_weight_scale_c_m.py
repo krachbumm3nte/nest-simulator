@@ -8,9 +8,10 @@ import numpy as np
 import src.plot_utils as plot_utils
 import src.utils as utils
 
-styles_c_m = {1: "-",
-              5: "--",
-              15: ":"}
+styles_c_m = {0.4: "-",
+              0.6: "--",
+              1: ":",
+              5: "-."}
 
 
 colors_weight_scale = {1: "green",
@@ -37,7 +38,7 @@ if __name__ == "__main__":
 
     tau_eff = 1 / 0.19
 
-    accuracies = {c_m: [] for c_m in [1, 5, 15]}
+    accuracies = {c_m: [] for c_m in styles_c_m.keys()}
     for config in all_configs:
 
         with open(os.path.join(dirname, config, "progress.json")) as f:
@@ -46,7 +47,7 @@ if __name__ == "__main__":
             params = json.load(f)
 
         weight_scale = int(params["weight_scale"])
-        c_m = int(params["c_m_api"])
+        c_m = float(params["C_m_api"])
         acc = progress["test_acc"]
 
         final_acc = np.mean([datapoint[1] for datapoint in acc[-10:]])  # average over last 10 accuracy readings
