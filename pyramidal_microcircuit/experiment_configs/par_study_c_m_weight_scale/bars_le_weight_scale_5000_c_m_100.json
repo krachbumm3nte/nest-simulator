@@ -27,6 +27,6 @@
     },
     "record_interval": 1,
     "network_type": "snest",
-    "weight_scale": 10,
-    "C_m_api": 0.6
+    "weight_scale": 50,
+    "C_m_api": 10
 }

@@ -5,7 +5,7 @@ root_dir = os.path.dirname(os.path.realpath(__file__))
 target_dir = os.path.join(root_dir, "c_m")
 
 weight_scale_list = [1, 5, 10, 50]
-c_m_list = [0.4, 0.6, 1, 5]
+c_m_list = [0.5, 1, 5, 10]
 
 
 config = {
