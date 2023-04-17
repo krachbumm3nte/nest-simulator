@@ -121,12 +121,11 @@ if __name__ == "__main__":
                 f"both input file and script parameters specify different network types ({params.network_type}/{args.network}).")
             print(f"overwriting with argument and using {args.network} network type")
             params.network_type = args.network
-        root_dir, imgdir, datadir = utils.setup_directories(name=config_name, type=params.network_type)
 
         spiking = args.network == "snest"
         params.network_type = args.network
-        params.timestamp = root_dir.split(os.path.sep)[-1]
         params.spiking = spiking
+        root_dir, imgdir, datadir = utils.setup_directories(name=config_name, type=params.network_type)
         # params.mode = args.mode
     params.threads = args.threads
 

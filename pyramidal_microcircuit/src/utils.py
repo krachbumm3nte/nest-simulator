@@ -24,8 +24,8 @@ def setup_directories(type, name="default", root=None):
 
     print(f"attemting to create dir {root}")
     if os.path.exists(root):
-        reply = input("a simulation of that name already exists, exiting. overwrite? (yes|no)\n")
-        if reply in ["y", "Y", "yes"]:
+        reply = input("a simulation of that name already exists, exiting. overwrite? (Y|n)\n")
+        if reply in ["y", "Y", "yes", ""]:
             print(f"deleting old contents of {root}")
             shutil.rmtree(root)
         else:
