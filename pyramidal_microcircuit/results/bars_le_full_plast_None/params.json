@@ -15,7 +15,7 @@
         "soma_curr": 5,
         "soma": 1
     },
-    "config_file": "experiment_configs/bars_no_selfpred_soft_reset.json",
+    "config_file": "experiment_configs/bars_le_full_plast.json",
     "delta_t": 0.1,
     "dims": [
         9,
@@ -47,7 +47,7 @@
     "g_lk_dnd": 0.1,
     "g_som": 0.06,
     "gamma": 1,
-    "init_self_pred": false,
+    "init_self_pred": true,
     "input_params": {
         "soma": {
             "g_L": 0.03,
@@ -151,7 +151,7 @@
     },
     "record_interval": 0.5,
     "record_weights": false,
-    "reset": 1,
+    "reset": 2,
     "sigma": 0.3,
     "sim_time": 50,
     "spiking": false,
@@ -177,7 +177,7 @@
     "test_time": 50,
     "theta": 0,
     "threads": 8,
-    "timestamp": "bars_no_selfpred_soft_reset_None",
+    "timestamp": "bars_le_full_plast_None",
     "weight_scale": 250,
     "wmax_init": 1,
     "wmin_init": -1
