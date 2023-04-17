@@ -1,12 +1,13 @@
 {
-    "C_m_api": 1,
+    "C_m_api": 0.5,
     "C_m_bas": 1,
     "C_m_som": 1,
     "Wmax": 4,
     "Wmin": -4,
     "beta": 1,
-    "c_m_api": 5,
     "compartments": {
+        "apical_td_curr": 8,
+        "apical_td": 4,
         "apical_lat_curr": 7,
         "apical_lat": 3,
         "basal_curr": 6,
@@ -14,7 +15,7 @@
         "soma_curr": 5,
         "soma": 1
     },
-    "config_file": "./experiment_configs/c_m/bars_le_weight_scale_500_c_m_5.json",
+    "config_file": "experiment_configs/par_study_c_m_weight_scale/bars_le_weight_scale_500_c_m_5.json",
     "delta_t": 0.1,
     "dims": [
         9,
@@ -61,7 +62,12 @@
         "apical_lat": {
             "g_L": 0.1,
             "g": 0,
-            "C_m": 1
+            "C_m": 0.5
+        },
+        "apical_td": {
+            "g_L": 0.1,
+            "g": 0.06,
+            "C_m": 0.5
         },
         "tau_m": 1,
         "lambda": 0.06,
@@ -86,7 +92,12 @@
         "apical_lat": {
             "g_L": 0.1,
             "g": 0,
-            "C_m": 1
+            "C_m": 0.5
+        },
+        "apical_td": {
+            "g_L": 0.1,
+            "g": 0.06,
+            "C_m": 0.5
         },
         "tau_m": 1,
         "lambda": 0.06,
@@ -122,7 +133,12 @@
         "apical_lat": {
             "g_L": 0.1,
             "g": 0.06,
-            "C_m": 1
+            "C_m": 0.5
+        },
+        "apical_td": {
+            "g_L": 0.1,
+            "g": 0.06,
+            "C_m": 0.5
         },
         "tau_m": 1,
         "lambda": 0.06,
@@ -135,6 +151,7 @@
     },
     "record_interval": 1,
     "record_weights": false,
+    "reset": 2,
     "sigma": 0.3,
     "sim_time": 150,
     "spiking": true,
