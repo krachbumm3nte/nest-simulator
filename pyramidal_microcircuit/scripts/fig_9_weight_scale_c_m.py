@@ -8,10 +8,10 @@ import numpy as np
 import src.plot_utils as plot_utils
 import src.utils as utils
 
-styles_c_m = {0.4: "-",
-              0.6: "--",
+styles_c_m = {0.5: "-",
               1: ":",
-              5: "-."}
+              5: "-.",
+              10: "--"}
 
 
 colors_weight_scale = {1: "green",

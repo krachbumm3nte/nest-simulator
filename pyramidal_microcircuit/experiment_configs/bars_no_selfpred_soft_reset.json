@@ -23,7 +23,7 @@
             0.0
         ]
     },
-    "record_interval": 0.1,
+    "record_interval": 0.5,
     "n_epochs": 10000,
     "reset": 1
 }

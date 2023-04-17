@@ -39,7 +39,7 @@ def run_simulations(net, params, root_dir, imgdir, datadir, plot_interval=0, pro
                         print("-------------------------------\n")
                         break
 
-            if plot_interval > 0 and epoch % plot_interval == 0 and epoch > 0:
+            if plot_interval > 0 and epoch % plot_interval == 0:
                 if net.mode == "self-pred":
                     plot_pre_training(epoch, net, imgdir)
                 else:
