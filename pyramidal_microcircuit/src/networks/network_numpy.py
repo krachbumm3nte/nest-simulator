@@ -42,7 +42,7 @@ class NumpyNetwork(Network):
         for i, weight_dict in enumerate(self.weight_record):
             for key, weights in weight_dict.items():
                 self.weight_record[i][key] = np.expand_dims(weights, axis=0)
-                self.V_ah_record = np.zeros((1, self.dims[-2]))
+        self.V_ah_record = np.zeros((1, self.dims[-2]))
         self.V_bh_record = np.zeros((1, self.dims[-2]))
         self.U_h_record = np.zeros((1, self.dims[-2]))
         self.U_i_record = np.zeros((1, self.dims[-1]))
