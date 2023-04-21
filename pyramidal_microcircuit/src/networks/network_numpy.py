@@ -46,7 +46,9 @@ class NumpyNetwork(Network):
         self.V_bh_record = np.zeros((1, self.dims[-2]))
         self.U_h_record = np.zeros((1, self.dims[-2]))
         self.U_i_record = np.zeros((1, self.dims[-1]))
+        self.V_bi_record = np.zeros((1, self.dims[-1]))
         self.U_y_record = np.zeros((1, self.dims[-1]))
+        self.V_by_record = np.zeros((1, self.dims[-1]))
         self.U_x_record = np.zeros((1, self.dims[0]))
 
     def train_teacher(self, T):
@@ -141,12 +143,13 @@ class NumpyNetwork(Network):
 
     def record_state(self):
         U_y = self.layers[-1].u_pyr["soma"]
+        self.V_by_record = np.concatenate((self.V_by_record, np.expand_dims(self.layers[-1].u_pyr["basal"], 0)), axis=0)
         self.U_y_record = np.concatenate((self.U_y_record, np.expand_dims(U_y, 0)), axis=0)
-        self.V_ah_record = np.concatenate(
-            (self.V_ah_record, np.expand_dims(self.layers[-2].u_pyr["apical"], 0)), axis=0)
+        self.V_ah_record = np.concatenate((self.V_ah_record, np.expand_dims(self.layers[-2].u_pyr["apical"], 0)), axis=0)
         self.V_bh_record = np.concatenate((self.V_bh_record, np.expand_dims(self.layers[-2].u_pyr["basal"], 0)), axis=0)
-        self.U_i_record = np.concatenate((self.U_i_record, np.expand_dims(self.layers[-2].u_inn["soma"], 0)), axis=0)
         self.U_h_record = np.concatenate((self.U_h_record, np.expand_dims(self.layers[-2].u_pyr["soma"], 0)), axis=0)
+        self.U_i_record = np.concatenate((self.U_i_record, np.expand_dims(self.layers[-2].u_inn["soma"], 0)), axis=0)
+        self.V_bi_record = np.concatenate((self.V_bi_record, np.expand_dims(self.layers[-2].u_inn["dendrite"], 0)), axis=0)
         self.U_x_record = np.concatenate((self.U_x_record, np.expand_dims(self.r_in, 0)), axis=0)
 
         for i, weight_dict in enumerate(self.copy_weights()):

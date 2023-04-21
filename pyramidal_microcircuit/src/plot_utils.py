@@ -17,7 +17,7 @@ colors = {
 
 
 def setup_plt():
-    plt.rcParams['savefig.dpi'] = 300
+    plt.rcParams['savefig.dpi'] = 500
     plt.rcParams['figure.constrained_layout.use'] = True
     plt.rcParams['text.usetex'] = True
     # font = {'family': 'normal',

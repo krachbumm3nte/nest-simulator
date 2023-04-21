@@ -38,7 +38,6 @@ class Params:
         self.g_som = 0.06  # output neuron nudging conductance
         self.g_l_eff = self.g_l + self.g_d + self.g_a  # effective leakage conductance
         self.tau_x = 0.1  # input filtering time constant
-        self.tau_m = 1  # membrane time constant for pyramidal and interneurons
         self.g_lk_dnd = self.delta_t  # dendritic leakage
         self.C_m_som = 1  # membrane capacitance of somatic compartment in pF
         self.C_m_bas = 1  # membrane capacitance of basal compartment in pF
@@ -112,7 +111,6 @@ class Params:
                 'g': self.g_a,
                 'C_m': self.C_m_api
             },
-            'tau_m': self.tau_m,  # Membrane time constant
             'lambda': self.g_som,  # Interneuron nudging conductance
             'gamma': self.gamma,
             'beta': self.beta,
