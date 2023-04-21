@@ -23,7 +23,6 @@ for le in [False, True]:
             "sim_time": t,
             "out_lag": round(0.5*t, 1),
             "tau_delta": 1,
-            "tau_m": 1,
             "latent_equilibrium": le,
             "eta": eta,
             "record_interval": max(0.1, round(0.01*t, 1))
