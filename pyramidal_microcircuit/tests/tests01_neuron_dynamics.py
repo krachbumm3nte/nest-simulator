@@ -160,10 +160,11 @@ class DynamicsHX(TestClass):
 
         super().__init__(params, **kwargs)
         params.setup_nest_configs()
-        self.weight = 1 
+        self.weight = 1
 
         conn_hx = self.p.syn_plastic
-        conn_hx.update({"weight": self.weight/ self.weight_scale, "eta": 0, "receptor_type": self.p.compartments["basal"]})
+        conn_hx.update({"weight": self.weight / self.weight_scale, "eta": 0,
+                       "receptor_type": self.p.compartments["basal"]})
 
         self.neuron_01 = nest.Create(params.neuron_model, 1, params.input_params)
         self.mm_01 = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
@@ -385,7 +386,6 @@ class DynamicsHY(DynamicsHX):
         ax2.legend()
 
 
-
 class DynamicsHY(DynamicsHX):
     """
     This test shows that the neuron model handles a single dendritic input exactly like the analytical
@@ -397,7 +397,8 @@ class DynamicsHY(DynamicsHX):
         super().__init__(params, **kwargs)
 
         synapse = self.p.syn_plastic
-        synapse.update({"weight": self.weight / self.weight_scale, "eta": 0, "receptor_type": self.p.compartments["apical_td"]})
+        synapse.update({"weight": self.weight / self.weight_scale, "eta": 0,
+                       "receptor_type": self.p.compartments["apical_td"]})
 
         self.neuron_01.set(params.intn_params)
         self.neuron_02.set(params.pyr_params)
@@ -454,7 +455,6 @@ class DynamicsHY(DynamicsHX):
         ax2.plot(self.VAH, label="analytical")
 
         ax3.plot(*zip(*read_multimeter(self.mm_02, "V_m.a_td")), label="NEST computed")
-
 
         ax0.set_title("UY")
         ax1.set_title("UH")
@@ -619,3 +619,32 @@ class NetworkDynamics(TestClass):
         #     plt.show()
         # axes[0][0].set_ylabel("NEST computed")
         # axes[1][0].set_ylabel("Target activation")
+
+
+class DeepNetworkDynamics(NetworkDynamics):
+
+    def __init__(self, params, **kwargs) -> None:
+        params.dims = [4, 3, 2, 2]
+        params.eta = {
+            "ip": [
+                0.004,
+                0.004,
+                0.0
+            ],
+            "pi": [
+                0.01,
+                0.01,
+                0.0
+            ],
+            "up": [
+                0.01,
+                0.01,
+                0.003
+            ],
+            "down": [
+                0,
+                0,
+                0
+            ]
+        }
+        super().__init__(params, **kwargs)

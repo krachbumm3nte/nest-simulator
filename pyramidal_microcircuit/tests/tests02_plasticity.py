@@ -453,7 +453,6 @@ class PlasticityHY(DynamicsHY):
 class NetworkPlasticity(TestClass):
 
     def __init__(self, params, **kwargs) -> None:
-        params.dims = [3, 2, 2]
         params.record_interval = 0.5
         super().__init__(params, record_weights=True, **kwargs)
         self.numpy_net = NumpyNetwork(deepcopy(params))
@@ -502,52 +501,125 @@ class NetworkPlasticity(TestClass):
             and records_match(self.down_0.flatten(), self.numpy_net.weight_record[-2]["down"].flatten())
 
     def plot_results(self):
-        records = pd.DataFrame.from_dict(self.nest_net.mm.events)
-        self.nest_UH = records[records["senders"].isin(self.nest_net.layers[-2].pyr.global_id)].sort_values(
-            ["senders", "times"])["V_m.s"].values.reshape((self.dims[-2], -1)).swapaxes(0, 1)
-        self.nest_VAH = records[records["senders"].isin(self.nest_net.layers[-2].pyr.global_id)].sort_values(
-            ["senders", "times"])["V_m.a_lat"].values.reshape((self.dims[-2], -1)).swapaxes(0, 1)
-        self.nest_VAH_dist = records[records["senders"].isin(self.nest_net.layers[-2].pyr.global_id)].sort_values(
-            ["senders", "times"])["V_m.a_td"].values.reshape((self.dims[-2], -1)).swapaxes(0, 1)
-        self.nest_VBH = records[records["senders"].isin(self.nest_net.layers[-2].pyr.global_id)].sort_values(
-            ["senders", "times"])["V_m.b"].values.reshape((self.dims[-2], -1)).swapaxes(0, 1)
-        self.nest_UI = records[records["senders"].isin(self.nest_net.layers[-2].intn.global_id)].sort_values(
-            ["senders", "times"])["V_m.s"].values.reshape((self.dims[-1], -1)).swapaxes(0, 1)
-        self.nest_UY = records[records["senders"].isin(self.nest_net.layers[-1].pyr.global_id)].sort_values(
-            ["senders", "times"])["V_m.s"].values.reshape((self.dims[-1], -1)).swapaxes(0, 1)
 
-        fig, axes = plt.subplots(2, 2, sharex=True, constrained_layout=True)
-        linestyles = ["solid", "dotted", "dashdot", "dashed"]
+        fig, axes = plt.subplots(2, 3, sharex=True, sharey="col", constrained_layout=True)
         cmap = plt.cm.get_cmap('hsv', max(self.dims)+1)
+        linestyles = ["solid", "dotted", "dashdot", "dashed"]
 
-        for i in range(self.dims[-2]):
-            axes[0][1].plot(self.numpy_net.V_ah_dist_record[:, i], color=cmap(i))
-            axes[0][1].plot(self.nest_VAH_dist[:, i], color=cmap(i), linestyle="dashed", alpha=0.7)
-
-            axes[1][1].plot(self.numpy_net.U_h_record[:, i], color=cmap(i))
-            axes[1][1].plot(self.nest_UH[:, i], color=cmap(i), linestyle="dashed", alpha=0.7)
-
-            axes[1][0].plot(self.numpy_net.V_ah_record[:, i], color=cmap(i))
-            axes[1][0].plot(self.nest_VAH[:, i], color=cmap(i), linestyle="dashed", alpha=0.7)
-
-
-        # fig, axes = plt.subplots(2, 3, sharex=True, sharey="col", constrained_layout=True)
-        # linestyles = ["solid", "dotted", "dashdot", "dashed"]
-
-        # for i, (name, layer) in enumerate(zip(["up", "down", "ip", "pi", "up"], [0, 0, 0, 0, 1])):
-        for i, (name, layer) in enumerate(zip(["down"], [0])):
+        for i, (name, layer) in enumerate(zip(["up", "down", "ip", "pi", "up"], [0, 0, 0, 0, 1])):
 
             weights_nest = eval(f"self.{name}_{layer}")
             weights_numpy = self.numpy_net.weight_record[layer][name]
             axes[i//3][i % 3].set_title(name)
-            for sender in range(weights_nest.shape[-1]):
-                for target in range(weights_nest.shape[-2]):
+            for sender in range(weights_nest.shape[2]):
+                for target in range(weights_nest.shape[1]):
                     col = cmap(sender)
                     style = linestyles[target]
                     axes[i//3][i % 3].plot(weights_nest[:, target, sender], linestyle="dashed", color=col)
                     axes[i//3][i % 3].plot(weights_numpy[:, target, sender], linestyle="solid", color=col, alpha=0.8)
 
-        axes[0][0].set_title("fb weights")
-        axes[0][1].set_title("api dist")
-        axes[1][0].set_title("api")
-        axes[1][1].set_title("som")
+        axes[0][0].set_ylabel("NEST computed")
+        axes[1][0].set_ylabel("Target activation")
+
+class DeepNetworkPlasticity(TestClass):
+
+    def __init__(self, params, **kwargs) -> None:
+        params.dims = [4, 3, 2, 2]
+        params.eta = {
+            "ip": [
+                0.1,
+                0.1,
+                0.0
+            ],
+            "pi": [
+                0.6,
+                0.6,
+                0.0
+            ],
+            "up": [
+                0.6,
+                0.6,
+                0.2
+            ],
+            "down": [
+                0,
+                0,
+                0
+            ]
+        }
+        super().__init__(params, record_weights=True, **kwargs)
+        self.numpy_net = NumpyNetwork(deepcopy(params))
+        self.nest_net = NestNetwork(deepcopy(params))
+        self.numpy_net.set_all_weights(self.nest_net.get_weight_dict())
+
+
+    def run(self):
+
+        self.sim_time = 8
+
+        self.up_0 = []
+        self.pi_0 = []
+        self.ip_0 = []
+        self.down_0 = []
+        self.up_1 = []
+        self.pi_1 = []
+        self.ip_1 = []
+        self.down_1 = []
+        n_trials = 3
+        self.nest_net.mm.set({"start": 0, 'stop': self.sim_time * n_trials, 'origin': nest.biological_time})
+        for i in range(n_trials):
+            input_currents = np.random.random(self.dims[0])
+            target_currents = np.random.random(self.dims[-1])
+            target_currents = np.zeros(self.dims[-1])
+            self.nest_net.set_input(input_currents)
+            self.numpy_net.set_input(input_currents)
+            self.nest_net.set_target(target_currents)
+
+            for i in range(int(self.sim_time/self.p.record_interval)):
+                for j in range(int(self.p.record_interval/self.delta_t)):
+                    self.numpy_net.simulate(lambda: target_currents, True)
+                self.nest_net.simulate(self.p.record_interval, False, False)
+                wgts = self.nest_net.get_weight_dict(True)
+
+                self.up_0.append(wgts[-3]["up"])
+                self.pi_0.append(wgts[-3]["pi"])
+                self.ip_0.append(wgts[-3]["ip"])
+                self.down_0.append(wgts[-3]["down"])
+                self.up_1.append(wgts[-2]["up"])
+                self.pi_1.append(wgts[-2]["pi"])
+                self.ip_1.append(wgts[-2]["ip"])
+                self.down_1.append(wgts[-2]["down"])
+
+    def evaluate(self) -> bool:
+        self.up_0 = np.array(self.up_0)
+        self.pi_0 = np.array(self.pi_0)
+        self.ip_0 = np.array(self.ip_0)
+        self.down_0 = np.array(self.down_0)
+        self.up_1 = np.array(self.up_1)
+        self.pi_1 = np.array(self.pi_1)
+        self.ip_1 = np.array(self.ip_1)
+        self.down_1 = np.array(self.down_1)
+        return records_match(self.up_0.flatten(), self.numpy_net.weight_record[-3]["up"].flatten()) \
+            and records_match(self.pi_0.flatten(), self.numpy_net.weight_record[-3]["pi"].flatten()) \
+            and records_match(self.ip_0.flatten(), self.numpy_net.weight_record[-3]["ip"].flatten()) \
+            and records_match(self.up_1.flatten(), self.numpy_net.weight_record[-2]["up"].flatten()) \
+            and records_match(self.down_0.flatten(), self.numpy_net.weight_record[-3]["down"].flatten())
+
+    def plot_results(self):
+
+        fig, axes = plt.subplots(4, 2, sharex=True, sharey="col", constrained_layout=True)
+        cmap = plt.cm.get_cmap('hsv', max(self.dims)+1)
+        linestyles = ["solid", "dotted", "dashdot", "dashed"]
+
+        for layer in range(2):
+            for i, name in enumerate(["up", "down", "ip", "pi"]):
+
+                weights_nest = eval(f"self.{name}_{layer}")
+                weights_numpy = self.numpy_net.weight_record[layer][name]
+                axes[i][layer].set_title(name)
+                for sender in range(weights_nest.shape[2]):
+                    for target in range(weights_nest.shape[1]):
+                        col = cmap(sender)
+                        style = linestyles[target]
+                        axes[i][layer].plot(weights_nest[:, target, sender], linestyle="dashed", color=col, label="NEST")
+                        axes[i][layer].plot(weights_numpy[:, target, sender], linestyle="solid", color=col, alpha=0.8, label="numpy")

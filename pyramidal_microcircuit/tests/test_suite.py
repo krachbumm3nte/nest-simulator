@@ -19,7 +19,7 @@ if __name__ == "__main__":
         classes = [eval(arg) for arg in sys.argv[1:]]
     else:
         classes = [FilteredInputCurrent, CurrentConnection, TargetCurrent, DynamicsHX, DynamicsHXMulti, DynamicsHY, DynamicsHY,
-                   DynamicsYH, NetworkDynamics, PlasticityHX, PlasticityHXMulti, PlasticityYH, NetworkPlasticity]
+                   DynamicsYH, NetworkDynamics, PlasticityHX, PlasticityHXMulti, PlasticityYH, NetworkPlasticity, DeepNetworkDynamics, DeepNetworkPlasticity]
 
     test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
     root, imgdir, datadir = utils.setup_directories(
