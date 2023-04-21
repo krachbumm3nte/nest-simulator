@@ -91,62 +91,6 @@ RecordablesMap< pp_cond_exp_mc_pyr >::create()
 extern "C" int
 nest::pp_cond_exp_mc_pyr_dynamics( double, const double y[], double f[], void* pnode )
 {
-  // some shorthands
-  typedef nest::pp_cond_exp_mc_pyr N;
-  typedef nest::pp_cond_exp_mc_pyr::State_ S;
-
-  // get access to node so we can work almost as in a member function
-  assert( pnode );
-  const nest::pp_cond_exp_mc_pyr& node = *( reinterpret_cast< nest::pp_cond_exp_mc_pyr* >( pnode ) );
-
-  // computations written quite explicitly for clarity, assume compile
-  // will optimized most stuff away ... TODO: understand the extent of this
-
-  // membrane potential of soma
-  const double V = y[ S::idx( N::SOMA, S::V_M ) ];
-
-  // leak current of soma
-  // TODO: I am misappropriating g_som here, because I am too lazy to create another neuron parameter.
-  // The gist of it is, that all neuron types have effective leakage conductance of (g_l + g_D + g_A),
-  // yet in- and output neurons have an apical conductance of zero. Thus we need to store this sum separately.
-  // as it serves no other purpose, the somatic conductance is used here (temporarily?)
-  const double I_L = node.P_.pyr_params.g_conn[ N::SOMA ] * V;
-
-  // coupling from dendrites to soma all summed up
-  double I_conn_d_s = 0.0;
-
-  // compute dynamics for each dendritic compartment
-  // computations written quite explicitly for clarity, assume compile
-  // will optimized most stuff away ...
-  for ( size_t n = 1; n < N::NCOMP; ++n )
-  {
-    if ( node.P_.pyr_params.g_conn[ n ] == 0 )
-    {
-      continue;
-    }
-    // membrane potential of dendrite
-    const double V_dnd = y[ S::idx( n, S::V_M ) ];
-
-    // coupling current from dendrite to soma
-    I_conn_d_s += node.P_.pyr_params.g_conn[ n ] * V_dnd;
-
-    // dendritic current due to input
-    const double I_dend = y[ S::idx( n, S::I ) ];
-
-    const double I_L_dend = node.P_.pyr_params.g_L[ n ] * V_dnd;
-
-    // derivative membrane potential
-    f[ S::idx( n, S::V_M ) ] = -I_L_dend + I_dend;
-
-    // derivative dendritic current
-    f[ S::idx( n, S::I ) ] = -I_dend;
-  }
-
-  // derivative membrane potential
-  // soma
-  f[ S::idx( N::SOMA, S::V_M ) ] = -I_L + I_conn_d_s + node.B_.I_stim_[ N::SOMA ] + node.P_.I_e[ N::SOMA ];
-
-
   return GSL_SUCCESS;
 }
 
@@ -589,22 +533,11 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
 
   for ( long lag = from; lag < to; ++lag )
   {
-    // add incoming spikes and injected currents to all compartmens
-    for ( size_t n = 0; n < NCOMP; ++n )
-    {
-      S_.y_[ S::idx( n, S::I ) ] += B_.spikes_[ n ].get_value( lag ) / pyr_params->tau_m;
-      B_.I_stim_[ n ] = B_.currents_[ n ].get_value( lag );
-    }
-
-    // Somatic membrane potential
-    const double V_som_old = S_.y_[ S::idx( SOMA, S::V_M ) ];
-
     // leak current of soma
     // TODO: I am misappropriating g_som here, because I am too lazy to create another neuron parameter.
     // The gist of it is, that all neuron types have effective leakage conductance of (g_l + g_D + g_A),
     // yet in- and output neurons have an apical conductance of zero. Thus we need to store this sum separately.
     // as it serves no other purpose, the somatic conductance is used here (temporarily?)
-    const double I_L = P_.pyr_params.g_conn[ SOMA ] * V_som_old;
 
     // coupling from dendrites to soma all summed up
     double I_conn_d_s = 0.0;
@@ -621,45 +554,29 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       // membrane potential of dendrite
       const double V_dnd = S_.y_[ S::idx( n, S::V_M ) ];
 
-      // coupling current from dendrite to soma
+      // coupling current from dendrite to soma. Distant apical compartment does not leak directly into the soma
       if ( n != APICAL_TD )
       {
         I_conn_d_s += pyr_params->g_conn[ n ] * V_dnd;
       }
-
-      // dendritic current due to input
-      const double I_dend = S_.y_[ S::idx( n, S::I ) ];
-
-      const double I_L_dend = pyr_params->g_L[ n ] * V_dnd;
-
-      S_.y_[ S::idx( n, S::V_M ) ] += ( -I_L_dend + I_dend ) / pyr_params->C_m[ n ];
-
-      // derivative dendritic current
-      // S_.y_[ S::idx( n, S::I ) ] -= I_dend / pyr_params->tau_m;
-      S_.y_[ S::idx( n, S::I ) ] = 0;
-
+      S_.y_[ S::idx( n, S::V_M ) ] += ( -(pyr_params->g_L[ n ] * V_dnd) + B_.spikes_[ n ].get_value( lag ) ) / pyr_params->C_m[ n ];
     }
 
-    double I_som = S_.y_[ S::idx( SOMA, S::I ) ];
+    const double I_L = P_.pyr_params.g_conn[ SOMA ] * S_.y_[ S::idx( SOMA, S::V_M ) ];
     const double delta_V_som =
-      ( -I_L + I_conn_d_s + B_.I_stim_[ SOMA ] + P_.I_e[ SOMA ] + I_som ) / pyr_params->C_m[ SOMA ];
+      ( -I_L + I_conn_d_s + B_.currents_[ 0 ].get_value( lag ) + P_.I_e[ SOMA ] + B_.spikes_[ 0 ].get_value( lag ) ) / pyr_params->C_m[ SOMA ];
 
 
-    S_.y_[ S::idx( SOMA, S::I ) ] -= I_som / pyr_params->tau_m;
+
     S_.y_[ S::idx( SOMA, S::V_M ) ] += B_.step_ * delta_V_som;
-    S_.y_[ S::idx( SOMA, S::V_forw ) ] =
-      V_som_old + delta_V_som * ( pyr_params->C_m[ SOMA ] / pyr_params->g_conn[ SOMA ] );
 
 
-    // excitatory conductance soma
     // TODO: we currently do not allow spikes at the soma. maybe change that?
-    S_.y_[ S::idx( SOMA, S::I ) ] -= S_.y_[ S::idx( SOMA, S::I ) ] / pyr_params->tau_m;
-
 
     double V_som_forward = S_.y_[ S::idx( SOMA, S::V_M ) ];
     if ( pyr_params->latent_equilibrium )
     {
-      V_som_forward = S_.y_[ S::idx( SOMA, S::V_forw ) ];
+      V_som_forward = S_.y_[ S::idx( SOMA, S::V_M ) ] + delta_V_som * ( pyr_params->C_m[ SOMA ] / pyr_params->g_conn[ SOMA ] );
     }
 
     // Declaration outside if statement because we need it later

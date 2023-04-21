@@ -455,7 +455,6 @@ public:
     }
     else
     {
-      //std::cout << "transmitting forw: " << S_.y_[ S_.idx( comp, State_::V_forw ) ] << std::endl;
       return S_.y_[ S_.idx( comp, State_::V_forw ) ];
     }
   }

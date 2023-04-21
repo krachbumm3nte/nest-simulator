@@ -407,7 +407,6 @@ public:
     enum StateVecElems_
     {
       V_M = 0,
-      V_forw,
       I,
       STATE_VEC_COMPS
     };
