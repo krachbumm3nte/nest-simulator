@@ -1,0 +1,37 @@
+{
+    "sim_time": 25,
+    "out_lag": 12,
+    "tau_delta": 1,
+    "tau_m": 1,
+    "latent_equilibrium": true,
+    "dims": [
+        9,
+        30,
+        10,
+        3
+    ],
+    "eta": {
+        "ip": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "pi": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "up": [
+            0.0,
+            0.0,
+            0.01
+        ],
+        "down": [
+            0,
+            0,
+            0
+        ]
+    },
+    "record_interval": 0.5,
+    "n_epochs": 10
+}
