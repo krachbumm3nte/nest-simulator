@@ -79,8 +79,8 @@ RecordablesMap< pp_cond_exp_mc_pyr >::create()
     Name( "V_m.b" ), &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::BASAL > );
   insert_( Name( "V_m.a_lat" ),
     &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::APICAL_LAT > );
-  insert_( Name( "V_m.a_td" ),
-    &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::APICAL_TD > );
+  // insert_( Name( "V_m.a_td" ),
+  //   &pp_cond_exp_mc_pyr::get_y_elem_< pp_cond_exp_mc_pyr::State_::V_M, pp_cond_exp_mc_pyr::APICAL_TD > );
 }
 }
 
@@ -139,11 +139,11 @@ nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_()
   I_e[ APICAL_LAT ] = 0.0;            // pA
 
   // distal apical dendrite parameters
-  pyr_params.C_m[ APICAL_TD ] = 1.0; // pF
-  pyr_params.g_conn[ APICAL_TD ] = 0.8;
-  pyr_params.g_L[ APICAL_TD ] = 0.0;
-  pyr_params.E_L[ APICAL_TD ] = 0.0; // mV
-  I_e[ APICAL_TD ] = 0.0;            // pA
+  // pyr_params.C_m[ APICAL_TD ] = 1.0; // pF
+  // pyr_params.g_conn[ APICAL_TD ] = 0.8;
+  // pyr_params.g_L[ APICAL_TD ] = 0.0;
+  // pyr_params.E_L[ APICAL_TD ] = 0.0; // mV
+  // I_e[ APICAL_TD ] = 0.0;            // pA
 }
 
 nest::pp_cond_exp_mc_pyr::Parameters_::Parameters_( const Parameters_& p )
@@ -313,7 +313,7 @@ nest::pp_cond_exp_mc_pyr::Parameters_::set( const DictionaryDatum& d )
   updateValue< double >( d, Name( names::g_som ), pyr_params.g_conn[ SOMA ] );
   updateValue< double >( d, Name( names::g_b ), pyr_params.g_conn[ BASAL ] );
   updateValue< double >( d, Name( names::g_a ), pyr_params.g_conn[ APICAL_LAT ] );
-  updateValue< double >( d, Name( names::g_a ), pyr_params.g_conn[ APICAL_TD ] );
+  // updateValue< double >( d, Name( names::g_a ), pyr_params.g_conn[ APICAL_TD ] );
 
   updateValue< double >( d, Name( names::target ), pyr_params.curr_target_id );
   updateValue< double >( d, Name( names::lambda ), pyr_params.lambda_curr );
@@ -413,7 +413,7 @@ nest::pp_cond_exp_mc_pyr::pp_cond_exp_mc_pyr()
   comp_names_[ SOMA ] = Name( "soma" );
   comp_names_[ BASAL ] = Name( "basal" );
   comp_names_[ APICAL_LAT ] = Name( "apical_lat" );
-  comp_names_[ APICAL_TD ] = Name( "apical_td" );
+  // comp_names_[ APICAL_TD ] = Name( "apical_td" );
   PyrArchivingNode< pp_cond_exp_mc_pyr_parameters >::pyr_params = &P_.pyr_params;
 }
 
@@ -555,28 +555,29 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       const double V_dnd = S_.y_[ S::idx( n, S::V_M ) ];
 
       // coupling current from dendrite to soma. Distant apical compartment does not leak directly into the soma
-      if ( n != APICAL_TD )
-      {
-        I_conn_d_s += pyr_params->g_conn[ n ] * V_dnd;
-      }
-      S_.y_[ S::idx( n, S::V_M ) ] += ( -(pyr_params->g_L[ n ] * V_dnd) + B_.spikes_[ n ].get_value( lag ) ) / pyr_params->C_m[ n ];
+      // if ( n != APICAL_TD )
+      // {
+      I_conn_d_s += pyr_params->g_conn[ n ] * V_dnd;
+      // }
+      S_.y_[ S::idx( n, S::V_M ) ] +=
+        ( -( pyr_params->g_L[ n ] * V_dnd ) + B_.spikes_[ n ].get_value( lag ) ) / pyr_params->C_m[ n ];
     }
 
-    const double I_L = P_.pyr_params.g_conn[ SOMA ] * S_.y_[ S::idx( SOMA, S::V_M ) ];
+    const double I_L = pyr_params->g_conn[ SOMA ] * S_.y_[ S::idx( SOMA, S::V_M ) ];
     const double delta_V_som =
-      ( -I_L + I_conn_d_s + B_.currents_[ 0 ].get_value( lag ) + P_.I_e[ SOMA ] + B_.spikes_[ 0 ].get_value( lag ) ) / pyr_params->C_m[ SOMA ];
+      ( -I_L + I_conn_d_s + B_.currents_[ 0 ].get_value( lag ) + P_.I_e[ SOMA ] + B_.spikes_[ 0 ].get_value( lag ) )
+      / pyr_params->C_m[ SOMA ];
 
 
+    double V_som_old = S_.y_[ S::idx( SOMA, S::V_M ) ];
 
     S_.y_[ S::idx( SOMA, S::V_M ) ] += B_.step_ * delta_V_som;
 
 
-    // TODO: we currently do not allow spikes at the soma. maybe change that?
-
     double V_som_forward = S_.y_[ S::idx( SOMA, S::V_M ) ];
     if ( pyr_params->latent_equilibrium )
     {
-      V_som_forward = S_.y_[ S::idx( SOMA, S::V_M ) ] + delta_V_som * ( pyr_params->C_m[ SOMA ] / pyr_params->g_conn[ SOMA ] );
+      V_som_forward = V_som_old + delta_V_som * ( pyr_params->C_m[ SOMA ] / pyr_params->g_conn[ SOMA ] );
     }
 
     // Declaration outside if statement because we need it later
@@ -589,35 +590,32 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       // There is no reset of the membrane potential after a spike
       double rate = pyr_params->phi( V_som_forward );
 
-      if ( rate > 0.0 )
+
+      if ( P_.t_ref > 0.0 )
       {
-
-        if ( P_.t_ref > 0.0 )
+        // Draw random number and compare to prob to have a spike
+        if ( V_.rng_->drand() <= -numerics::expm1( -rate * V_.h_ ) )
         {
-          // Draw random number and compare to prob to have a spike
-          if ( V_.rng_->drand() <= -numerics::expm1( -rate * V_.h_ ) )
-          {
-            n_spikes = 1;
-          }
+          n_spikes = 1;
         }
-        else
-        {
-          // Draw Poisson random number of spikes
-          poisson_distribution::param_type param( rate * V_.h_ );
-          n_spikes = V_.poisson_dist_( V_.rng_, param );
-        }
+      }
+      else
+      {
+        // Draw Poisson random number of spikes
+        poisson_distribution::param_type param( rate * V_.h_ );
+        n_spikes = V_.poisson_dist_( V_.rng_, param );
+      }
 
-        if ( n_spikes > 0 ) // Is there a spike? Then set the new dead time.
-        {
-          // Set dead time interval according to parameters
-          S_.r_ = V_.RefractoryCounts_;
+      if ( n_spikes > 0 ) // Is there a spike? Then set the new dead time.
+      {
+        // Set dead time interval according to parameters
+        S_.r_ = V_.RefractoryCounts_;
 
-          // And send the spike event
-          SpikeEvent se;
-          se.set_multiplicity( n_spikes );
-          kernel().event_delivery_manager.send( *this, se, lag );
-        }
-      } // if (rate > 0.0)
+        // And send the spike event
+        SpikeEvent se;
+        se.set_multiplicity( n_spikes );
+        kernel().event_delivery_manager.send( *this, se, lag );
+      }
     }
     else // Neuron is within dead time
     {
@@ -629,8 +627,8 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       Time::step( origin.get_steps() + lag + 1 ), S_.y_[ S::idx( BASAL, S::V_M ) ], V_som_forward, BASAL );
     write_urbanczik_history(
       Time::step( origin.get_steps() + lag + 1 ), S_.y_[ S::idx( APICAL_LAT, S::V_M ) ], V_som_forward, APICAL_LAT );
-    write_urbanczik_history(
-      Time::step( origin.get_steps() + lag + 1 ), S_.y_[ S::idx( APICAL_TD, S::V_M ) ], V_som_forward, APICAL_TD );
+    // write_urbanczik_history(
+    //   Time::step( origin.get_steps() + lag + 1 ), S_.y_[ S::idx( APICAL_TD, S::V_M ) ], V_som_forward, APICAL_TD );
 
     // log state data
     B_.logger_.record_data( origin.get_steps() + lag );
@@ -661,11 +659,11 @@ nest::pp_cond_exp_mc_pyr::handle( SpikeEvent& e )
   B_.spikes_[ port ].add_value(
     e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), e.get_weight() * e.get_multiplicity() );
 
-  if ( port == APICAL_TD )
-  {
-    B_.spikes_[ APICAL_LAT ].add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
-      e.get_weight() * e.get_multiplicity() );
-  }
+  // if ( port == APICAL_TD )
+  // {
+  //   B_.spikes_[ APICAL_LAT ].add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
+  //     e.get_weight() * e.get_multiplicity() );
+  // }
 }
 
 void
@@ -681,11 +679,11 @@ nest::pp_cond_exp_mc_pyr::handle( CurrentEvent& e )
   B_.currents_[ port ].add_value(
     e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), e.get_weight() * e.get_current() );
 
-  if ( port == I_APICAL_TD )
-  {
-    B_.currents_[ I_APICAL_LAT ].add_value(
-      e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), e.get_weight() * e.get_current() );
-  }
+  // if ( port == I_APICAL_TD )
+  // {
+  //   B_.currents_[ I_APICAL_LAT ].add_value(
+  //     e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), e.get_weight() * e.get_current() );
+  // }
 }
 
 void
