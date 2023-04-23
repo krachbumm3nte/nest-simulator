@@ -66,6 +66,7 @@ class NestNetwork(Network):
         stim_synapse = deepcopy(self.p.syn_static)
         stim_synapse.update({"receptor_type": self.p.compartments["soma"],
                              "weight": self.p.g_som/self.weight_scale})
+
         nest.Connect(self.output_stimulators, self.layers[-1].pyr, conn_spec="one_to_one", syn_spec=stim_synapse)
 
         if self.p.noise:
@@ -82,13 +83,12 @@ class NestNetwork(Network):
         if self.use_mm:
             self.mm = nest.Create('multimeter', 1, {'record_to': self.recording_backend,
                                                     'interval': self.p.record_interval,
-                                                    'record_from': ["V_m.a_lat", "V_m.s", "V_m.b"],
+                                                    'record_from': ["V_m.s"],  # ["V_m.a_lat", "V_m.s", "V_m.b"],
                                                     'stop': 0.0  # disables multimeter by default
                                                     })
-            nest.Connect(self.mm, self.layers[-2].pyr)
-            nest.Connect(self.mm, self.layers[-2].intn)
-            nest.Connect(self.mm, self.layers[-1].pyr)
-            nest.Connect(self.mm, self.output_stimulators)
+            # nest.Connect(self.mm, self.layers[-2].pyr)
+            # nest.Connect(self.mm, self.layers[-2].intn)
+            nest.Connect(self.mm, self.layers[-1].pyr, syn_spec={"delay": self.p.delta_t})
 
         pyr_prev = self.input_neurons
         intn_prev = None
@@ -169,9 +169,9 @@ class NestNetwork(Network):
         for i in range(self.dims[-1]):
             # self.layers[-1].pyr[i].set({"soma": {"I_e": target_currents[i] * self.p.g_som}})
             if self.spiking:
-                self.output_stimulators[i].set({"soma": {"I_e": 10 *  target_currents[i] / self.tau_x }})
+                self.output_stimulators[i].set({"soma": {"I_e": 10 * target_currents[i] / self.tau_x}})
             else:
-                self.output_stimulators[i].set({"soma": {"I_e":  target_currents[i] / self.tau_x }})
+                self.output_stimulators[i].set({"soma": {"I_e":  target_currents[i] / self.tau_x}})
 
     def train_batch(self, x_batch, y_batch):
         loss = []
