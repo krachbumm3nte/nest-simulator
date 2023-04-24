@@ -86,7 +86,7 @@ private:
     SOMA = 0,
     BASAL,
     APICAL_LAT,
-    APICAL_TD,
+    // APICAL_TD,
     NCOMP
   };
 
@@ -109,7 +109,7 @@ public:
 
   double g_conn[ NCOMP ]; //!< Conductances connecting compartments in nS
   double g_L[ NCOMP ];    //!< Leak Conductance in nS
-  double C_m[ NCOMP ];             //!< Capacity of the membrane in pF
+  double C_m[ NCOMP ];    //!< Capacity of the membrane in pF
   double E_L[ NCOMP ];    //!< Reversal Potential in mV
 };
 
@@ -273,16 +273,17 @@ public:
   port send_test_event( Node&, rport, synindex, bool ) override;
 
   void handle( DelayedRateConnectionEvent& ) override;
-  void handle( CurrentEvent& );
-  void handle( DataLoggingRequest& );
+  void handle( CurrentEvent& ) override;
+  void handle( DataLoggingRequest& ) override;
 
   port handles_test_event( DelayedRateConnectionEvent&, rport ) override;
-  port handles_test_event( CurrentEvent&, rport );
-  port handles_test_event( DataLoggingRequest&, rport );
+  port handles_test_event( CurrentEvent&, rport ) override;
+  port handles_test_event( DataLoggingRequest&, rport ) override;
   void
   sends_secondary_event( DelayedRateConnectionEvent& ) override
   {
   }
+
   void get_status( DictionaryDatum& ) const;
   void set_status( const DictionaryDatum& );
 
@@ -299,7 +300,7 @@ private:
     SOMA = 0,
     BASAL,
     APICAL_LAT,
-    APICAL_TD,
+    // APICAL_TD,
     NCOMP
   };
 
@@ -318,7 +319,7 @@ private:
     S_SOMA = MIN_SPIKE_RECEPTOR,
     S_BASAL,
     S_APICAL_LAT,
-    S_APICAL_TD,
+    // S_APICAL_TD,
     SUP_SPIKE_RECEPTOR
   };
 
@@ -339,7 +340,7 @@ private:
     I_SOMA = MIN_CURR_RECEPTOR,
     I_BASAL,
     I_APICAL_LAT,
-    I_APICAL_TD,
+    // I_APICAL_TD,
     SUP_CURR_RECEPTOR
   };
 
@@ -556,11 +557,14 @@ public:
   static RecordablesMap< rate_neuron_pyr > recordablesMap_;
 };
 
+
 // Inline functions of rate_neuron_pyr_parameters
+
 inline double
 rate_neuron_pyr_parameters::phi( double u )
 {
   const double phi_thresh = 15;
+  
   if ( use_phi )
   {
     if ( u < -phi_thresh )
@@ -664,8 +668,8 @@ rate_neuron_pyr::get_status( DictionaryDatum& d ) const
   ( *receptor_dict_ )[ names::apical_lat ] = S_APICAL_LAT;
   ( *receptor_dict_ )[ names::apical_lat_curr ] = I_APICAL_LAT;
 
-  ( *receptor_dict_ )[ names::apical_td ] = S_APICAL_TD;
-  ( *receptor_dict_ )[ names::apical_td_curr ] = I_APICAL_TD;
+  // ( *receptor_dict_ )[ names::apical_td ] = S_APICAL_TD;
+  // ( *receptor_dict_ )[ names::apical_td_curr ] = I_APICAL_TD;
 
   ( *d )[ names::receptor_types ] = receptor_dict_;
 }

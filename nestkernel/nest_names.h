@@ -595,6 +595,7 @@ extern const Name use_compressed_spikes;
 extern const Name use_wfr;
 extern const Name use_phi;
 
+extern const Name V_forw;
 extern const Name V_T;
 extern const Name V_T_star;
 extern const Name V_act_NMDA;

@@ -91,6 +91,48 @@ RecordablesMap< pp_cond_exp_mc_pyr >::create()
 extern "C" int
 nest::pp_cond_exp_mc_pyr_dynamics( double, const double y[], double f[], void* pnode )
 {
+  //   // some shorthands
+  //   typedef nest::pp_cond_exp_mc_pyr N;
+  //   typedef nest::pp_cond_exp_mc_pyr::State_ S;
+
+  //   assert( pnode );
+  //   const nest::pp_cond_exp_mc_pyr& node = *( reinterpret_cast< nest::pp_cond_exp_mc_pyr* >( pnode ) );
+
+  //   // coupling from dendrites to soma all summed up
+  //   double I_conn_d_s = 0.0;
+
+  //   // compute dynamics for each dendritic compartment
+  //   // computations written quite explicitly for clarity, assume compiler
+  //   // will optimize most stuff away ...
+  //   for ( size_t n = 1; n < N::NCOMP; ++n )
+  //   {
+  //     if ( node.P_.pyr_params.g_conn[ n ] == 0 )
+  //     {
+  //       continue;
+  //     }
+  //     // membrane potential of dendrite
+  //     const double V_dnd = y[ S::idx( n, S::V_M ) ];
+
+  //     // coupling current from dendrite to soma. Distant apical compartment does not leak directly into the soma
+  //     // if ( n != APICAL_TD )
+  //     // {
+  //     I_conn_d_s += node.P_.pyr_params.g_conn[ n ] * V_dnd;
+  //     // }
+  //     f[ S::idx( n, S::V_M ) ] =
+  //       ( -( node.P_.pyr_params.g_L[ n ] * V_dnd ) + y[ S::idx( n, S::I ) ] ) / node.P_.pyr_params.C_m[ n ];
+  //   }
+
+  //   const double I_L = node.P_.pyr_params.g_conn[ N::SOMA ] * y[ S::idx( N::SOMA, S::V_M ) ];
+  //   const double delta_V_som =
+  //     ( -I_L + I_conn_d_s + node.P_.I_e[ N::SOMA ] + y[ S::idx( N::SOMA, S::I ) ] ) / node.P_.pyr_params.C_m[ N::SOMA
+  //     ];
+
+
+  //   f[ S::idx( N::SOMA, S::V_M ) ] = node.B_.step_ * delta_V_som;
+  //   f[ S::idx( N::SOMA, S::V_forw ) ] =
+  //     ( node.P_.pyr_params.C_m[ N::SOMA ] / node.P_.pyr_params.g_conn[ N::SOMA ] ) * delta_V_som;
+
+
   return GSL_SUCCESS;
 }
 
@@ -390,7 +432,7 @@ nest::pp_cond_exp_mc_pyr::State_::set( const DictionaryDatum& d, const Parameter
     {
       DictionaryDatum dd = getValue< DictionaryDatum >( d, comp_names_[ n ] );
       updateValue< double >( dd, names::V_m, y_[ idx( n, V_M ) ] );
-      updateValue< double >( dd, names::I, y_[ idx( n, I ) ] );
+      updateValue< double >( dd, names::V_forw, y_[ idx( n, V_forw ) ] );
     }
   }
 }
@@ -569,15 +611,16 @@ nest::pp_cond_exp_mc_pyr::update( Time const& origin, const long from, const lon
       / pyr_params->C_m[ SOMA ];
 
 
-    double V_som_old = S_.y_[ S::idx( SOMA, S::V_M ) ];
+    S_.y_[ S::idx( SOMA, S::V_forw ) ] =
+      S_.y_[ S::idx( SOMA, S::V_M ) ] + ( pyr_params->C_m[ SOMA ] / pyr_params->g_conn[ SOMA ] ) * delta_V_som;
 
     S_.y_[ S::idx( SOMA, S::V_M ) ] += B_.step_ * delta_V_som;
-
 
     double V_som_forward = S_.y_[ S::idx( SOMA, S::V_M ) ];
     if ( pyr_params->latent_equilibrium )
     {
-      V_som_forward = V_som_old + delta_V_som * ( pyr_params->C_m[ SOMA ] / pyr_params->g_conn[ SOMA ] );
+      // V_som_forward = V_som_old + delta_V_som * ( pyr_params->C_m[ SOMA ] / pyr_params->g_conn[ SOMA ] );
+      V_som_forward = S_.y_[ S::idx( SOMA, S::V_forw ) ];
     }
 
     // Declaration outside if statement because we need it later
@@ -673,7 +716,7 @@ nest::pp_cond_exp_mc_pyr::handle( CurrentEvent& e )
   // TODO: not 100% clean, should look at MIN, SUP
   long port = e.get_rport();
 
-  assert( 0 <= e.get_rport() and port < NCOMP );
+  assert( 0 <= port and port < NCOMP );
 
   // add weighted current; HEP 2002-10-04
   B_.currents_[ port ].add_value(

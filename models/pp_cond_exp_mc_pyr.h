@@ -279,8 +279,8 @@ public:
   port handles_test_event( CurrentEvent&, rport ) override;
   port handles_test_event( DataLoggingRequest&, rport ) override;
 
-  void get_status( DictionaryDatum& ) const override;
-  void set_status( const DictionaryDatum& ) override;
+  void get_status( DictionaryDatum& ) const;
+  void set_status( const DictionaryDatum& );
 
 private:
   void init_buffers_() override;
@@ -407,7 +407,7 @@ public:
     enum StateVecElems_
     {
       V_M = 0,
-      I,
+      V_forw,
       STATE_VEC_COMPS
     };
 
@@ -444,8 +444,7 @@ public:
   double
   get_V_m( int comp )
   {
-    double v = S_.y_[ S_.idx( comp, State_::V_M ) ];
-    return v;
+    return S_.y_[ S_.idx( comp, State_::V_M ) ];
   }
 
 private:
@@ -594,6 +593,7 @@ pp_cond_exp_mc_pyr::handles_test_event( SpikeEvent&, rport receptor_type )
   }
   return receptor_type - MIN_SPIKE_RECEPTOR;
 }
+
 
 inline port
 pp_cond_exp_mc_pyr::handles_test_event( CurrentEvent&, rport receptor_type )

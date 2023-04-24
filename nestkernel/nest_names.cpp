@@ -571,6 +571,7 @@ const Name use_compressed_spikes( "use_compressed_spikes" );
 const Name use_wfr( "use_wfr" );
 const Name use_phi( "use_phi" );
 
+const Name V_forw( "V_forw" );
 const Name V_T( "V_T" );
 const Name V_T_star( "V_T_star" );
 const Name V_act_NMDA( "V_act_NMDA" );
