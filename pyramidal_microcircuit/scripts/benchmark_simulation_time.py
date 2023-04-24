@@ -22,20 +22,31 @@ plot_dir = args[1]
 plot_utils.setup_plt()
 
 configs = {
-    "snest": {
+    "snest_high": {
         "type": NestNetwork,
         "spiking": True,
-        "name": "NEST spiking"
+        "name": "NEST spiking",
+        "weight_scale": 250
+
+    },
+    "snest_low": {
+        "type": NestNetwork,
+        "spiking": True,
+        "name": "NEST spiking",
+        "weight_scale": 10
+
     },
     "rnest": {
         "type": NestNetwork,
         "spiking": False,
-        "name": "NEST rate"
+        "name": "NEST rate",
+        "weight_scale": 10
     },
     "numpy": {
         "type": NumpyNetwork,
         "spiking": False,
-        "name": "NumPy"
+        "name": "NumPy",
+        "weight_scale": 10
     },
 }
 
@@ -54,14 +65,14 @@ for i, dims in enumerate(all_dims):
         params = Params()
         params.spiking = conf["spiking"]
         params.dims = dims
-        params.weight_scale = 1
         params.out_lag = 50
         params.sim_time = 100
-        params.train_samples = 5
+        params.weight_scale = conf["weight_scale"]
 
         utils.setup_nest(params)
         net = conf["type"](params)
         net.set_all_weights(wgts)
+        net.train_samples = 50
 
         t_start = time()
         net.train_epoch()
