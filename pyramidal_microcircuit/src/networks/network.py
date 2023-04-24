@@ -117,7 +117,7 @@ class Network:
         self.ff_error = []
         self.fb_error = []
 
-    def gen_weights(self, n_in, n_out, wmin=None, wmax=None):
+    def gen_weights(n_in, n_out, wmin=None, wmax=None):
         if not wmin:
             wmin = -0.1
         if not wmax:

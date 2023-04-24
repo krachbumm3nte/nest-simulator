@@ -162,3 +162,19 @@ def dump_state(net, filename):
         }
 
         json.dump(wtf, f, indent=4)
+
+
+def generate_weights(dims):
+    weights = []
+
+    for i in range(1, len(dims) - 1):
+        weights.append({
+            "up": Network.gen_weights(dims[i-1], dims[i]),
+            "ip": Network.gen_weights(dims[i], dims[i+1]),
+            "pi": Network.gen_weights(dims[i+1], dims[i]),
+            "down": Network.gen_weights(dims[i+1], dims[i])
+        })
+    weights.append({
+            "up": Network.gen_weights(dims[-2], dims[-1])
+    })
+    return weights
