@@ -56,7 +56,7 @@ for i, dims in enumerate(all_dims):
         params.dims = dims
         params.out_lag = 50
         params.sim_time = 100
-        params.train_samples = 1
+        params.train_samples = 5
 
         utils.setup_nest(params)
         net = conf["type"](params)
