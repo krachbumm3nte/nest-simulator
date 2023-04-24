@@ -76,7 +76,7 @@ with open(os.path.join(plot_dir, "data.json"), "w") as f:
 
 fig, ax = plt.subplots(1, len(all_dims))
 
-for i, (n_hidden, data) in enumerate(results):
+for i, (n_hidden, data) in enumerate(results.items()):
     ax[i].bar(data.keys(), data.values(), width = 0.55)
     ax[i].set_title(r"$n_{{hidden}} = {}$".format(n_hidden))
 
