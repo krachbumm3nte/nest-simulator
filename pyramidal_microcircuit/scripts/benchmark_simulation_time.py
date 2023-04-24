@@ -54,6 +54,7 @@ for i, dims in enumerate(all_dims):
         params = Params()
         params.spiking = conf["spiking"]
         params.dims = dims
+        params.out_lag = 50
         params.sim_time = 100
         params.train_samples = 1
 
