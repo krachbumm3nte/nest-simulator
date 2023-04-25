@@ -64,8 +64,7 @@ if __name__ == "__main__":
             "weight_scale": 1
         },
     }
-    
-    
+
     results = {}
 
     for i, n_hidden in enumerate(args.n_hidden):
@@ -82,6 +81,7 @@ if __name__ == "__main__":
             params.out_lag = 0
             params.sim_time = args.t_pres
             params.weight_scale = conf["weight_scale"]
+            params.threads = args.threads
 
             utils.setup_nest(params)
             net = conf["type"](params)
