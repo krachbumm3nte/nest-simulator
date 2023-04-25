@@ -49,6 +49,9 @@ if __name__ == "__main__":
     net.train_loss = progress["train_loss"]
     net.ff_error = progress["ff_error"]
     net.fb_error = progress["fb_error"]
+    net.intn_error = progress["intn_error"]
+    net.apical_error = progress["apical_error"]
     net.epoch = progress["epochs_completed"]    
 
     plot_utils.plot_training_progress(net.epoch, net, target_dir)
+    plot_utils.plot_pre_training(net.epoch, net, target_dir)

@@ -36,6 +36,11 @@ def calculate_weight_errors(net, epoch, layer_offset=0):
     WIH = weights[-(layer_offset + 2)]["ip"]
     WYH = weights[-(layer_offset + 1)]["up"]
 
+    WHI[np.isnan(WHI)] = 0
+    WHY[np.isnan(WHY)] = 0
+    WIH[np.isnan(WIH)] = 0
+    WYH[np.isnan(WYH)] = 0
+
     fb_error_now = mse(WHY.flatten(), -WHI.flatten())
     net.fb_error.append([epoch, fb_error_now])
 
@@ -71,6 +76,7 @@ def plot_pre_training(epoch, net, imgdir):
             ax3.plot(i, WIH[j, i], "x", color=col, label=f"from {i}")
 
     intn_error = np.array(net.intn_error)
+    print(intn_error)
     ax4.plot(intn_error[:, 0] * net.train_samples, utils.rolling_avg(intn_error[:, 1], 5))
     apical_error = np.array(net.apical_error)
     ax5.plot(apical_error[:, 0] * net.train_samples, utils.rolling_avg(apical_error[:, 1], 5))
