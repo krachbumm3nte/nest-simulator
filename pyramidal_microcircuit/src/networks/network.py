@@ -19,8 +19,8 @@ class Network:
             """
             self.dims = p.dims
             if p.dims[0] != 9 or p.dims[-1] != 3:
-                raise ValueError(
-                    f"For training on the bar Dataset, network must have exactly 9 input and 3 output neurons, dims are: {p.dims}")
+                raise ValueError(f"For training on the bar Dataset, network must have exactly 9 \
+input and 3 output neurons, dims are: {p.dims}")
             self.train_samples = 3
             self.val_samples = 1
             self.test_samples = 1
@@ -37,8 +37,8 @@ class Network:
             self.n_classes = p.n_classes
             self.dims = p.dims
 
-            self.train_samples = 100
-            self.val_samples = 50
+            self.train_samples = 10
+            self.val_samples = 10
             self.test_samples = 10
 
             print("Preparing MNIST train images...", end=" ")
@@ -73,7 +73,7 @@ class Network:
             self.k_yh = 10         # hidden to output teacher weight scaling factor
             self.k_hx = 1         # input to hidden teacher weight scaling factor
             self.dims_teacher = self.dims
-            self.dims_teacher[1:-1] = self.dims_teacher[1:-1]  # TODO: reduce teacher network size
+            self.dims_teacher[1:-1] = self.dims_teacher[1:-1]
             self.whx_trgt = self.gen_weights(self.dims_teacher[0], self.dims_teacher[1], -1, 1)
             self.wyh_trgt = self.gen_weights(self.dims_teacher[1], self.dims_teacher[2], -1, 1)
             self.y = np.random.random(self.dims_teacher[-1])
