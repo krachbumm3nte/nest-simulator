@@ -7,10 +7,10 @@
     "init_self_pred": false,
     "test_interval": -1,
     "full_recording": true,
-    "p_conn": 0.9,
+    "p_conn": 0.85,
     "dims": [
-        6,
-        10,
+        9,
+        30,
         3
     ],
     "n_epochs": 5000,
