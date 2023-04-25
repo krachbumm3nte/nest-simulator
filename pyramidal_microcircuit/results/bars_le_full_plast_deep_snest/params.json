@@ -74,7 +74,6 @@
             "g": 0.06,
             "C_m": 1
         },
-        "tau_m": 1,
         "lambda": 0.06,
         "gamma": 250,
         "beta": 1,
@@ -104,7 +103,6 @@
             "g": 0.06,
             "C_m": 1
         },
-        "tau_m": 1,
         "lambda": 0.06,
         "gamma": 250,
         "beta": 1,
@@ -145,7 +143,6 @@
             "g": 0.06,
             "C_m": 1
         },
-        "tau_m": 1,
         "lambda": 0.06,
         "gamma": 250,
         "beta": 1,
@@ -161,7 +158,7 @@
     "sim_time": 50,
     "spiking": true,
     "static_syn_model": "static_synapse",
-    "store_errors": true,
+    "store_errors": false,
     "syn_model": "pyr_synapse",
     "syn_plastic": {
         "synapse_model": "pyr_synapse",
@@ -177,9 +174,9 @@
     "tau_delta": 1,
     "tau_m": 1,
     "tau_x": 0.1,
-    "test_delay": 25,
+    "test_delay": 5,
     "test_interval": 10,
-    "test_time": 50,
+    "test_time": 10,
     "theta": 0,
     "threads": 8,
     "weight_scale": 250,
