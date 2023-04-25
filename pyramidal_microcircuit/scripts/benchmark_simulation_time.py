@@ -64,7 +64,8 @@ if __name__ == "__main__":
             "weight_scale": 1
         },
     }
-
+    
+    
     results = {}
 
     for i, n_hidden in enumerate(args.n_hidden):
@@ -95,7 +96,7 @@ if __name__ == "__main__":
             nest.ResetKernel()
             print("Done.\n")
 
-    data = vars(args)
+    data = args.__dict__
     args["times"] = results
 
     with open(args.target_dir, "w") as f:
