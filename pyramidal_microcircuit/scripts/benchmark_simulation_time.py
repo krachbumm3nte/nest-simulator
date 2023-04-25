@@ -97,7 +97,7 @@ if __name__ == "__main__":
             print("Done.\n")
 
     data = args.__dict__
-    args["times"] = results
+    data["times"] = results
 
     with open(args.target_dir, "w") as f:
         json.dump(data, f)
