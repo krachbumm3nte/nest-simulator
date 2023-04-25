@@ -30,6 +30,25 @@ input and 3 output neurons, dims are: {p.dims}")
             self.get_training_data = self.bar_dataset.get_samples
             self.get_val_data = self.bar_dataset.get_samples
             self.get_test_data = self.bar_dataset.get_samples
+        elif self.mode == "bars-flex":
+            """
+            Network is trained on the 'bars' dataset from Haider et al. (2021). Simple classification task
+            in which each output neuron represents horizontal, vertical or diagonal alignment respectively
+            of the 3x3 input square.
+            """
+            self.dims = p.dims
+            if p.dims[0] != 9 or p.dims[-1] != 3:
+                raise ValueError(f"For training on the bar Dataset, network must have exactly 9 \
+input and 3 output neurons, dims are: {p.dims}")
+            self.train_samples = 3
+            self.val_samples = 1
+            self.test_samples = 1
+            self.bar_dataset = BarDataset(-0.5, 1)
+
+            self.get_training_data = self.bar_dataset.get_samples
+            self.get_val_data = self.bar_dataset.get_samples
+            self.get_test_data = self.bar_dataset.get_samples
+
         elif self.mode == "mnist":
             """
             Network is trained on the MNIST dataset. Kinda self-explanatory?

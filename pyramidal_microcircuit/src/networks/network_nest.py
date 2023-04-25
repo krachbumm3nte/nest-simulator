@@ -107,17 +107,20 @@ class NestNetwork(Network):
         self.layers[-1].redefine_connections(pyr_prev)
 
         if self.p.init_self_pred:
-            for i in range(len(self.layers) - 1):
-                layer = self.layers[i]
-                l_next = self.layers[i + 1]
-                w_down = self.get_weight_array_from_syn(layer.down)
-                self.set_weights_from_syn(-w_down, layer.pi)
-
-                w_up = self.get_weight_array_from_syn(l_next.up)
-                self.set_weights_from_syn(w_up * l_next.gb / (l_next.gl + l_next.ga + l_next.gb) *
-                                          (layer.gl + layer.gd) / layer.gd, layer.ip)
-
+            self.set_selfpredicting_weights()
         print("Done")
+
+    def set_selfpredicting_weights(self):
+        for i in range(len(self.layers) - 1):
+            layer = self.layers[i]
+            l_next = self.layers[i + 1]
+            w_down = self.get_weight_array_from_syn(layer.down)
+            self.set_weights_from_syn(-w_down, layer.pi)
+
+            w_up = self.get_weight_array_from_syn(l_next.up)
+            self.set_weights_from_syn(w_up * l_next.gb / (l_next.gl + l_next.ga + l_next.gb) *
+                                        (layer.gl + layer.gd) / layer.gd, layer.ip)
+
 
     def simulate(self, T, enable_recording=False, with_delay=True):
         if enable_recording and self.use_mm:
