@@ -28,7 +28,6 @@ for le in [False, True]:
             "eta": eta,
             "record_interval": max(0.1, round(0.01*t, 1)),
             "test_interval": 10,
-            "tau_x": 1,
             "weight_scale": 250,
         }
 

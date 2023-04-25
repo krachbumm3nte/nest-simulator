@@ -1,8 +1,6 @@
 {
     "sim_time": 50,
     "out_lag": 35.0,
-    "tau_delta": 1,
-    "tau_m": 1,
     "latent_equilibrium": true,
     "eta": {
         "ip": [
