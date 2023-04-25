@@ -1,1 +1,16 @@
-{"n_hidden": ["1000"], "target_dir": "/home/johannes/nest-simulator/pyramidal_microcircuit/data/benchmark_large_t16.json", "threads": 16, "n_samples": 10, "t_pres": 100, "times": {"1000": {"NEST spiking": 16.66900897026062, "NEST rate": 30.1930091381073, "NumPy": 61.67648005485535}}}
+{
+    "n_hidden": [
+        "1000"
+    ],
+    "target_dir": "/home/johannes/nest-simulator/pyramidal_microcircuit/data/benchmark_large_t16.json",
+    "threads": 16,
+    "n_samples": 10,
+    "t_pres": 100,
+    "times": {
+        "1000": {
+            "NEST spiking": 16.66900897026062,
+            "NEST rate": 30.1930091381073,
+            "NumPy": 61.67648005485535
+        }
+    }
+}
