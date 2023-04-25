@@ -68,6 +68,7 @@ if __name__ == "__main__":
     results = {}
 
     for i, n_hidden in enumerate(args.n_hidden):
+        n_hidden = int(n_hidden)
         dims = [9, n_hidden, 3]
         wgts = utils.generate_weights(dims)
 
