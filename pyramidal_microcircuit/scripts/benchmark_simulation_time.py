@@ -94,5 +94,8 @@ if __name__ == "__main__":
             nest.ResetKernel()
             print("Done.\n")
 
+    data = vars(args)
+    args["times"] = results
+
     with open(args.target_dir, "w") as f:
-        json.dump(results, f)
+        json.dump(data, f)
