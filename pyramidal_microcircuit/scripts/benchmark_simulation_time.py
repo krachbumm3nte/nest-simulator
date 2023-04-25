@@ -25,6 +25,14 @@ if __name__ == "__main__":
                         type=int,
                         default=8,
                         help="number of threads to allocate. Only has an effect when simulating with NEST.")
+    parser.add_argument("--n_samples",
+                        type=int,
+                        default=10,
+                        help="number samples for each configuration")
+    parser.add_argument("--t_pres",
+                        type=int,
+                        default=100,
+                        help="Presentation time per sample in ms.")
     args = parser.parse_args()
     plot_utils.setup_plt()
 
@@ -69,14 +77,14 @@ if __name__ == "__main__":
             params = Params()
             params.spiking = conf["spiking"]
             params.dims = dims
-            params.out_lag = 50
-            params.sim_time = 100
+            params.out_lag = 0
+            params.sim_time = args.t_pres
             params.weight_scale = conf["weight_scale"]
 
             utils.setup_nest(params)
             net = conf["type"](params)
             net.set_all_weights(wgts)
-            net.train_samples = 50
+            net.train_samples = args.n_samples
 
             t_start = time()
             net.train_epoch()
