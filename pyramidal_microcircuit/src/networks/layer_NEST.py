@@ -58,11 +58,11 @@ class NestLayer(AbstractLayer):
         self.pyr.set({"soma": {"V_m": 0, "I_e": 0},
                       "basal": {"V_m": 0, "I_e": 0},
                       "apical_lat": {"V_m": 0, "I_e": 0}})
-                      # "apical_td": {"V_m": 0, "I_e": 0}})
+        # "apical_td": {"V_m": 0, "I_e": 0}})
         self.intn.set({"soma": {"V_m": 0, "I_e": 0},
                        "basal": {"V_m": 0, "I_e": 0},
                        "apical_lat": {"V_m": 0, "I_e": 0}})
-                      # "apical_td": {"V_m": 0, "I_e": 0}})
+        # "apical_td": {"V_m": 0, "I_e": 0}})
 
         # TODO: reset urbanczik History?
 
@@ -113,7 +113,7 @@ class NestOutputLayer(AbstractLayer):
         self.pyr.set({"soma": {"V_m": 0, "I_e": 0},
                       "basal": {"V_m": 0, "I_e": 0},
                       "apical_lat": {"V_m": 0, "I_e": 0}})
-                      # "apical_td": {"V_m": 0, "I_e": 0}})
+        # "apical_td": {"V_m": 0, "I_e": 0}})
 
         # TODO: reset urbanczik History?
 

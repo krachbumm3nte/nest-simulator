@@ -81,14 +81,16 @@ class NestNetwork(Network):
                          syn_spec={"receptor_type": self.p.compartments["soma_curr"]})
 
         if self.use_mm:
+            record_from = ["V_m.a_lat", "V_m.s", "V_m.b"] if self.p.store_errors else ["V_m.s"]
             self.mm = nest.Create('multimeter', 1, {'record_to': self.recording_backend,
                                                     'interval': self.p.record_interval,
-                                                    'record_from': ["V_m.s"],  # ["V_m.a_lat", "V_m.s", "V_m.b"],
+                                                    'record_from': record_from,
                                                     'stop': 0.0  # disables multimeter by default
                                                     })
-            # nest.Connect(self.mm, self.layers[-2].pyr)
-            # nest.Connect(self.mm, self.layers[-2].intn)
-            nest.Connect(self.mm, self.layers[-1].pyr, syn_spec={"delay": self.p.delta_t})
+            nest.Connect(self.mm, self.layers[-1].pyr)
+            if self.p.store_errors:
+                nest.Connect(self.mm, self.layers[-2].pyr)
+                nest.Connect(self.mm, self.layers[-2].intn)
 
         pyr_prev = self.input_neurons
         intn_prev = None
@@ -99,6 +101,24 @@ class NestNetwork(Network):
             pyr_prev = layer.pyr
             intn_prev = layer.intn
         self.layers[-1].connect(pyr_prev, intn_prev)
+
+        if self.p.p_conn < 1.0:
+
+            dropout = 1 - self.p.p_conn
+            print(f"Processing neuron dropout of {np.round(100*dropout, 2)}% ...")
+
+            all_neurons = nest.GetNodes(properties={"model": self.p.neuron_model})
+            all_synapses = nest.GetConnections(source=all_neurons, target=all_neurons)
+
+            n_synapses = len(all_synapses)
+            conns_to_delete = np.random.choice(n_synapses, int(dropout * n_synapses), replace=False)
+
+            print(f"{len(conns_to_delete)} synapses will be deleted... ", end="")
+
+            for i in conns_to_delete:
+                nest.Disconnect(all_synapses[i])
+
+            print("Done.")
 
         pyr_prev = self.input_neurons
         for i in range(len(self.layers)-1):
@@ -119,8 +139,7 @@ class NestNetwork(Network):
 
             w_up = self.get_weight_array_from_syn(l_next.up)
             self.set_weights_from_syn(w_up * l_next.gb / (l_next.gl + l_next.ga + l_next.gb) *
-                                        (layer.gl + layer.gd) / layer.gd, layer.ip)
-
+                                      (layer.gl + layer.gd) / layer.gd, layer.ip)
 
     def simulate(self, T, enable_recording=False, with_delay=True):
         if enable_recording and self.use_mm:
@@ -240,7 +259,10 @@ class NestNetwork(Network):
         weight_df = pd.DataFrame.from_dict(synapse_collection.get())
         n_out = len(set(synapse_collection.targets()))
         n_in = len(set(synapse_collection.sources()))
-        weight_array = weight_df.sort_values(["target", "source"]).weight.values.reshape((n_out, n_in))
+        weight_array = np.full((n_out, n_in), np.nan)
+        for idx, w in weight_df.iterrows():
+            weight_array[w["target"] % n_out, w["source"] % n_in] = w["weight"]
+
         if normalized:
             weight_array *= self.weight_scale
         return weight_array

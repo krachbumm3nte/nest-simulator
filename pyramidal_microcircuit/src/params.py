@@ -60,6 +60,7 @@ class Params:
         self.Wmax = 4
         self.tau_delta = 1.  # weight change filter time constant
         self.syn_model = None,  # Synapse model (for NEST simulations only)
+        self.p_conn = 1.
         # learning rates for all populations per layer
         self.eta = {
             'ip': [0.0004, 0],
