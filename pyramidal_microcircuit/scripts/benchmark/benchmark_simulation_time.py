@@ -13,91 +13,65 @@ import nest
 from time import time
 import matplotlib.pyplot as plt
 import argparse
+import numpy as np
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--n_hidden", "--list", nargs="+",
-                        help="list of hidden neurons with which to run the benchmark")
-    parser.add_argument("--target_dir",
+    parser.add_argument("--config", type=str,
+                        help="configuration file")
+    parser.add_argument("--out_file",
                         type=str,
-                        help="directory in which to store")
-    parser.add_argument("--threads",
-                        type=int,
-                        default=8,
-                        help="number of threads to allocate. Only has an effect when simulating with NEST.")
-    parser.add_argument("--n_samples",
-                        type=int,
-                        default=10,
-                        help="number samples for each configuration")
-    parser.add_argument("--t_pres",
-                        type=int,
-                        default=100,
-                        help="Presentation time per sample in ms.")
+                        help="file in which to store simulation results")
     args = parser.parse_args()
     plot_utils.setup_plt()
 
-    configs = {
-        "snest_high": {
-            "type": NestNetwork,
-            "spiking": True,
-            "name": "NEST spiking",
-            "weight_scale": 250
+    with open(args.config) as f:
+        config = json.load(f)
 
-        },
-        "snest_low": {
-            "type": NestNetwork,
-            "spiking": True,
-            "name": "NEST spiking",
-            "weight_scale": 1
+    config["results"] = {}
+    n_reps = config["n_repetitions"] if "n_repetitions" in config else 1
+    n_samples = config["n_samples"] if "n_samples" in config else 1
 
-        },
-        "rnest": {
-            "type": NestNetwork,
-            "spiking": False,
-            "name": "NEST rate",
-            "weight_scale": 1
-        },
-        # "numpy": {
-        #     "type": NumpyNetwork,
-        #     "spiking": False,
-        #     "name": "NumPy",
-        #     "weight_scale": 1
-        # },
-    }
+    for i, (name, param_dict) in enumerate(config["configs"].items()):
+        print(f"Benchmarking {name}...")
 
-    results = {}
+        sim_times = []
 
-    for i, n_hidden in enumerate(args.n_hidden):
-        n_hidden = int(n_hidden)
-        dims = [9, n_hidden, 3]
-        wgts = utils.generate_weights(dims)
+        for n in range(n_reps):
+            print(f"\trun {n+1}/{n_reps}...")
 
-        results[n_hidden] = {}
-        for conf in configs.values():
-            print(f"simulating {conf['name']} on {dims}")
             params = Params()
-            params.spiking = conf["spiking"]
-            params.dims = dims
-            params.out_lag = 0
-            params.t_pres = args.t_pres
-            params.weight_scale = conf["weight_scale"]
-            params.threads = args.threads
+            params.from_dict(config["global_params"])
+            params.from_dict(param_dict)
+            params.out_lag = 0 # ensures that simulation works for any t_pres
 
             utils.setup_nest(params)
-            net = conf["type"](params)
-            net.set_all_weights(wgts)
-            net.train_samples = args.n_samples
+            if params.network_type == "numpy":
+                net = NumpyNetwork(params)
+            elif params.network_type in ["rnest", "snest"]:
+                net = NestNetwork(params)
+            else:
+                raise ValueError(f"invalid network type: {params.network_type}")
+
+            if "init_weights" in config:
+                with open(config["init_weights"]) as f:
+                    wgts = json.load(f)
+                net.set_all_weights(wgts)
+
+            net.train_samples = n_samples
 
             t_start = time()
             net.train_epoch()
             t_stop = time()
             train_time = t_stop - t_start
-            results[n_hidden][conf["name"]] = train_time
-            nest.ResetKernel()
-            print("Done.\n")
+            sim_times.append(train_time)
+        t_mean = np.mean(sim_times)
+        t_std = np.std(sim_times)
+        config["results"][name] = {"times": sim_times,
+                                   "t_mean": t_mean,
+                                   "std": t_std}
+        print(f"mean time: {t_mean}s, std:{t_std}s. \n\n")
+        nest.ResetKernel()
 
-    data = args.__dict__
-    data["times"] = results
-
-    with open(args.target_dir, "w") as f:
-        json.dump(data, f)
+    with open(args.out_file, "w") as f:
+        json.dump(config, f)

@@ -1,0 +1,34 @@
+{
+    "n_repetitions": 5,
+    "n_samples": 10,
+    "global_params": {
+        "dims": [
+            9,
+            100,
+            3
+        ],
+        "t_pres": 50,
+        "threads": 8
+    },
+    "configs": {
+        "snest_high": {
+            "network_type": "snest",
+            "spiking": true,
+            "weight_scale": 250
+
+        },
+        "snest_low": {
+            "network_type": "snest",
+            "spiking": true,
+            "weight_scale": 1
+
+        },
+        "rnest": {
+            "network_type": "rnest",
+            "spiking": false
+        },
+        "numpy": {
+            "network_type": "numpy"
+        }
+    }
+}

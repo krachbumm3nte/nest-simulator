@@ -1,0 +1,56 @@
+{
+    "n_repetitions": 1,
+    "n_samples": 5,
+    "global_params": {
+        "t_pres": 10,
+        "latent_equilibrium": true,
+        "mode": "mnist",
+        "dims": [
+            784,
+            300,
+            100,
+            10
+        ],
+        "n_classes": 10,
+        "eta": {
+            "ip": [
+                0.004,
+                0.004,
+                0.0
+            ],
+            "pi": [
+                0.0,
+                0.0
+            ],
+            "up": [
+                0.01,
+                0.01,
+                0.002
+            ],
+            "down": [
+                0.0,
+                0.0
+            ]
+        },
+        "network_type": "snest",
+        "spiking": true,
+        "weight_scale": 1
+    },
+    "configs": {
+        "8": {
+            "n_threads": 8
+
+        },
+        "16": {
+            "n_threads": 16
+
+        },
+        "24": {
+            "n_threads": 24
+
+        },
+        "32": {
+            "n_threads": 32
+        }
+    }
+}
