@@ -170,7 +170,6 @@ class NestNetwork(Network):
         Arguments:
             input_currents -- Iterable of length equal to the input dimension.
         """
-        print("setting input...")
         input_currents = np.array(input_currents)
         self.input_currents = input_currents
         for i in range(self.dims[0]):
@@ -203,8 +202,12 @@ class NestNetwork(Network):
         loss = []
         for x, y in zip(x_batch, y_batch):
             self.reset()
+            print("set_input")
             self.set_input(x)
+            print("set_target")
             self.set_target(y)
+            print("Done")
+
             self.simulate(self.t_pres, enable_recording=True)
             if self.use_mm:
                 mm_data = pd.DataFrame.from_dict(self.mm.events)
