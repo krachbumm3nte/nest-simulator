@@ -170,6 +170,7 @@ class NestNetwork(Network):
         Arguments:
             input_currents -- Iterable of length equal to the input dimension.
         """
+        print("setting input...")
         input_currents = np.array(input_currents)
         self.input_currents = input_currents
         for i in range(self.dims[0]):
