@@ -27,7 +27,6 @@ class NestNetwork(Network):
         self.setup_populations()
         print("Done")
 
-
     def setup_populations(self):
         self.wr = None
         if self.p.record_weights:
@@ -262,9 +261,12 @@ class NestNetwork(Network):
         weight_df = pd.DataFrame.from_dict(synapse_collection.get())
         n_out = len(set(synapse_collection.targets()))
         n_in = len(set(synapse_collection.sources()))
-        weight_array = np.full((n_out, n_in), np.nan)
-        for idx, w in weight_df.iterrows():
-            weight_array[w["target"] % n_out, w["source"] % n_in] = w["weight"]
+        if self.p.p_conn == 1:
+            weight_array = weight_df.sort_values(["target", "source"]).weight.values.reshape((n_out, n_in))
+        else:
+            weight_array = np.full((n_out, n_in), np.nan)
+            for idx, w in weight_df.iterrows():
+                weight_array[w["target"] % n_out, w["source"] % n_in] = w["weight"]
 
         if normalized:
             weight_array *= self.weight_scale

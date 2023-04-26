@@ -13,9 +13,9 @@ class Params:
         self.delta_t = 0.1  # Euler integration step in ms
         self.threads = 8  # number of threads for parallel processing
         self.record_interval = 1  # interval for storing membrane potentials in ms
-        self.t_pres = 500  # stimulus presentation time during training in ms
+        self.t_pres = 50  # stimulus presentation time during training in ms
         self.n_epochs = 1000  # number of training iterations
-        self.out_lag = 400  # lag in ms before recording output neuron voltage during testing
+        self.out_lag = 35  # lag in ms before recording output neuron voltage during testing
         self.test_interval = 10  # test the network every N epochs
         self.test_time = 10  # stimulus presentation time during testing in ms
         self.test_delay = 5  # output layer recording delay during testing in ms
@@ -27,7 +27,7 @@ class Params:
         self.noise_factor = np.sqrt(self.delta_t) * self.sigma  # constant noise factor (arb. units)
         self.mode = "bars"  # Which dataset to train on. Default: Bars dataset from Haider (2021)
         self.store_errors = False  # compute and store apical and interneuron errors during traininng
-        self.network_type = None
+        self.network_type = "snest"
         self.reset = 2  # how to reset the network between simualtions
         # (0: not at all, 1: simulate a relaxation period, 2: hard reset all neuron states)
 
@@ -63,15 +63,15 @@ class Params:
         self.p_conn = 1.
         # learning rates for all populations per layer
         self.eta = {
-            'ip': [0.0004, 0],
-            'pi': [0, 0],
-            'up': [0.001, 0.0002],
-            'down': [0, 0]
-        }
+            "ip": [0.004, 0.0],
+            "pi": [0.01, 0.0],
+            "up": [0.01, 0.003],
+            "down": [0.0, 0.0]
+        },
 
         # parameters that regard only simulations in NEST
         self.record_weights = False  # flag to record weights in NEST using a 'weight_recorder'
-        self.weight_scale = 250  # weight scaling factor # TODO: rename this
+        self.weight_scale = 100  # weight scaling factor # TODO: rename this
         self.spiking = True  # flag to enable simulation with spiking neurons
 
         # if a config file is provided, read the file and change all specified values

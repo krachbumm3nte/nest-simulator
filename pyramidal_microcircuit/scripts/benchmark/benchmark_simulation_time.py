@@ -43,7 +43,7 @@ if __name__ == "__main__":
             params = Params()
             params.from_dict(config["global_params"])
             params.from_dict(param_dict)
-            params.out_lag = 0 # ensures that simulation works for any t_pres
+            params.out_lag = 0  # ensures that simulation works for any t_pres
 
             utils.setup_nest(params)
             if params.network_type == "numpy":
