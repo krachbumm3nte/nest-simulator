@@ -1,5 +1,5 @@
 {
-    "sim_time": 500,
+    "t_pres": 500,
     "out_lag": 250.0,
     "latent_equilibrium": true,
     "eta": {

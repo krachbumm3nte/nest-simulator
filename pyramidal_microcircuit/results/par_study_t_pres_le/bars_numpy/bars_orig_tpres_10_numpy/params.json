@@ -48,7 +48,7 @@
     "record_interval": 0.1,
     "record_weights": false,
     "sigma": 0.3,
-    "sim_time": 1,
+    "t_pres": 1,
     "spiking": false,
     "syn_model": [
         null

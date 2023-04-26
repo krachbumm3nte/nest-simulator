@@ -54,7 +54,7 @@
     "recording_backend": "memory",
     "reset": 2,
     "sigma": 0.3,
-    "sim_time": 500,
+    "t_pres": 500,
     "spiking": true,
     "store_errors": true,
     "syn_model": [

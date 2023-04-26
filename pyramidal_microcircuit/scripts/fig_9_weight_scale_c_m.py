@@ -59,7 +59,7 @@ if __name__ == "__main__":
         ax0.plot(times, utils.rolling_avg(acc, filter_window),
                  color=colors_weight_scale[weight_scale], linestyle=styles_c_m[c_m])
         # ax0.plot(times, acc,
-        #  label=r"$t_{{pres}}={} \tau_{{eff}}$".format(round(t_pres)), color="orange", linestyle=linestyles[params["sim_time"]])
+        #  label=r"$t_{{pres}}={} \tau_{{eff}}$".format(round(t_pres)), color="orange", linestyle=linestyles[params["t_pres"]])
 
     # ax0.legend()
     le_data_1 = sorted(le_data_1)

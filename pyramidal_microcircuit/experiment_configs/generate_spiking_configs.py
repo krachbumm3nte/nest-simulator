@@ -21,7 +21,7 @@ for le in [False, True]:
         eta = {k: [(lr/t) * 0.1 for lr in v] for k, v in eta_default.items()}
 
         config = {
-            "sim_time": t,
+            "t_pres": t,
             "out_lag": round(0.6*t, 1),
             "tau_delta": 1,
             "latent_equilibrium": le,

@@ -22,7 +22,7 @@ if __name__ == "__main__":
         'down': [0, 0, 0]
     }
     p.out_lag = 0
-    p.sim_time = 50
+    p.t_pres = 50
 
     p.latent_equilibrium = False
     net_sac = NumpyNetwork(deepcopy(p))

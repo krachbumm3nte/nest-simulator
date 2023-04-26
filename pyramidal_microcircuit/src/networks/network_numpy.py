@@ -75,13 +75,13 @@ class NumpyNetwork(Network):
 
     def train_batch(self, x_batch, y_batch):
         loss = []
-        n_samples = int((self.p.sim_time - self.p.out_lag)/self.record_interval)
+        n_samples = int((self.p.t_pres - self.p.out_lag)/self.record_interval)
 
         for x, y in zip(x_batch, y_batch):
             self.reset()
             self.set_input(x)
             self.target_seq = y
-            for i in range(int(self.sim_time/self.dt)):
+            for i in range(int(self.t_pres/self.dt)):
                 self.simulate(self.target_filtered, enable_recording=True)
             U_Y = np.mean(self.U_y_record[-n_samples:], axis=0)
             U_Y = self.layers[-1].u_pyr["soma"]
@@ -100,9 +100,9 @@ class NumpyNetwork(Network):
         loss_mse = []
         for x_test, y_actual in zip(x_batch, y_batch):
             self.set_input(x_test)
-            for i in range(int(self.sim_time/self.dt)):
+            for i in range(int(self.t_pres/self.dt)):
                 self.simulate(lambda: np.zeros(self.dims[-1]), True, False)
-            y_pred = np.mean(self.U_y_record[int((self.p.out_lag/self.sim_time)*self.record_interval):], axis=0)
+            y_pred = np.mean(self.U_y_record[int((self.p.out_lag/self.t_pres)*self.record_interval):], axis=0)
             loss_mse.append(mse(y_actual, y_pred))
             acc.append(np.argmax(y_actual) == np.argmax(y_pred))
             self.reset()

@@ -27,12 +27,12 @@ nest.Connect(intn, sr)
 pyr_hz = []
 intn_hz = []
 # input_nrn_hz = []
-sim_time = 1000
+t_pres = 1000
 
 
-def get_hz_from_sr(spike_recorder, neuron, sim_time):
+def get_hz_from_sr(spike_recorder, neuron, t_pres):
     n_spikes = len(np.where(spike_recorder.events["senders"] == neuron.global_id)[0])
-    return (1000 * n_spikes) / sim_time
+    return (1000 * n_spikes) / t_pres
 
 
 for scale in weight_scales:
@@ -45,11 +45,11 @@ for scale in weight_scales:
     intn.set({"soma": {"I_e": 0.5 * params.g_som}})
     # input_nrn.set({"soma": {"I_e": 0.5 / params.tau_x}})
 
-    nest.Simulate(sim_time)
+    nest.Simulate(t_pres)
 
-    pyr_hz.append([scale, get_hz_from_sr(sr, pyr, sim_time)])
-    intn_hz.append([scale, get_hz_from_sr(sr, intn, sim_time)])
-    # input_nrn_hz.append([scale, get_hz_from_sr(sr, input_nrn, sim_time)])
+    pyr_hz.append([scale, get_hz_from_sr(sr, pyr, t_pres)])
+    intn_hz.append([scale, get_hz_from_sr(sr, intn, t_pres)])
+    # input_nrn_hz.append([scale, get_hz_from_sr(sr, input_nrn, t_pres)])
 
 
 min_freq = sorted(pyr_hz)[0]

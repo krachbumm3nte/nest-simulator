@@ -113,7 +113,7 @@ input and 3 output neurons, dims are: {p.dims}")
         else:
             self.dims = p.dims
 
-        self.sim_time = self.p.sim_time
+        self.t_pres = self.p.t_pres
         self.dt = self.p.delta_t
         self.sigma_noise = self.p.sigma
         self.record_interval = self.p.record_interval

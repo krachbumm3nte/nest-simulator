@@ -116,19 +116,19 @@ def read_mm(device_id, path, it_min=None, it_max=None):
     return pd.concat(dataframes)
 
 
-def read_wr(grouped_df, source, target, sim_time, delta_t):
+def read_wr(grouped_df, source, target, t_pres, delta_t):
 
     source_id = sorted(source.global_id)
     target_id = sorted(target.global_id)
 
-    weight_array = np.zeros((int(sim_time/delta_t), len(target_id), len(source_id)))
+    weight_array = np.zeros((int(t_pres/delta_t), len(target_id), len(source_id)))
 
     for i, id_source in enumerate(source_id):
         for j, id_target in enumerate(target_id):
             group = grouped_df.get_group((id_source, id_target))
             group = group.drop_duplicates("time_ms")
             group = group.set_index("time_ms")
-            group = group.reindex(np.arange(0, sim_time, delta_t))
+            group = group.reindex(np.arange(0, t_pres, delta_t))
             group = group.fillna(method="backfill").fillna(method="ffill")
             weight_array[:, j, i] = group.weights.values
 
@@ -158,7 +158,7 @@ def dump_state(net, filename):
             "inputs": [f["I_e"] for f in net.input_neurons.get("soma")],
             "targets": [f["I_e"] for f in net.layers[-1].pyr.get("soma")],
             "t": nest.biological_time,
-            "s": net.sim_time
+            "s": net.t_pres
         }
 
         json.dump(wtf, f, indent=4)

@@ -51,7 +51,7 @@
     "record_interval": 1,
     "record_weights": false,
     "sigma": 0.3,
-    "sim_time": 100,
+    "t_pres": 100,
     "spiking": false,
     "store_errors": true,
     "syn_model": [

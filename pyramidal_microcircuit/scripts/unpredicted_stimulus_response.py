@@ -19,7 +19,7 @@ plot_utils.setup_plt()
 
 p = Params("/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/results/bars_le_full_plast_deep_rnest/params.json")
 p.weight_scale = 500
-p.sim_time = 50
+p.t_pres = 50
 p.spiking = True
 p.latent_equilibrium = True
 p.init_self_pred = False

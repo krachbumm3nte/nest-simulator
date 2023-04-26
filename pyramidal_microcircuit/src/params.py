@@ -13,7 +13,7 @@ class Params:
         self.delta_t = 0.1  # Euler integration step in ms
         self.threads = 8  # number of threads for parallel processing
         self.record_interval = 1  # interval for storing membrane potentials in ms
-        self.sim_time = 500  # stimulus presentation time during training in ms
+        self.t_pres = 500  # stimulus presentation time during training in ms
         self.n_epochs = 1000  # number of training iterations
         self.out_lag = 400  # lag in ms before recording output neuron voltage during testing
         self.test_interval = 10  # test the network every N epochs

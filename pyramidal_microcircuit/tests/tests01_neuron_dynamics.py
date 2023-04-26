@@ -550,17 +550,17 @@ class NetworkDynamics(TestClass):
         self.numpy_net.set_all_weights(self.nest_net.get_weight_dict())
 
     def run(self):
-        self.sim_time = 10
+        self.t_pres = 10
         for i in range(5):
             input_currents = np.random.random(self.dims[0])
             target_currents = np.random.random(self.dims[-1])
 
             self.nest_net.set_input(input_currents)
             self.nest_net.set_target(target_currents)
-            self.nest_net.simulate(self.sim_time, enable_recording=True, with_delay=False)
+            self.nest_net.simulate(self.t_pres, enable_recording=True, with_delay=False)
 
             self.numpy_net.set_input(input_currents)
-            for i in range(int(self.sim_time/self.delta_t)):
+            for i in range(int(self.t_pres/self.delta_t)):
                 self.numpy_net.simulate(lambda: target_currents, enable_recording=True, plasticity=False)
 
     def evaluate(self) -> bool:

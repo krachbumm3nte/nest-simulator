@@ -79,7 +79,7 @@ if __name__ == "__main__":
             params.spiking = conf["spiking"]
             params.dims = dims
             params.out_lag = 0
-            params.sim_time = args.t_pres
+            params.t_pres = args.t_pres
             params.weight_scale = conf["weight_scale"]
             params.threads = args.threads
 

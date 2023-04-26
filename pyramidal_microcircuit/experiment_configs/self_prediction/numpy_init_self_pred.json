@@ -1,5 +1,5 @@
 {
-    "sim_time": 100,
+    "t_pres": 100,
     "out_lag": 60,
     "latent_equilibrium": false,
     "record_interval": 1,

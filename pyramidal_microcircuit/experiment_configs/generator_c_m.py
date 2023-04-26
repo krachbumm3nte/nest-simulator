@@ -9,7 +9,7 @@ c_m_list = [0.5, 1, 5, 10]
 
 
 config = {
-    "sim_time": 150,
+    "t_pres": 150,
     "out_lag": 110.0,
     "latent_equilibrium": True,
     "dims": [9, 30, 3],

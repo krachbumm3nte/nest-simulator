@@ -461,7 +461,7 @@ class NetworkPlasticity(TestClass):
 
     def run(self):
 
-        self.sim_time = 8
+        self.t_pres = 8
 
         self.up_0 = []
         self.pi_0 = []
@@ -469,7 +469,7 @@ class NetworkPlasticity(TestClass):
         self.down_0 = []
         self.up_1 = []
         n_trials = 3
-        self.nest_net.mm.set({"start": 0, 'stop': self.sim_time * n_trials, 'origin': nest.biological_time})
+        self.nest_net.mm.set({"start": 0, 'stop': self.t_pres * n_trials, 'origin': nest.biological_time})
         for i in range(n_trials):
             input_currents = np.random.random(self.dims[0])
             target_currents = np.random.random(self.dims[-1])
@@ -477,7 +477,7 @@ class NetworkPlasticity(TestClass):
             self.numpy_net.set_input(input_currents)
             self.nest_net.set_target(target_currents)
 
-            for i in range(int(self.sim_time/self.p.record_interval)):
+            for i in range(int(self.t_pres/self.p.record_interval)):
                 for j in range(int(self.p.record_interval/self.delta_t)):
                     self.numpy_net.simulate(lambda: target_currents, True)
                 self.nest_net.simulate(self.p.record_interval, False, False)
@@ -555,7 +555,7 @@ class DeepNetworkPlasticity(TestClass):
 
     def run(self):
 
-        self.sim_time = 8
+        self.t_pres = 8
 
         self.up_0 = []
         self.pi_0 = []
@@ -566,7 +566,7 @@ class DeepNetworkPlasticity(TestClass):
         self.ip_1 = []
         self.down_1 = []
         n_trials = 3
-        self.nest_net.mm.set({"start": 0, 'stop': self.sim_time * n_trials, 'origin': nest.biological_time})
+        self.nest_net.mm.set({"start": 0, 'stop': self.t_pres * n_trials, 'origin': nest.biological_time})
         for i in range(n_trials):
             input_currents = np.random.random(self.dims[0])
             target_currents = np.random.random(self.dims[-1])
@@ -575,7 +575,7 @@ class DeepNetworkPlasticity(TestClass):
             self.numpy_net.set_input(input_currents)
             self.nest_net.set_target(target_currents)
 
-            for i in range(int(self.sim_time/self.p.record_interval)):
+            for i in range(int(self.t_pres/self.p.record_interval)):
                 for j in range(int(self.p.record_interval/self.delta_t)):
                     self.numpy_net.simulate(lambda: target_currents, True)
                 self.nest_net.simulate(self.p.record_interval, False, False)

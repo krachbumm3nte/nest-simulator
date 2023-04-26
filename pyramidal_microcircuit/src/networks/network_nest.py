@@ -144,7 +144,7 @@ class NestNetwork(Network):
     def simulate(self, T, enable_recording=False, with_delay=True):
         if enable_recording and self.use_mm:
             self.mm.set({"start": self.p.out_lag if with_delay else 0,
-                        'stop': self.sim_time, 'origin': nest.biological_time})
+                        'stop': self.t_pres, 'origin': nest.biological_time})
             if self.recording_backend == "ascii":
                 nest.SetKernelStatus({"data_prefix": f"it{str(self.iteration).zfill(8)}_"})
 
@@ -201,7 +201,7 @@ class NestNetwork(Network):
             self.reset()
             self.set_input(x)
             self.set_target(y)
-            self.simulate(self.sim_time, enable_recording=True)
+            self.simulate(self.t_pres, enable_recording=True)
             if self.use_mm:
                 mm_data = pd.DataFrame.from_dict(self.mm.events)
                 y_pred = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]
@@ -231,9 +231,9 @@ class NestNetwork(Network):
         for x_test, y_actual in zip(x_batch, y_batch):
             self.set_input(x_test)
             if self.use_mm:
-                # self.mm.set({"start": self.p.out_lag, 'stop': self.sim_time, 'origin': nest.biological_time})
+                # self.mm.set({"start": self.p.out_lag, 'stop': self.t_pres, 'origin': nest.biological_time})
                 self.mm.set({"start": self.p.test_delay, 'stop': self.p.test_time, 'origin': nest.biological_time})
-            self.simulate(self.p.test_time)  # self.sim_time)
+            self.simulate(self.p.test_time)  # self.t_pres)
             if self.use_mm:
                 mm_data = pd.DataFrame.from_dict(self.mm.events)
                 U_Y = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]

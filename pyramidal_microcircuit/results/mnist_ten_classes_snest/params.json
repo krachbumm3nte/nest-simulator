@@ -151,7 +151,7 @@
     "record_weights": false,
     "reset": 2,
     "sigma": 0.3,
-    "sim_time": 50,
+    "t_pres": 50,
     "spiking": true,
     "static_syn_model": "static_synapse",
     "store_errors": false,

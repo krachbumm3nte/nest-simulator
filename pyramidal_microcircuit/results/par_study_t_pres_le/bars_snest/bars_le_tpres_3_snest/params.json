@@ -126,7 +126,7 @@
     "record_interval": 0.1,
     "record_weights": false,
     "sigma": 0.3,
-    "sim_time": 0.3,
+    "t_pres": 0.3,
     "spiking": true,
     "static_syn_model": "static_synapse",
     "syn_model": "pyr_synapse",

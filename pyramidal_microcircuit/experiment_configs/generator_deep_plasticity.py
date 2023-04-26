@@ -34,7 +34,7 @@ eta = {
 with open(base_file, "r") as f:
     config = json.load(f)
 
-config["sim_time"] = 25
+config["t_pres"] = 25
 config["out_lag"] = 12
 config["n_epochs"] = 10
 

@@ -136,7 +136,7 @@
     "record_interval": -1,
     "record_weights": false,
     "sigma": 0.3,
-    "sim_time": 10,
+    "t_pres": 10,
     "spiking": false,
     "static_syn_model": "rate_connection_delayed",
     "store_errors": true,
