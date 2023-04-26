@@ -16,6 +16,7 @@
         "Wmin": -0.5,
         "Wmax": 0.5,
         "n_classes": 10,
+        "init_self_pred": false,
         "eta": {
             "ip": [
                 0.004,
