@@ -67,7 +67,7 @@ class Params:
             "pi": [0.01, 0.0],
             "up": [0.01, 0.003],
             "down": [0.0, 0.0]
-        },
+        }
 
         # parameters that regard only simulations in NEST
         self.record_weights = False  # flag to record weights in NEST using a 'weight_recorder'
