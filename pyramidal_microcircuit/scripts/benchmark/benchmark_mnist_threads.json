@@ -2,7 +2,7 @@
     "n_repetitions": 1,
     "n_samples": 10,
     "global_params": {
-        "t_pres": 100,
+        "t_pres": 25,
         "latent_equilibrium": true,
         "mode": "mnist",
         "dims": [

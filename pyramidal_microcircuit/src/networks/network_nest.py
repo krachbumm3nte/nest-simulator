@@ -202,13 +202,9 @@ class NestNetwork(Network):
         loss = []
         for x, y in zip(x_batch, y_batch):
             self.reset()
-            print("set_input")
             self.set_input(x)
-            print("set_target")
             self.set_target(y)
-            print("simulate")
             self.simulate(self.t_pres, enable_recording=True)
-            print("readout")
             if self.use_mm:
                 mm_data = pd.DataFrame.from_dict(self.mm.events)
                 y_pred = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in self.layers[-1].pyr.global_id]
