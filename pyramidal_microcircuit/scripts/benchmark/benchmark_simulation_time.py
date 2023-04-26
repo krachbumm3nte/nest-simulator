@@ -59,7 +59,7 @@ if __name__ == "__main__":
                 net.set_all_weights(wgts)
 
             net.train_samples = n_samples
-
+            print("setup complete, running test.")
             t_start = time()
             net.train_epoch()
             t_stop = time()
