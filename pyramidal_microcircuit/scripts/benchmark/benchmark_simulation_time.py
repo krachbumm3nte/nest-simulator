@@ -57,12 +57,12 @@ if __name__ == "__main__":
             "name": "NEST rate",
             "weight_scale": 1
         },
-        "numpy": {
-            "type": NumpyNetwork,
-            "spiking": False,
-            "name": "NumPy",
-            "weight_scale": 1
-        },
+        # "numpy": {
+        #     "type": NumpyNetwork,
+        #     "spiking": False,
+        #     "name": "NumPy",
+        #     "weight_scale": 1
+        # },
     }
 
     results = {}

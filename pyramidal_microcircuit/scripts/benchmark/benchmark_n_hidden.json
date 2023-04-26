@@ -1,0 +1,28 @@
+
+{
+    "global_params": {
+        "dims": [9, 39, 3]
+    },
+    "configs": {
+        "snest_high": {
+            "network_type": "snest",
+            "spiking": true,
+            "name": "NEST spiking",
+            "weight_scale": 250
+
+        },
+        "snest_low": {
+            "network_type": "snest",
+            "spiking": true,
+            "name": "NEST spiking",
+            "weight_scale": 1
+
+        },
+        "rnest": {
+            "network_type": "rnest",
+            "spiking": false,
+            "name": "NEST rate",
+            "weight_scale": 1
+        }
+    }
+}
