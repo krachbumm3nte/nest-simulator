@@ -23,10 +23,12 @@ class NestNetwork(Network):
         else:
             self.use_mm = True
 
+        print("Setting up populations... ")
         self.setup_populations()
+        print("Done")
+
 
     def setup_populations(self):
-        print("Setting up populations... ", end="")
         self.wr = None
         if self.p.record_weights:
             # initialize a weight_recorder, and update all synapse models to interface with it
@@ -92,6 +94,7 @@ class NestNetwork(Network):
                 nest.Connect(self.mm, self.layers[-2].pyr)
                 nest.Connect(self.mm, self.layers[-2].intn)
 
+        print("\tConnecting layers... ")
         pyr_prev = self.input_neurons
         intn_prev = None
         for i in range(len(self.dims)-2):
@@ -127,8 +130,8 @@ class NestNetwork(Network):
         self.layers[-1].redefine_connections(pyr_prev)
 
         if self.p.init_self_pred:
+            print("\tSetting self-predicting weight")
             self.set_selfpredicting_weights()
-        print("Done")
 
     def set_selfpredicting_weights(self):
         for i in range(len(self.layers) - 1):
