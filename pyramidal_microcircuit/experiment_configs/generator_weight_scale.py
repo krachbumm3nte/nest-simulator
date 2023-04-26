@@ -2,12 +2,10 @@ import os
 import json
 
 root_dir = os.path.dirname(os.path.realpath(__file__))
-base_file = os.path.join(root_dir, "bars_le/bars_le_tpres_500.json")
-target_dir = os.path.join(root_dir, "weight_scale")
-with open(base_file, "r") as f:
-    config = json.load(f)
+target_dir = os.path.join(root_dir, "par_study_weight_scale")
+config = {}
 
-weight_scale = [0.1, 0.25, 0.5, 1, 5, 10, 50, 100, 500, 1000, 5000]
+weight_scale = [1, 5, 10, 25, 50, 100, 500]
 
 os.mkdir(target_dir)
 for scale in weight_scale:
