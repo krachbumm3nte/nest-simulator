@@ -2,7 +2,7 @@
     "n_repetitions": 1,
     "n_samples": 10,
     "global_params": {
-        "t_pres": 10,
+        "t_pres": 50,
         "latent_equilibrium": true,
         "mode": "mnist",
         "dims": [
@@ -45,19 +45,19 @@
     },
     "configs": {
         "8": {
-            "n_threads": 8
+            "threads": 8
 
         },
         "16": {
-            "n_threads": 16
+            "threads": 16
 
         },
         "24": {
-            "n_threads": 24
+            "threads": 24
 
         },
         "32": {
-            "n_threads": 32
+            "threads": 32
         }
     }
 }
