@@ -1,9 +1,8 @@
 {
-    "t_pres": 100,
-    "out_lag": 60,
+    "t_pres": 50,
+    "out_lag": 0,
     "latent_equilibrium": true,
-    "record_interval": 1,
-    "weight_scale": 500,
+    "weight_scale": 100,
     "mode": "self-pred",
     "init_self_pred": false,
     "test_interval": -1,
@@ -12,7 +11,7 @@
         10,
         3
     ],
-    "n_epochs": 5000,
+    "n_epochs": 2000,
     "store_errors": true,
     "eta": {
         "ip": [
