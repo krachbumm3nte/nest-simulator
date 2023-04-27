@@ -13,7 +13,7 @@
         "soma_curr": 4,
         "soma": 1
     },
-    "config_file": "experiment_configs/par_study_dropout/selfpred_dropout_p_5.json",
+    "config_file": "experiment_configs/par_study_dropout/selfpred_dropout_p_7.json",
     "delta_t": 0.1,
     "dims": [
         6,
@@ -105,7 +105,7 @@
     "noise": false,
     "noise_factor": 0.09486832980505137,
     "out_lag": 0,
-    "p_conn": 0.5,
+    "p_conn": 0.7,
     "pyr_params": {
         "soma": {
             "g_L": 0.03,
