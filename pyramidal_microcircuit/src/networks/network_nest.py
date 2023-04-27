@@ -267,6 +267,7 @@ class NestNetwork(Network):
         return np.mean(acc), np.mean(loss_mse)
 
     def get_weight_array(self, source, target, normalized=False):
+        print(source, target)
         weight_df = pd.DataFrame.from_dict(nest.GetConnections(source=source, target=target).get())
         n_out = len(target)
         n_in = len(source)
@@ -303,7 +304,7 @@ class NestNetwork(Network):
             weights.append({"up": self.get_weight_array(pyr_prev, layer.pyr, normalized),
                             "pi": self.get_weight_array(layer.intn, layer.pyr, normalized),
                             "ip": self.get_weight_array(layer.pyr, layer.intn, normalized),
-                            "down": self.get_weight_array(self.layers[i+1], layer.pyr, normalized)})
+                            "down": self.get_weight_array(self.layers[i+1].pyr, layer.pyr, normalized)})
             pyr_prev = layer.pyr
         weights.append({"up": self.get_weight_array(pyr_prev, self.layers[-1].pyr, normalized)})
         return weights
