@@ -268,7 +268,15 @@ class NestNetwork(Network):
 
     def get_weight_array(self, source, target, normalized=False):
         weight_df = pd.DataFrame.from_dict(nest.GetConnections(source=source, target=target).get())
-        weight_array = weight_df.sort_values(["target", "source"]).weight.values.reshape((len(target), len(source)))
+        n_out = len(target)
+        n_in = len(source)
+        if self.p.p_conn == 1:
+            weight_array = weight_df.sort_values(["target", "source"]).weight.values.reshape((n_out, n_in))
+        else:
+            weight_array = np.full((n_out, n_in), np.nan)
+            for idx, w in weight_df.iterrows():
+                weight_array[w["target"] % n_out, w["source"] % n_in] = w["weight"]
+        
         if normalized:
             weight_array *= self.weight_scale
         return weight_array
@@ -290,12 +298,14 @@ class NestNetwork(Network):
 
     def get_weight_dict(self, normalized=True):
         weights = []
-        for layer in self.layers[:-1]:
-            weights.append({"up": self.get_weight_array_from_syn(layer.up, normalized),
-                            "pi": self.get_weight_array_from_syn(layer.pi, normalized),
-                            "ip": self.get_weight_array_from_syn(layer.ip, normalized),
-                            "down": self.get_weight_array_from_syn(layer.down, normalized)})
-        weights.append({"up": self.get_weight_array_from_syn(self.layers[-1].up, normalized)})
+        pyr_prev = self.input_neurons
+        for i, layer in enumerate(self.layers[:-1]):
+            weights.append({"up": self.get_weight_array(pyr_prev, layer.pyr, normalized),
+                            "pi": self.get_weight_array(layer.intn, layer.pyr, normalized),
+                            "ip": self.get_weight_array(layer.pyr, layer.intn, normalized),
+                            "down": self.get_weight_array(self.layers[i+1], layer.pyr, normalized)})
+            pyr_prev = layer.pyr
+        weights.append({"up": self.get_weight_array(pyr_prev, self.layers[-1].pyr, normalized)})
         return weights
 
     def reset(self):
