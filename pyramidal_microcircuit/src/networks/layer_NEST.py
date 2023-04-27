@@ -27,7 +27,6 @@ class NestLayer(AbstractLayer):
         self.synapses["ip"]['receptor_type'] = basal_dendrite
         self.synapses["pi"]['receptor_type'] = apical_proximal
         self.synapses["down"]['receptor_type'] = apical_proximal  # apical_distal
-        # connections_l["down"]['delay'] = 2*p.delta_t
 
         self.N_prev = net.dims[layer]
         self.N_pyr = net.dims[layer+1]

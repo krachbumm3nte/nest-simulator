@@ -99,6 +99,16 @@ class NestNetwork(Network):
         for i in range(len(self.dims)-2):
             layer = self.layers[i]
             pyr_next = self.layers[i+1].pyr
+
+            # Initialize weights to the self-predicting state
+            if self.p.init_self_pred:
+                layer.synapses["pi"]["weight"] = -layer.synapses["down"]["weight"]
+
+                if i > 0:
+                    l_prev = self.layers[i-1]
+                    layer.synapses["up"]["weight"] = l_prev.synapses["ip"]["weight"] * \
+                        ((layer.gl + layer.ga + layer.gb) / layer.gb) * (l_prev.gd / (l_prev.gl + l_prev.gd))
+            
             layer.connect(pyr_prev, pyr_next, intn_prev)
             pyr_prev = layer.pyr
             intn_prev = layer.intn
@@ -128,11 +138,15 @@ class NestNetwork(Network):
             pyr_prev = self.layers[i].pyr
         self.layers[-1].redefine_connections(pyr_prev)
 
-        if self.p.init_self_pred:
-            print("\tSetting self-predicting weight")
-            self.set_selfpredicting_weights()
+        # if self.p.init_self_pred:
+        #     print("\tSetting self-predicting weight... ", end="")
+        #     self.set_selfpredicting_weights()
+        #     print("Done.")
 
     def set_selfpredicting_weights(self):
+        """Initialize weights to the self-predicting state. Note that this approach is highly 
+        inefficient for large networks, as weights need to be set individually.
+        """
         for i in range(len(self.layers) - 1):
             layer = self.layers[i]
             l_next = self.layers[i + 1]
