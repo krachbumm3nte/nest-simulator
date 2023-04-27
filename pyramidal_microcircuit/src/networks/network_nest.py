@@ -46,7 +46,7 @@ class NestNetwork(Network):
         # if self.spiking:
         #     self.poisson_generators = nest.Create("poisson_generator", self.dims[0])
         #     self.input_neurons = nest.Create("parrot_neuron", self.dims[0])
-        #     nest.Connect(self.poisson_generators, self.input_neurons,
+        #     nest.Connect(self.poisson_generators, self.input_neurons, 
         #               conn_spec='one_to_one', syn_spec={'delay': self.p.delta_t})
         # else:
         #     # self.input_neurons = nest.Create("step_rate_generator", self.dims[0])
@@ -233,7 +233,8 @@ class NestNetwork(Network):
             V_ah = [mm_data[mm_data["senders"] == hidden_id]["V_m.a_lat"]
                     for hidden_id in self.layers[-2].pyr.global_id]
             V_ah = np.mean(V_ah, axis=1)
-            self.apical_error.append((self.epoch, float(np.linalg.norm(V_ah))))
+            # self.apical_error.append((self.epoch, float(np.linalg.norm(V_ah))))
+            self.apical_error.append((self.epoch, float(np.abs(np.mean(V_ah)))))
             self.intn_error.append([self.epoch, mse(self.phi(U_I), self.phi(y_pred))])
 
         return np.mean(loss)
