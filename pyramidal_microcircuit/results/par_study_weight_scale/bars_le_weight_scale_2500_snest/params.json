@@ -13,7 +13,7 @@
         "soma_curr": 4,
         "soma": 1
     },
-    "config_file": "experiment_configs/par_study_weight_scale/bars_le_weight_scale_500.json",
+    "config_file": "experiment_configs/par_study_weight_scale/bars_le_weight_scale_2500.json",
     "delta_t": 0.1,
     "dims": [
         9,
@@ -22,16 +22,16 @@
     ],
     "eta": {
         "ip": [
-            3.2e-05,
+            2.56e-07,
             0.0
         ],
         "pi": [
-            0.0004,
+            1.6e-05,
             0.0
         ],
         "up": [
-            8e-05,
-            2.4e-05
+            6.4e-07,
+            1.92e-07
         ],
         "down": [
             0.0,
@@ -63,7 +63,7 @@
             "C_m": 1
         },
         "lambda": 0.06,
-        "gamma": 5,
+        "gamma": 25,
         "beta": 1,
         "theta": 0,
         "use_phi": false,
@@ -87,7 +87,7 @@
             "C_m": 1
         },
         "lambda": 0.06,
-        "gamma": 5,
+        "gamma": 25,
         "beta": 1,
         "theta": 0,
         "use_phi": true,
@@ -123,7 +123,7 @@
             "C_m": 1
         },
         "lambda": 0.06,
-        "gamma": 5,
+        "gamma": 25,
         "beta": 1,
         "theta": 0,
         "use_phi": true,
@@ -141,8 +141,8 @@
     "syn_plastic": {
         "synapse_model": "pyr_synapse",
         "tau_Delta": 1.0,
-        "Wmin": -0.8,
-        "Wmax": 0.8,
+        "Wmin": -0.16,
+        "Wmax": 0.16,
         "delay": 0.1
     },
     "syn_static": {
@@ -157,7 +157,7 @@
     "test_time": 10,
     "theta": 0,
     "threads": 8,
-    "weight_scale": 5,
+    "weight_scale": 25,
     "wmax_init": 1,
     "wmin_init": -1
 }
