@@ -5,7 +5,7 @@ import numpy as np
 root_dir = os.path.dirname(os.path.realpath(__file__))
 
 target_dir = os.path.join(root_dir, "par_study_dropout")
-p_conn = np.arange(0.1, 1, 0.2)
+p_conn = np.arange(0.5, 1, 0.1)
 
 config = {
     "t_pres": 50,
@@ -46,6 +46,6 @@ config = {
 os.mkdir(target_dir)
 for p in p_conn:
     config["p_conn"] = p
-    config_name = f"selfpred_dropout_p_{int(10*p)}.json"
+    config_name = f"selfpred_dropout_p_{int(np.round(10*p))}.json"
     with open(os.path.join(target_dir, config_name), "w") as f:
         json.dump(config, f, indent=4)
