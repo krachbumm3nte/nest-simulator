@@ -17,7 +17,9 @@ import nest
 import matplotlib.pyplot as plt
 plot_utils.setup_plt()
 
-p = Params("/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/results/bars_le_full_plast_deep_rnest/params.json")
+simulation_dir = "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/results/"
+weight_loc = os.path.join(simulation_dir, "data/weights_1000.json")
+p = Params(os.path.join(simulation_dir, "params.json"))
 p.weight_scale = 500
 p.t_pres = 50
 p.spiking = True
@@ -25,7 +27,6 @@ p.latent_equilibrium = True
 p.init_self_pred = False
 p.dims = [9, 30, 10, 3]
 utils.setup_nest(p)
-weight_loc = "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/results/bars_le_full_plast_deep_rnest/data/weights_1000.json"
 
 net = NestNetwork(p)
 
@@ -33,6 +34,7 @@ sr_pyr = nest.Create("spike_recorder")
 sr_intn = nest.Create("spike_recorder")
 
 n_samples = 5
+
 
 def reset_recorders():
     sr_pyr.n_events = 0

@@ -46,7 +46,8 @@ class NestNetwork(Network):
         # if self.spiking:
         #     self.poisson_generators = nest.Create("poisson_generator", self.dims[0])
         #     self.input_neurons = nest.Create("parrot_neuron", self.dims[0])
-        #     nest.Connect(self.poisson_generators, self.input_neurons, conn_spec='one_to_one', syn_spec={'delay': self.p.delta_t})
+        #     nest.Connect(self.poisson_generators, self.input_neurons,
+        #               conn_spec='one_to_one', syn_spec={'delay': self.p.delta_t})
         # else:
         #     # self.input_neurons = nest.Create("step_rate_generator", self.dims[0])
         self.input_neurons = nest.Create(self.p.neuron_model, self.dims[0], self.p.input_params)
@@ -108,7 +109,7 @@ class NestNetwork(Network):
                     l_prev = self.layers[i-1]
                     layer.synapses["up"]["weight"] = l_prev.synapses["ip"]["weight"] * \
                         ((layer.gl + layer.ga + layer.gb) / layer.gb) * (l_prev.gd / (l_prev.gl + l_prev.gd))
-            
+
             layer.connect(pyr_prev, pyr_next, intn_prev)
             pyr_prev = layer.pyr
             intn_prev = layer.intn
@@ -144,7 +145,7 @@ class NestNetwork(Network):
         #     print("Done.")
 
     def set_selfpredicting_weights(self):
-        """Initialize weights to the self-predicting state. Note that this approach is highly 
+        """Initialize weights to the self-predicting state. Note that this approach is highly
         inefficient for large networks, as weights need to be set individually.
         """
         for i in range(len(self.layers) - 1):
@@ -311,7 +312,6 @@ class NestNetwork(Network):
             self.mm.n_events = 0
 
     def set_weights_from_syn(self, weights, synapse_collection):
-        # TODO: match numpy variant
         for i, source_id in enumerate(sorted(set(synapse_collection.sources()))):
             for j, target_id in enumerate(sorted(set(synapse_collection.targets()))):
                 source = nest.GetNodes({"global_id": source_id})

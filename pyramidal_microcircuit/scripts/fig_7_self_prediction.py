@@ -9,11 +9,10 @@ import src.plot_utils as plot_utils
 import src.utils as utils
 from sklearn.metrics import mean_squared_error as mse
 
-colors = {
-    "numpy": "orange",
-    "rnest": "green",
-    "snest": "blue",
-    "c_m_snest": "purple"
+networks = {
+    "numpy": {"color": "orange", "label": "NumPy"},
+    "rnest": {"color": "green", "label": "NEST rate"},
+    "snest": {"color": "blue", "label": "NEST spiking"},
 }
 
 
@@ -28,7 +27,6 @@ if __name__ == "__main__":
     out_file = args[1]
 
     all_configs = sorted(os.listdir(dirname))
-    all_configs = ["/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/results/self_pred/self_pred_numpy_numpy"]
     fig, [[ax0, ax1], [ax2, ax3]] = plt.subplots(2, 2, sharex=True)
 
     final_performance = []
@@ -36,10 +34,9 @@ if __name__ == "__main__":
 
     for config in all_configs:
 
-        network_type = config.split("_")[-1]
-        network_type = config[16:]
-        network_type = "numpy"
-        col = colors[network_type]
+        net_name = config.split("_")[-1]
+        col = networks[net_name]["color"]
+        network_type = networks[net_name]["label"]
 
         with open(os.path.join(dirname, config, "progress.json")) as f:
             progress = json.load(f)
@@ -72,17 +69,17 @@ if __name__ == "__main__":
 
     ax2.set_xlabel("epoch")
     ax3.set_xlabel("epoch")
-    ax0.set_title("apical error")
-    ax1.set_title("interneuron error")
-    ax2.set_title("feedforward weight error")
-    ax3.set_title("feedback weight error")
+    ax0.set_title("Apical error")
+    ax1.set_title("Interneuron error")
+    ax2.set_title("Feedforward weight error")
+    ax3.set_title("Feedback weight error")
 
     ax0.set_ylim(bottom=0)
     ax1.set_ylim(bottom=0)
     ax2.set_ylim(bottom=0)
     ax3.set_ylim(bottom=0)
 
-    ax0.legend()
+    ax1.legend()
 
     # plt.show()
 
