@@ -4,7 +4,7 @@
     "global_params": {
         "dims": [
             9,
-            100,
+            30,
             3
         ],
         "t_pres": 50,
@@ -15,13 +15,11 @@
             "network_type": "snest",
             "spiking": true,
             "weight_scale": 250
-
         },
         "snest_low": {
             "network_type": "snest",
             "spiking": true,
             "weight_scale": 1
-
         },
         "rnest": {
             "network_type": "rnest",
