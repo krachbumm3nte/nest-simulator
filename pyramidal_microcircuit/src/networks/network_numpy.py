@@ -115,22 +115,22 @@ class NumpyNetwork(Network):
         return u_old if self.le else self.u_target
 
     def simulate(self, train_function, enable_recording=False, plasticity=True):
-        noise_on = False
         self.r_in = self.r_in + (self.dt/self.tau_x) * (self.I_x - self.r_in)
+
         if self.le:
-            self.layers[0].update(self.r_in, self.layers[1].u_pyr["forw"], plasticity, noise_on=noise_on)
+            self.layers[0].update(self.r_in, self.layers[1].u_pyr["forw"], plasticity)
             for n in range(1, len(self.layers) - 1):
                 self.layers[n].update(self.phi(self.layers[n - 1].u_pyr["forw"]), self.layers[n + 1].u_pyr["forw"],
-                                      plasticity, noise_on=noise_on)
+                                      plasticity)
             self.layers[-1].update(self.phi(self.layers[-2].u_pyr["forw"]),
-                                   train_function(), plasticity, noise_on=noise_on)
+                                   train_function(), plasticity)
         else:
-            self.layers[0].update(self.r_in, self.layers[1].u_pyr["soma"], plasticity, noise_on=noise_on)
+            self.layers[0].update(self.r_in, self.layers[1].u_pyr["soma"], plasticity)
             for n in range(1, len(self.layers) - 1):
                 self.layers[n].update(self.phi(self.layers[n - 1].u_pyr["soma"]), self.layers[n + 1].u_pyr["soma"],
-                                      plasticity, noise_on=noise_on)
+                                      plasticity)
             self.layers[-1].update(self.phi(self.layers[-2].u_pyr["soma"]),
-                                   train_function(), plasticity, noise_on=noise_on)
+                                   train_function(), plasticity)
 
         for layer in self.layers:
             layer.apply(plasticity)
@@ -142,19 +142,27 @@ class NumpyNetwork(Network):
 
     def record_state(self):
         U_y = self.layers[-1].u_pyr["soma"]
-        self.V_by_record = np.concatenate((self.V_by_record, np.expand_dims(self.layers[-1].u_pyr["basal"], 0)), axis=0)
         self.U_y_record = np.concatenate((self.U_y_record, np.expand_dims(U_y, 0)), axis=0)
-        self.V_ah_record = np.concatenate((self.V_ah_record, np.expand_dims(self.layers[-2].u_pyr["apical"], 0)), axis=0)
-        self.V_bh_record = np.concatenate((self.V_bh_record, np.expand_dims(self.layers[-2].u_pyr["basal"], 0)), axis=0)
-        self.U_h_record = np.concatenate((self.U_h_record, np.expand_dims(self.layers[-2].u_pyr["soma"], 0)), axis=0)
-        self.U_i_record = np.concatenate((self.U_i_record, np.expand_dims(self.layers[-2].u_inn["soma"], 0)), axis=0)
-        self.V_bi_record = np.concatenate((self.V_bi_record, np.expand_dims(self.layers[-2].u_inn["dendrite"], 0)), axis=0)
-        self.U_x_record = np.concatenate((self.U_x_record, np.expand_dims(self.r_in, 0)), axis=0)
+        if self.p.store_errors:
+            self.V_by_record = np.concatenate(
+                (self.V_by_record, np.expand_dims(self.layers[-1].u_pyr["basal"], 0)), axis=0)
+            self.V_ah_record = np.concatenate(
+                (self.V_ah_record, np.expand_dims(self.layers[-2].u_pyr["apical"], 0)), axis=0)
+            self.V_bh_record = np.concatenate(
+                (self.V_bh_record, np.expand_dims(self.layers[-2].u_pyr["basal"], 0)), axis=0)
+            self.U_h_record = np.concatenate(
+                (self.U_h_record, np.expand_dims(self.layers[-2].u_pyr["soma"], 0)), axis=0)
+            self.U_i_record = np.concatenate(
+                (self.U_i_record, np.expand_dims(self.layers[-2].u_inn["soma"], 0)), axis=0)
+            self.V_bi_record = np.concatenate(
+                (self.V_bi_record, np.expand_dims(self.layers[-2].u_inn["dendrite"], 0)), axis=0)
+            self.U_x_record = np.concatenate((self.U_x_record, np.expand_dims(self.r_in, 0)), axis=0)
 
-        for i, weight_dict in enumerate(self.copy_weights()):
-            for key, weights in weight_dict.items():
-                self.weight_record[i][key] = np.concatenate(
-                    (self.weight_record[i][key], np.expand_dims(weights, axis=0)), axis=0)
+        if self.p.record_weights:
+            for i, weight_dict in enumerate(self.copy_weights()):
+                for key, weights in weight_dict.items():
+                    self.weight_record[i][key] = np.concatenate(
+                        (self.weight_record[i][key], np.expand_dims(weights, axis=0)), axis=0)
 
     def set_input(self, input_currents):
         """Inject a constant current into all neurons in the input layer.
