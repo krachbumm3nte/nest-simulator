@@ -46,7 +46,7 @@ class NestNetwork(Network):
         # if self.spiking:
         #     self.poisson_generators = nest.Create("poisson_generator", self.dims[0])
         #     self.input_neurons = nest.Create("parrot_neuron", self.dims[0])
-        #     nest.Connect(self.poisson_generators, self.input_neurons, 
+        #     nest.Connect(self.poisson_generators, self.input_neurons,
         #               conn_spec='one_to_one', syn_spec={'delay': self.p.delta_t})
         # else:
         #     # self.input_neurons = nest.Create("step_rate_generator", self.dims[0])
@@ -267,7 +267,6 @@ class NestNetwork(Network):
         return np.mean(acc), np.mean(loss_mse)
 
     def get_weight_array(self, source, target, normalized=False):
-        print(source, target)
         weight_df = pd.DataFrame.from_dict(nest.GetConnections(source=source, target=target).get())
         n_out = len(target)
         n_in = len(source)
@@ -277,7 +276,7 @@ class NestNetwork(Network):
             weight_array = np.full((n_out, n_in), np.nan)
             for idx, w in weight_df.iterrows():
                 weight_array[w["target"] % n_out, w["source"] % n_in] = w["weight"]
-        
+
         if normalized:
             weight_array *= self.weight_scale
         return weight_array

@@ -83,15 +83,14 @@ class NumpyNetwork(Network):
             self.target_seq = y
             for i in range(int(self.t_pres/self.dt)):
                 self.simulate(self.target_filtered, enable_recording=True)
-            U_Y = np.mean(self.U_y_record[-n_samples:], axis=0)
-            U_Y = self.layers[-1].u_pyr["soma"]
-            loss.append(mse(U_Y, y))
+            y_pred = np.mean(self.U_y_record[-n_samples:], axis=0)
+            loss.append(mse(y_pred, y))
 
         if self.p.store_errors:
             U_I = np.mean(self.U_i_record[-n_samples:], axis=0)
             V_ah = np.mean(self.V_ah_record[-n_samples:], axis=0)
             self.apical_error.append((self.epoch, float(np.linalg.norm(V_ah))))
-            self.intn_error.append([self.epoch, mse(self.phi(U_I), self.phi(U_Y))])
+            self.intn_error.append([self.epoch, mse(self.phi(U_I), self.phi(y_pred))])
 
         return np.mean(loss)
 
