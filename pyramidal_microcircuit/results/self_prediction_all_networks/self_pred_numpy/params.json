@@ -65,7 +65,7 @@
     "test_interval": -1,
     "test_time": 10,
     "theta": 0,
-    "threads": 6,
+    "threads": 1,
     "weight_scale": 250,
     "wmax_init": 1,
     "wmin_init": -1

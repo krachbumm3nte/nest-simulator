@@ -13,7 +13,7 @@
         "soma_curr": 4,
         "soma": 1
     },
-    "config_file": "experiment_configs/self_prediction/self_pred_snest_high_cm.json",
+    "config_file": "experiment_configs/self_prediction/self_pred_snest_cm_2.json",
     "delta_t": 0.1,
     "dims": [
         5,
