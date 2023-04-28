@@ -1,23 +1,18 @@
-import argparse
 import json
 import os
-import sys
-import warnings
-from datetime import timedelta
-from time import time
 
-import numpy as np
-import src.utils as utils
-import src.plot_utils as plot_utils
-from src.networks.network_nest import NestNetwork
-from src.networks.network_numpy import NumpyNetwork
-from src.params import Params
-from src.plot_utils import plot_training_progress, plot_pre_training
-import nest
 import matplotlib.pyplot as plt
+import numpy as np
+import src.plot_utils as plot_utils
+import src.utils as utils
+from src.networks.network_nest import NestNetwork
+from src.params import Params
+
+import nest
+
 plot_utils.setup_plt()
 
-simulation_dir = "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/results/"
+simulation_dir = "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/results/bars_le_full_plast_deep_rnest"
 weight_loc = os.path.join(simulation_dir, "data/weights_1000.json")
 p = Params(os.path.join(simulation_dir, "params.json"))
 p.weight_scale = 500

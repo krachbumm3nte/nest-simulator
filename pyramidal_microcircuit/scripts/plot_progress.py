@@ -27,18 +27,17 @@ if __name__ == "__main__":
     training_duration = []
 
     p = Params(os.path.join(dirname, "params.json"))
-
+    p.p_conn = 1
     with open(os.path.join(dirname, "progress.json")) as f:
         progress = json.load(f)
     with open(os.path.join(dirname, "weights.json")) as f:
         weights = json.load(f)
-
     if p.network_type == "numpy":
         net = NumpyNetwork(p)
     else:
         net = NestNetwork(p)
 
-    # net.set_all_weights(weights)
+    net.set_all_weights(weights)
 
     weight_scale = p.weight_scale
     acc = np.array(progress["test_acc"])
@@ -53,5 +52,5 @@ if __name__ == "__main__":
     net.apical_error = progress["apical_error"]
     net.epoch = progress["epochs_completed"]    
 
-    plot_utils.plot_training_progress(net.epoch, net, target_dir)
+    # plot_utils.plot_training_progress(net.epoch, net, target_dir)
     plot_utils.plot_pre_training(net.epoch, net, target_dir)
