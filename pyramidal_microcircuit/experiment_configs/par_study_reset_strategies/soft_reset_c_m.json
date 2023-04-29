@@ -23,5 +23,6 @@
     "record_interval": 1,
     "init_self_pred": false,
     "network_type": "snest",
-    "reset": 2
+    "reset": 1,
+    "C_m_api": 75
 }
