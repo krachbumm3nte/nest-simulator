@@ -9,17 +9,21 @@ import src.plot_utils as plot_utils
 import src.utils as utils
 from sklearn.metrics import mean_squared_error as mse
 
-networks = {
-    "numpy": {"color": "orange", "label": "NumPy"},
-    "rnest": {"color": "green", "label": "NEST rate"},
-    "snest": {"color": "blue", "label": "NEST spiking"},
-}
+# networks = {
+#     "numpy": {"color": "orange", "label": "NumPy"},
+#     "rnest": {"color": "green", "label": "NEST rate"},
+#     "snest": {"color": "blue", "label": "NEST spiking"},
+# }
 
 networks = {
     "10": {"color": "orange", "label": r"$C_m = 1$"},
     "15": {"color": "red", "label": r"$C_m = 1.5$"},
     "20": {"color": "green", "label": r"$C_m = 2$"},
+    "25": {"color": "purple", "label": r"$C_m = 2.5$"},
     "50": {"color": "blue", "label": r"$C_m = 5$"},
+    "100": {"color": "magenta", "label": r"$C_m = 10$"},
+    "200": {"color": "grey", "label": r"$C_m = 20$"},
+    "500": {"color": "black", "label": r"$C_m = 50$"},
 }
 
 
@@ -40,7 +44,7 @@ if __name__ == "__main__":
 
     for config in all_configs:
 
-        net_name = config.split("_")[-1]
+        net_name = config.split("_")[-2]
         print(net_name)
         col = networks[net_name]["color"]
         network_type = networks[net_name]["label"]
@@ -51,7 +55,7 @@ if __name__ == "__main__":
         apical_error = np.array(progress["apical_error"])
         intnt_error = np.array(progress["intn_error"])
 
-        ax0.plot(apical_error[:, 0], utils.rolling_avg(apical_error[:, 1], 150), color=col, label=network_type)
+        ax0.plot(apical_error[:, 0], utils.rolling_avg(apical_error[:, 1], 350), color=col, label=network_type)
         ax1.plot(intnt_error[:, 0], utils.rolling_avg(intnt_error[:, 1], 100), color=col, label=network_type)
 
         ff_error = []
@@ -81,9 +85,9 @@ if __name__ == "__main__":
     ax2.set_title("Feedforward weight error")
     ax3.set_title("Feedback weight error")
 
-    ax0.set_ylim(bottom=0, top=0.006)
-    ax1.set_ylim(bottom=0, top=0.00005)
-    ax2.set_ylim(bottom=0)
+    ax0.set_ylim(bottom=0, top=0.005)
+    ax1.set_ylim(bottom=0, top=0.00001)
+    ax2.set_ylim(bottom=0, top=0.15)
     ax3.set_ylim(bottom=0)
 
     ax1.legend()

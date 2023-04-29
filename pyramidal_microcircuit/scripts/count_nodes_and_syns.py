@@ -13,6 +13,8 @@ import nest
 conf_file = "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/experiment_configs/mnist_full.json"
 
 p = Params(conf_file)
+p.mode = "selfpred"
+p.dims = [196, 100, 50, 10]
 net = NestNetwork(p)
 
 print(f"Number of neurons: {len(nest.GetNodes())}")

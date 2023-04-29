@@ -118,12 +118,12 @@ if __name__ == "__main__":
             sys.exit()
         if params.network_type and args.network and args.network != params.network_type:
             print(
-                f"both input file and script parameters specify different network types ({params.network_type}/{args.network}).")
+                f"both input file and script parameters specify different \
+network types ({params.network_type}/{args.network}).")
             print(f"overwriting with argument and using {args.network} network type")
             params.network_type = args.network
 
-        spiking = args.network == "snest"
-        params.network_type = args.network
+        spiking = params.network_type == "snest"
         params.spiking = spiking
         root_dir, imgdir, datadir = utils.setup_directories(name=config_name, type=params.network_type)
         # params.mode = args.mode
