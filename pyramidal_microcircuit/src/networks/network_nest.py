@@ -118,20 +118,22 @@ class NestNetwork(Network):
         if self.p.p_conn < 1.0:
 
             dropout = 1 - self.p.p_conn
-            print(f"Processing neuron dropout of {np.round(100*dropout, 2)}% ...")
+            print(f"Processing neuron dropout of {round(100*dropout, 2)}% ...")
 
-            all_neurons = nest.GetNodes(properties={"model": self.p.neuron_model})
-            all_synapses = nest.GetConnections(source=all_neurons, target=all_neurons)
+            all_neurons = nest.GetNodes({"neuron_model": self.p.neuron_model})
+            n_total = len(nest.GetConnections(source=all_neurons, target=all_neurons))
+            n_deleted = 0
+            for i, layer in enumerate(self.layers):
 
-            n_synapses = len(all_synapses)
-            conns_to_delete = np.random.choice(n_synapses, int(dropout * n_synapses), replace=False)
+                conns_layer = [layer.up, layer.pi, layer.ip, layer.down] if i < len(self.layers) - 1 else [layer.up]
+                for synapse_collection in conns_layer:
+                    n_synapses = len(synapse_collection)
+                    indices = np.random.choice(n_synapses, round(dropout * n_synapses), replace=False)
+                    n_deleted += len(indices)
+                    for i in indices:
+                        nest.Disconnect(synapse_collection[i])
 
-            print(f"{len(conns_to_delete)} synapses will be deleted... ", end="")
-
-            for i in conns_to_delete:
-                nest.Disconnect(all_synapses[i])
-
-            print("Done.")
+            print(f"{n_deleted}/{n_total} synapses were deleted ({round(100*n_deleted/n_total, 2)}%).")
 
         pyr_prev = self.input_neurons
         for i in range(len(self.layers)-1):
@@ -309,16 +311,16 @@ class NestNetwork(Network):
         return weights
 
     def reset(self):
-        self.set_target(np.zeros(self.dims[-1]))
         self.set_input(np.zeros(self.dims[0]))
+        self.set_target(np.zeros(self.dims[-1]))
         if self.p.reset == 2:
             # hard reset
             for layer in self.layers:
                 layer.reset()
         elif self.p.reset == 1:
-            # soft reset
-            for i in range(5):
-                nest.Simulate(5)
+            # soft reset TODO: parametrize relaxation time?
+            nest.Simulate(15)
+
         if self.use_mm:
             self.mm.n_events = 0
 
