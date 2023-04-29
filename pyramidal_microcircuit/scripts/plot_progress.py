@@ -19,7 +19,7 @@ if __name__ == "__main__":
     args = sys.argv[1:]
 
     dirname = args[0]
-    target_dir = args[1]
+    out_file = args[1]
 
     fig, [ax0, ax1, ax2] = plt.subplots(3, 1)
 
@@ -52,5 +52,5 @@ if __name__ == "__main__":
     net.apical_error = progress["apical_error"]
     net.epoch = progress["epochs_completed"]    
 
-    # plot_utils.plot_training_progress(net.epoch, net, target_dir)
-    plot_utils.plot_pre_training(net.epoch, net, target_dir)
+    plot_utils.plot_training_progress(net.epoch, net, out_file)
+    # plot_utils.plot_pre_training(net.epoch, net, out_file)

@@ -50,7 +50,7 @@ def calculate_weight_errors(net, epoch, layer_offset=0):
     return WHI, WHY, WIH, WYH
 
 
-def plot_pre_training(epoch, net, imgdir):
+def plot_pre_training(epoch, net, out_file):
     print(f"Ep {epoch}: generating plot...", end="")
 
     cmap_2 = plt.cm.get_cmap('hsv', net.dims[2]+1)
@@ -92,12 +92,12 @@ def plot_pre_training(epoch, net, imgdir):
     ax4.set_ylim(bottom=0)
     ax5.set_ylim(bottom=0)
 
-    plt.savefig(os.path.join(imgdir, f"{epoch}.png"))
+    plt.savefig(out_file)
     plt.close()
     print(f"done.\n")
 
 
-def plot_training_progress(epoch, net, imgdir):
+def plot_training_progress(epoch, net, out_file):
     print(f"Ep {epoch}: generating plot...", end="")
 
     cmap_1 = plt.cm.get_cmap('hsv', net.dims[1]+1)
@@ -150,6 +150,6 @@ def plot_training_progress(epoch, net, imgdir):
     ax4.set_ylim(0, 1)
     ax5.set_ylim(0, 1)
 
-    plt.savefig(os.path.join(imgdir, f"{epoch}.png"))
+    plt.savefig(out_file)
     plt.close()
     print(f"done.\n")

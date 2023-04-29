@@ -41,9 +41,9 @@ def run_simulations(net, params, root_dir, imgdir, datadir, plot_interval=0, pro
 
             if plot_interval > 0 and epoch % plot_interval == 0:
                 if net.mode == "self-pred":
-                    plot_pre_training(epoch, net, imgdir)
+                    plot_pre_training(epoch, net, os.path.join(imgdir, f"{epoch}.png"))
                 else:
-                    plot_training_progress(epoch, net, imgdir)
+                    plot_training_progress(epoch, net, os.path.join(imgdir, f"{epoch}.png"))
 
             if epoch % progress_interval == 0:
                 print("storing progress...", end="")
