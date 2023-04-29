@@ -41,6 +41,12 @@ if __name__ == "__main__":
 
     all_configs = os.listdir(args.config_dir)
 
+    init_weights = None
+    if args.weights:
+        print(f"initializing networks with weights from {args.weights}")
+        with open(args.weights) as f:
+            init_weights = json.load(f)
+
     global_t_start = time.time()
     for i, config in enumerate(all_configs):
         print(f"\nprocessing config file {config}...")
@@ -79,21 +85,22 @@ if __name__ == "__main__":
 
         if not use_nest:
             net = NumpyNetwork(params)
+            if init_weights:
+                net.set_all_weights(init_weights)
         else:
             utils.setup_nest(params, datadir)
-            net = NestNetwork(params)
-
-        if args.weights:
-            with open(args.weights, "r") as f:
-                weight_dict = json.load(f)
-            print(f"setting network weights from file: {args.weights}")
-            net.set_all_weights(weight_dict)
+            net = NestNetwork(params, init_weights)
 
         simulation_times = []
 
         # dump simulation parameters and initial weights to .json files
         params.to_json(os.path.join(root_dir, "params.json"))
-        utils.store_synaptic_weights(net, root_dir, "init_weights.json")
+        init_weight_fp = os.path.join(root_dir, "init_weights.json")
+        if init_weights:
+            with open(init_weight_fp, "w") as f:
+                json.dump(init_weights, f, indent=4)
+        else:
+            utils.store_synaptic_weights(net, init_weight_fp)
 
         print(f"Setup complete, beginning to train...")
 

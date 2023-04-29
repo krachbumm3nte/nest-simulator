@@ -47,7 +47,7 @@ def run_simulations(net, params, root_dir, imgdir, datadir, plot_interval=0, pro
 
             if epoch % progress_interval == 0:
                 print("storing progress...", end="")
-                utils.store_synaptic_weights(net, datadir, f"weights_{epoch}.json")
+                utils.store_synaptic_weights(net, os.path.join(datadir, f"weights_{epoch}.json"))
                 utils.store_progress(net, root_dir, epoch)
                 print("done.")
 
@@ -60,7 +60,7 @@ ETA: {timedelta(seconds=np.round(t_epoch * (params.n_epochs-epoch)))}\n")
     except KeyboardInterrupt:
         print("KeyboardInterrupt received - storing progress...")
     finally:
-        utils.store_synaptic_weights(net, root_dir)
+        utils.store_synaptic_weights(net, os.path.join(root_dir, "weights.json"))
         print("Weights stored to disk.")
         utils.store_progress(net, root_dir, epoch)
         print("progress stored to disk, exiting.")
@@ -112,7 +112,7 @@ if __name__ == "__main__":
         else:
             params = Params()
             config_name = "default_config"
-        print("created params")
+
         if not args.network and not params.network_type:
             print("no network type specified, aborting.")
             sys.exit()
@@ -130,16 +130,19 @@ network types ({params.network_type}/{args.network}).")
     params.threads = args.threads
 
     utils.setup_nest(params, datadir)
+
+    init_weights = None
+    if args.weights:
+        print(f"initializing network with weights from {args.weights}")
+        with open(args.weights) as f:
+            init_weights = json.load(f)
+
     if params.network_type == "numpy":
         net = NumpyNetwork(params)
+        if init_weights:
+            net.set_all_weights(init_weights)  # TODO: unify weight initialization
     else:
-        net = NestNetwork(params)
-
-    if args.weights:
-        with open(args.weights) as f:
-            print(f"initializing network with weights from {args.weights}")
-            weight_dict = json.load(f)
-        net.set_all_weights(weight_dict)
+        net = NestNetwork(params, init_weights)
 
     if args.cont:
         net.test_acc = progress["test_acc"]
@@ -156,7 +159,13 @@ network types ({params.network_type}/{args.network}).")
     if not args.cont:
         # dump simulation parameters and initial weights to .json files
         params.to_json(os.path.join(root_dir, "params.json"))
-        utils.store_synaptic_weights(net, root_dir, "init_weights.json")
+
+        init_weight_fp = os.path.join(root_dir, "init_weights.json")
+        if init_weights:
+            with open(init_weight_fp, "w") as f:
+                json.dump(init_weights, f, indent=4)
+        else:
+            utils.store_synaptic_weights(net, init_weight_fp)
 
     print("setup complete, running simulations...")
     plot_interval = args.plot

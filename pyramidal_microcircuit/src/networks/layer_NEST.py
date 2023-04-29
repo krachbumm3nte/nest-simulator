@@ -2,13 +2,13 @@
 from copy import deepcopy
 
 from src.networks.layer import AbstractLayer
-
+import numpy as np
 import nest
 
 
 class NestLayer(AbstractLayer):
 
-    def __init__(self, net, p, layer) -> None:
+    def __init__(self, net, p, layer, init_weights=None) -> None:
         super().__init__(p, net, layer)
         self.synapses = {}
         for type in ["up", "pi", "ip", "down"]:
@@ -32,10 +32,15 @@ class NestLayer(AbstractLayer):
         self.N_pyr = net.dims[layer+1]
         self.N_next = net.dims[layer+2]
 
-        self.synapses["up"]["weight"] = self.gen_weights(self.N_prev, self.N_pyr)
-        self.synapses["pi"]["weight"] = self.gen_weights(self.N_next, self.N_pyr)
-        self.synapses["ip"]["weight"] = self.gen_weights(self.N_pyr, self.N_next)
-        self.synapses["down"]["weight"] = self.gen_weights(self.N_next, self.N_pyr)
+        if init_weights:
+            for type in ["up", "pi", "ip", "down"]:
+                # Init weights are assumed to be normalized and thus need to be scaled down.
+                self.synapses[type]["weight"] = np.array(init_weights[type]) / self.weight_scale
+        else:
+            self.synapses["up"]["weight"] = self.gen_weights(self.N_prev, self.N_pyr)
+            self.synapses["pi"]["weight"] = self.gen_weights(self.N_next, self.N_pyr)
+            self.synapses["ip"]["weight"] = self.gen_weights(self.N_pyr, self.N_next)
+            self.synapses["down"]["weight"] = self.gen_weights(self.N_next, self.N_pyr)
 
         self.pyr = nest.Create(p.neuron_model, self.N_pyr, p.pyr_params)
         self.intn = nest.Create(p.neuron_model, self.N_next, p.intn_params)
@@ -79,7 +84,7 @@ class NestLayer(AbstractLayer):
 
 class NestOutputLayer(AbstractLayer):
 
-    def __init__(self, net, p) -> None:
+    def __init__(self, net, p, init_weights=None) -> None:
         super().__init__(p, net, len(net.dims)-2)
 
         self.ga = 0
@@ -92,9 +97,11 @@ class NestOutputLayer(AbstractLayer):
         else:
             self.synapse_up = deepcopy(p.syn_static)
 
-        basal_dendrite = p.compartments['basal']
-        self.synapse_up['receptor_type'] = basal_dendrite
-        self.synapse_up["weight"] = self.gen_weights(self.N_prev, self.N_out)
+        self.synapse_up['receptor_type'] = p.compartments['basal']
+        if init_weights:
+            self.synapse_up["weight"] = np.array(init_weights["up"]) / self.weight_scale
+        else:
+            self.synapse_up["weight"] = self.gen_weights(self.N_prev, self.N_out)
 
         self.pyr = nest.Create(p.neuron_model, self.N_out, p.pyr_params)
         self.pyr.set({"apical_lat": {"g": 0}})

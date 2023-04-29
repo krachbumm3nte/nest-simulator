@@ -55,7 +55,7 @@ def rolling_avg(input, size):
     return uniform_filter1d(input, size, mode="nearest")
 
 
-def store_synaptic_weights(network: Network, dirname, filename="weights.json"):
+def store_synaptic_weights(network: Network, out_dir):
     weights = network.get_weight_dict()
 
     for layer in weights:
@@ -63,7 +63,7 @@ def store_synaptic_weights(network: Network, dirname, filename="weights.json"):
             if type(layer[k]) == np.ndarray:
                 layer[k] = v.tolist()
 
-    with open(os.path.join(dirname, filename), "w") as f:
+    with open(out_dir, "w") as f:
         json.dump(weights, f, indent=4)
 
 

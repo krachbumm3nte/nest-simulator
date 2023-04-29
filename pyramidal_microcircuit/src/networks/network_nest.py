@@ -10,9 +10,10 @@ import nest
 
 class NestNetwork(Network):
 
-    def __init__(self, p: Params) -> None:
+    def __init__(self, p: Params, init_weights=None) -> None:
         super().__init__(p)
 
+        self.init_weights = init_weights
         self.noise_generator = None
         self.spiking = p.spiking
         self.weight_scale = self.p.weight_scale if self.spiking else 1
@@ -56,13 +57,15 @@ class NestNetwork(Network):
         pyr_prev = self.input_neurons
         intn_prev = None
         for i in range(len(self.dims)-2):
-            layer = NestLayer(self, self.p, i)
+            init_weights = self.init_weights[i] if self.init_weights else None
+            layer = NestLayer(self, self.p, i, init_weights)
             self.layers.append(layer)
             pyr_prev = layer.pyr
             intn_prev = layer.intn
 
         # output layer
-        self.layers.append(NestOutputLayer(self, self.p))
+        init_weights = self.init_weights[-1] if self.init_weights else None
+        self.layers.append(NestOutputLayer(self, self.p, init_weights))
 
         self.output_stimulators = nest.Create(self.p.neuron_model, self.dims[-1], self.p.input_params)
         stim_synapse = deepcopy(self.p.syn_static)
@@ -277,7 +280,7 @@ class NestNetwork(Network):
         else:
             weight_array = np.full((n_out, n_in), np.nan)
             for idx, w in weight_df.iterrows():
-                weight_array[w["target"] % n_out, w["source"] % n_in] = w["weight"]
+                weight_array[(w["target"] - 1) % n_out, (w["source"] - 1) % n_in] = w["weight"]
 
         if normalized:
             weight_array *= self.weight_scale
@@ -291,8 +294,9 @@ class NestNetwork(Network):
             weight_array = weight_df.sort_values(["target", "source"]).weight.values.reshape((n_out, n_in))
         else:
             weight_array = np.full((n_out, n_in), np.nan)
-            for idx, w in weight_df.iterrows():
-                weight_array[w["target"] % n_out, w["source"] % n_in] = w["weight"]
+            for idx, w in weight_df.sort_values(["target", "source"]).iterrows():
+                print(w["target"], w["source"])
+                weight_array[(w["target"] - 1) % n_out, (w["source"] - 1) % n_in] = w["weight"]
 
         if normalized:
             weight_array *= self.weight_scale
