@@ -1,0 +1,36 @@
+{
+    "t_pres": 50,
+    "out_lag": 0,
+    "latent_equilibrium": true,
+    "weight_scale": 100,
+    "mode": "self-pred",
+    "init_self_pred": false,
+    "test_interval": -1,
+    "dims": [
+        8,
+        8,
+        8
+    ],
+    "n_epochs": 2000,
+    "store_errors": true,
+    "eta": {
+        "ip": [
+            0.02375,
+            0.0
+        ],
+        "pi": [
+            0.05,
+            0.0
+        ],
+        "up": [
+            0,
+            0
+        ],
+        "down": [
+            0.0,
+            0.0
+        ]
+    },
+    "network_type": "snest",
+    "p_conn": 0.9
+}
