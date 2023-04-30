@@ -138,11 +138,7 @@ class NestNetwork(Network):
 
             print(f"{n_deleted}/{n_total} synapses were deleted ({round(100*n_deleted/n_total, 2)}%).")
 
-        pyr_prev = self.input_neurons
-        for i in range(len(self.layers)-1):
-            self.layers[i].redefine_connections(pyr_prev, self.layers[i+1].pyr)
-            pyr_prev = self.layers[i].pyr
-        self.layers[-1].redefine_connections(pyr_prev)
+        self.redefine_connections()
 
         # if self.p.init_self_pred:
         #     print("\tSetting self-predicting weight... ", end="")
@@ -162,6 +158,13 @@ class NestNetwork(Network):
             w_up = self.get_weight_array_from_syn(l_next.up)
             self.set_weights_from_syn(w_up * l_next.gb / (l_next.gl + l_next.ga + l_next.gb) *
                                       (layer.gl + layer.gd) / layer.gd, layer.ip)
+
+    def redefine_connections(self):
+        pyr_prev = self.input_neurons
+        for i in range(len(self.layers)-1):
+            self.layers[i].redefine_connections(pyr_prev, self.layers[i+1].pyr)
+            pyr_prev = self.layers[i].pyr
+        self.layers[-1].redefine_connections(pyr_prev)
 
     def simulate(self, T, enable_recording=False, with_delay=True):
         if enable_recording and self.use_mm:

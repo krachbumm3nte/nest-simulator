@@ -74,4 +74,4 @@ if __name__ == "__main__":
         nest.ResetKernel()
 
     with open(args.out_file, "w") as f:
-        json.dump(config, f)
+        json.dump(config, f, indent=4)

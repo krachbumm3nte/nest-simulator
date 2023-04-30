@@ -116,6 +116,17 @@ def read_mm(device_id, path, it_min=None, it_max=None):
     return pd.concat(dataframes)
 
 
+def get_mm_data(df, population, key):
+    ids = population.global_id
+    if hasattr(ids, "__iter__"): # check if ids is a list/tuple, i.e. contains more than one value
+        filtered_df = df[df["senders"].isin(ids)]
+        filtered_df = filtered_df.sort_values(by=["times", "senders"])[key]
+        return filtered_df.values.reshape(-1, len(ids))
+    else:
+        filtered_df = df[df["senders"] == ids]
+        return filtered_df.sort_values(by="times")[key].values
+
+
 def read_wr(grouped_df, source, target, t_pres, delta_t):
 
     source_id = sorted(source.global_id)
@@ -175,6 +186,6 @@ def generate_weights(dims):
             "down": Network.gen_weights(dims[i+1], dims[i])
         })
     weights.append({
-            "up": Network.gen_weights(dims[-2], dims[-1])
+        "up": Network.gen_weights(dims[-2], dims[-1])
     })
     return weights
