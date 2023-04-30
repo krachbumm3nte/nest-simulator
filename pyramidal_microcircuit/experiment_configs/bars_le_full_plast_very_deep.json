@@ -1,6 +1,6 @@
 {
-    "t_pres": 75,
-    "out_lag": 35.0,
+    "t_pres": 100,
+    "out_lag": 70,
     "latent_equilibrium": true,
     "dims": [
         9,
@@ -9,6 +9,7 @@
         10,
         3
     ],
+    "weight_scale": 25,
     "eta": {
         "ip": [
             0.004,
@@ -34,6 +35,5 @@
             0,
             0
         ]
-    },
-    "record_interval": 0.5
+    }
 }
