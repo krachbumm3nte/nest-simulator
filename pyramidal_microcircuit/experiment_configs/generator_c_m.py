@@ -2,32 +2,32 @@ import os
 import json
 
 root_dir = os.path.dirname(os.path.realpath(__file__))
-target_dir = os.path.join(root_dir, "c_m")
+target_dir = os.path.join(root_dir, "par_study_c_m_weight_scale")
 
 weight_scale_list = [1, 5, 10]
 c_m_list = [1, 10, 50]
 
 
 config = {
-    "t_pres": 150,
-    "out_lag": 110.0,
+    "t_pres": 250,
+    "out_lag": 180.0,
     "latent_equilibrium": True,
     "dims": [9, 30, 3],
     "eta": {
         "ip": [
-            0.001,
+            0.004,
             0.0
         ],
         "pi": [
-            0.0,
+            0.01,
             0.0
         ],
         "up": [
-            0.0025,
-            0.0005
+            0.01,
+            0.003
         ],
         "down": [
-            0.0,
+            0,
             0.0
         ]
     },
