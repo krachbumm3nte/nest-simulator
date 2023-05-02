@@ -13,37 +13,27 @@
         "soma_curr": 4,
         "soma": 1
     },
-    "config_file": "experiment_configs/bars_le_full_plast_very_deep.json",
+    "config_file": "experiment_configs/self_pred_snest_8_8_8.json",
     "delta_t": 0.1,
     "dims": [
-        9,
-        30,
-        20,
-        10,
-        3
+        8,
+        8,
+        8
     ],
     "eta": {
         "ip": [
-            1.28e-07,
-            1.28e-07,
-            1.28e-07,
+            2.56e-10,
             0.0
         ],
         "pi": [
-            8e-06,
-            8e-06,
-            8e-06,
+            1.6e-07,
             0.0
         ],
         "up": [
-            3.2e-07,
-            3.2e-07,
-            3.2e-07,
-            9.6e-08
+            6.400000000000001e-10,
+            1.92e-10
         ],
         "down": [
-            0.0,
-            0.0,
             0.0,
             0.0
         ]
@@ -55,7 +45,7 @@
     "g_lk_dnd": 0.1,
     "g_som": 0.06,
     "gamma": 1,
-    "init_self_pred": true,
+    "init_self_pred": false,
     "input_params": {
         "soma": {
             "g_L": 0.03,
@@ -73,7 +63,7 @@
             "C_m": 1
         },
         "lambda": 0.06,
-        "gamma": 25,
+        "gamma": 250,
         "beta": 1,
         "theta": 0,
         "use_phi": false,
@@ -97,7 +87,7 @@
             "C_m": 1
         },
         "lambda": 0.06,
-        "gamma": 25,
+        "gamma": 250,
         "beta": 1,
         "theta": 0,
         "use_phi": true,
@@ -108,13 +98,13 @@
     "lambda_bh": 0.5263157894736842,
     "lambda_out": 0.7692307692307693,
     "latent_equilibrium": true,
-    "mode": "bars",
-    "n_epochs": 1000,
+    "mode": "self-pred",
+    "n_epochs": 5000,
     "network_type": "snest",
     "neuron_model": "pp_cond_exp_mc_pyr",
     "noise": false,
     "noise_factor": 0.09486832980505137,
-    "out_lag": 70,
+    "out_lag": 0,
     "p_conn": 1.0,
     "pyr_params": {
         "soma": {
@@ -133,7 +123,7 @@
             "C_m": 1
         },
         "lambda": 0.06,
-        "gamma": 25,
+        "gamma": 250,
         "beta": 1,
         "theta": 0,
         "use_phi": true,
@@ -146,28 +136,28 @@
     "sigma": 0.3,
     "spiking": true,
     "static_syn_model": "static_synapse",
-    "store_errors": false,
+    "store_errors": true,
     "syn_model": "pyr_synapse",
     "syn_plastic": {
         "synapse_model": "pyr_synapse",
         "tau_Delta": 1.0,
-        "Wmin": -0.16,
-        "Wmax": 0.16,
+        "Wmin": -0.016,
+        "Wmax": 0.016,
         "delay": 0.1
     },
     "syn_static": {
         "synapse_model": "static_synapse",
         "delay": 0.1
     },
-    "t_pres": 100,
+    "t_pres": 50,
     "tau_delta": 1.0,
     "tau_x": 0.1,
     "test_delay": 5,
-    "test_interval": 10,
+    "test_interval": -1,
     "test_time": 10,
     "theta": 0,
     "threads": 8,
-    "weight_scale": 25,
+    "weight_scale": 250,
     "wmax_init": 1,
     "wmin_init": -1
 }
