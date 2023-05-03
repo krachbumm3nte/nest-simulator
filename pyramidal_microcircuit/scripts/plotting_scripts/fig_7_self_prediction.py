@@ -17,13 +17,17 @@ from sklearn.metrics import mean_squared_error as mse
 
 networks = {
     "10": {"color": "orange", "label": r"$C_m = 1$"},
-    "15": {"color": "red", "label": r"$C_m = 1.5$"},
-    "20": {"color": "green", "label": r"$C_m = 2$"},
-    "25": {"color": "purple", "label": r"$C_m = 2.5$"},
-    "50": {"color": "blue", "label": r"$C_m = 5$"},
+    # "15": {"color": "red", "label": r"$C_m = 1.5$"},
+    # "20": {"color": "green", "label": r"$C_m = 2$"},
+    # "25": {"color": "purple", "label": r"$C_m = 2.5$"},
+    # "50": {"color": "blue", "label": r"$C_m = 5$"},
     "100": {"color": "magenta", "label": r"$C_m = 10$"},
     "200": {"color": "grey", "label": r"$C_m = 20$"},
     "500": {"color": "black", "label": r"$C_m = 50$"},
+    # "750": {"color": "red", "label": r"$C_m = 75$"},
+    "1000": {"color": "cyan", "label": r"$C_m = 100$"},
+    # "2000": {"color": "red", "label": r"$C_m = 200$"},
+    # "2500": {"color": "blue", "label": r"$C_m = 250$"},
 }
 
 
@@ -46,6 +50,8 @@ if __name__ == "__main__":
 
         net_name = config.split("_")[-2]
         print(net_name)
+        if net_name not in networks:
+            continue
         col = networks[net_name]["color"]
         network_type = networks[net_name]["label"]
 

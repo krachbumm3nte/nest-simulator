@@ -1,17 +1,26 @@
 import numpy as np
 from src.params import Params
 import src.plot_utils as plot_utils
+import src.utils as utils
 import matplotlib.pyplot as plt
 import sys
 import json
 from src.networks.network_numpy import NumpyNetwork
+from src.networks.network_nest import NestNetwork
 from copy import deepcopy
+import pandas as pd
+
+
+
+
 p = Params()
+
+utils.setup_nest(p)
 
 ls = ["solid", "dashed", "dotted"]
 if __name__ == "__main__":
 
-    weights = "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/results/par_study_t_pres_le/bars_numpy/bars_le_tpres_5000_numpy/data/weights_1000.json"
+    weights = "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/results/par_study_t_pres_le/bars_snest/bars_le_tpres_1000_snest/data/weights_1000.json"
     #weights = sys.argv[1]
     #out_file = sys.argv[2]
     plot_utils.setup_plt()
@@ -21,36 +30,50 @@ if __name__ == "__main__":
         'up': [0.0, 0.0, 0],
         'down': [0, 0, 0]
     }
+    # p.weight_scale = 2000
+
     p.out_lag = 0
     p.t_pres = 50
-
+    p.store_errors = True
+    p.spiking = False
+    p.C_m_api = 50
     p.latent_equilibrium = False
-    net_sac = NumpyNetwork(deepcopy(p))
+    net_sac = NestNetwork(deepcopy(p))
     p.latent_equilibrium = True
-    net_le = NumpyNetwork(deepcopy(p))
+    net_le = NestNetwork(deepcopy(p))
+
+    net_le.redefine_connections()
+    net_sac.redefine_connections()
 
     with open(weights) as f:
         wgts = json.load(f)
+
+    print(net_le.dims, net_sac.dims)
     net_le.set_all_weights(wgts)
     net_sac.set_all_weights(wgts)
 
+
     stim_in, stim_out = net_le.get_training_data(1)
-    stim_out = [np.zeros(p.dims[-1])]
+    stim_in = [stim_in[0]]
+    #stim_out = [np.zeros(p.dims[-1])]
+    stim_out = [stim_out[0]]
+    print(stim_in, stim_out)
     print("training...")
     net_sac.train_batch(stim_in, stim_out)
     net_le.train_batch(stim_in, stim_out)
     phi = net_le.phi
     print("plotting...")
-    fig, axes = plt.subplots(2, sharex=True)
+    fig, axes = plt.subplots(2, 2, sharex=True)
     for i, neuron_idx in enumerate([0]):
         for net, label, line_col in zip([net_le, net_sac], ["LE", "Sacramento"], ["blue", "orange"]):
-            uh = net.U_h_record[:, neuron_idx]
-            vbh = net.V_bh_record[:, neuron_idx]
-            ui = net.U_i_record[:, neuron_idx]
-            vbi = net.V_bi_record[:, neuron_idx]
-            vah = net.V_ah_record[:, neuron_idx]
-            uy = net.U_y_record
-            vby = net.V_by_record[:, neuron_idx]
+            df = pd.DataFrame.from_dict(net.mm.get("events"))
+            uh = utils.get_mm_data(df, net.layers[-2].pyr[neuron_idx], "V_m.s")
+            vbh = utils.get_mm_data(df, net.layers[-2].pyr[neuron_idx], "V_m.b")
+            vah = utils.get_mm_data(df, net.layers[-2].pyr[neuron_idx], "V_m.a_lat")
+            ui = utils.get_mm_data(df, net.layers[-2].intn[neuron_idx], "V_m.s")
+            vbi = utils.get_mm_data(df, net.layers[-2].intn[neuron_idx], "V_m.b")
+            uy = utils.get_mm_data(df, net.layers[-1].pyr, "V_m.s")
+            vby = utils.get_mm_data(df, net.layers[-1].pyr[neuron_idx], "V_m.b")
 
             basal_pred_y = p.g_d * vby / (p.g_l + p.g_d)
 

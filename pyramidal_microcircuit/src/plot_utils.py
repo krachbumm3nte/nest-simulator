@@ -27,27 +27,32 @@ def setup_plt():
     # plt.rcParams['font'] = font
 
 
-def calculate_weight_errors(net, epoch, layer_offset=0):
+def forceAspect(ax, aspect=1):
+    # From https://stackoverflow.com/questions/7965743/how-can-i-set-the-aspect-ratio-in-matplotlib
+    im = ax.get_images()
+    extent = im[0].get_extent()
+    ax.set_aspect(abs((extent[1]-extent[0])/(extent[3]-extent[2]))/aspect)
+
+
+def calculate_weight_errors(weights, layer_offset=0):
     # Synaptic weights
     # notice that all weights are scaled up again to ensure that derived metrics are comparible between simulations
-    weights = net.get_weight_dict()
-    WHI = weights[-(layer_offset + 2)]["pi"]
-    WHY = weights[-(layer_offset + 2)]["down"]
-    WIH = weights[-(layer_offset + 2)]["ip"]
-    WYH = weights[-(layer_offset + 1)]["up"]
+    WHI = np.array(weights[-(layer_offset + 2)]["pi"])
+    WHY = np.array(weights[-(layer_offset + 2)]["down"])
+    WIH = np.array(weights[-(layer_offset + 2)]["ip"])
+    WYH = np.array(weights[-(layer_offset + 1)]["up"])
 
+    # handles neuron dropout
     WHI[np.isnan(WHI)] = 0
     WHY[np.isnan(WHY)] = 0
     WIH[np.isnan(WIH)] = 0
     WYH[np.isnan(WYH)] = 0
 
-    fb_error_now = mse(WHY.flatten(), -WHI.flatten())
-    net.fb_error.append([epoch, fb_error_now])
+    fb_error = mse(WHY.flatten(), -WHI.flatten())
 
-    ff_error_now = mse(WYH.flatten(), WIH.flatten())
-    net.ff_error.append([epoch, ff_error_now])
+    ff_error = mse(WYH.flatten(), WIH.flatten())
 
-    return WHI, WHY, WIH, WYH
+    return fb_error, ff_error, WHI, WHY, WIH, WYH
 
 
 def plot_pre_training(epoch, net, out_file):
@@ -58,7 +63,7 @@ def plot_pre_training(epoch, net, out_file):
     fig, axes = plt.subplots(3, 2, constrained_layout=True)
     [ax0, ax1, ax2, ax3, ax4, ax5] = axes.flatten()
 
-    WHI, WHY, WIH, WYH = calculate_weight_errors(net, epoch)
+    fb_error, ff_error, WHI, WHY, WIH, WYH = calculate_weight_errors(net.get_weight_dict())
     ax0.plot(*zip(*net.fb_error))
     ax1.plot(*zip(*net.ff_error))
 

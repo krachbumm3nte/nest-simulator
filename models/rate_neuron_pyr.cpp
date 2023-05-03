@@ -612,7 +612,7 @@ nest::rate_neuron_pyr::update( Time const& origin, const long from, const long t
       I_conn_d_s += pyr_params->g_conn[ n ] * V_dnd;
       // }
       S_.y_[ S::idx( n, S::V_M ) ] +=
-        ( -( pyr_params->g_L[ n ] * V_dnd ) + B_.spikes_[ n ].get_value( lag ) ) / pyr_params->C_m[ n ];
+        ( -( pyr_params->g_L[ n ] * V_dnd ) + B_.spikes_[ n ].get_value( lag ) + P_.I_e[ n ]) / pyr_params->C_m[ n ];
     }
 
     const double I_L = pyr_params->g_conn[ SOMA ] * S_.y_[ S::idx( SOMA, S::V_M ) ];

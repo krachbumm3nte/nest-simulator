@@ -127,18 +127,28 @@ def get_mm_data(df, population, key):
         return filtered_df.sort_values(by="times")[key].values
 
 
-def read_wr(grouped_df, source, target, t_pres, delta_t):
+def read_wr(grouped_df, source, target, t_pres, delta_t=0.1):
 
-    source_id = sorted(source.global_id)
-    target_id = sorted(target.global_id)
+    source_id = source.global_id
+    target_id = target.global_id
+
+    if hasattr(source_id, "__iter__"):
+        source_id = sorted(source_id)
+    else:
+        source_id = [source_id]
+    
+    if hasattr(target_id, "__iter__"):
+        target_id = sorted(target_id)
+    else:
+        target_id = [target_id]
 
     weight_array = np.zeros((int(t_pres/delta_t), len(target_id), len(source_id)))
 
     for i, id_source in enumerate(source_id):
         for j, id_target in enumerate(target_id):
             group = grouped_df.get_group((id_source, id_target))
-            group = group.drop_duplicates("time_ms")
-            group = group.set_index("time_ms")
+            group = group.drop_duplicates("times")
+            group = group.set_index("times")
             group = group.reindex(np.arange(0, t_pres, delta_t))
             group = group.fillna(method="backfill").fillna(method="ffill")
             weight_array[:, j, i] = group.weights.values

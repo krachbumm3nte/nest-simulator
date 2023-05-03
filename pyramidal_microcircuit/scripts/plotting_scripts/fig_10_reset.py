@@ -48,14 +48,20 @@ if __name__ == "__main__":
 
         weight_scale = int(params["weight_scale"])
         reset = int(params["reset"])
-        acc = progress["test_acc"]
+        acc = np.array(progress["test_acc"])
 
-        final_acc = np.mean([datapoint[1] for datapoint in acc[-10:]])  # average over last 10 accuracy readings
+        final_acc = np.mean([acc[-10:, 1]])  # average over last 10 accuracy readings
         orig_data_1.append((weight_scale, final_acc))
 
         times = [entry[0] for entry in acc]
         acc = [1-entry[1] for entry in acc]
-        ax0.plot(times, utils.rolling_avg(acc, filter_window), color=colors_reset_type[reset], label=reset_keys[reset])
+
+        if reset == 1:
+            label = f"{reset_keys[reset]}, c_m = {params['C_m_api']}"
+        else:
+            label = reset_keys[reset]
+
+        ax0.plot(times, utils.rolling_avg(acc, filter_window), label=label)
 
     le_data_1 = sorted(le_data_1)
     orig_data_1 = sorted(orig_data_1)
