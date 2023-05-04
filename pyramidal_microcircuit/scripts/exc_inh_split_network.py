@@ -93,7 +93,7 @@ network types ({params.network_type}/{args.network}).")
         n_pyr = l.N_pyr
         n_intn = l.N_next
 
-        n_intn_inh = 2 * l.N_pyr
+        n_intn_inh = l.N_next
         # Modify existing connection to allow strictly positive weights
         w_exc_1 = NestNetwork.gen_weights(n_intn, n_pyr, 0, 0.5*params.Wmax)
         l.pi.set({"Wmin": 0, "delay": 2*params.delta_t})
@@ -107,8 +107,10 @@ network types ({params.network_type}/{args.network}).")
         l.intn_2 = nest.Create("parrot_neuron", n_intn_inh)
 
         # Connect excitatory interneurons to inhibitory interneuron population
-        syn_spec_exc_2 = deepcopy(l.synapses["down"])
-        syn_spec_exc_2["weight"] = NestNetwork.gen_weights(n_intn, n_intn_inh, 0, 0.5*params.Wmax)
+        # syn_spec_exc_2 = deepcopy(l.synapses["down"])
+        # syn_spec_exc_2["weight"] = NestNetwork.gen_weights(n_intn, n_intn_inh, 0, 0.5*params.Wmax)
+        syn_spec_exc_2 = deepcopy(params.syn_static)
+        syn_spec_exc_2["weight"] = np.random.random(n_intn_inh) * 0.5*params.Wmax
         nest.Connect(l.intn, l.intn_2, conn_spec="one_to_one", syn_spec=syn_spec_exc_2)
 
         # Connect inhibitory interneurons to pyramidal targets.
