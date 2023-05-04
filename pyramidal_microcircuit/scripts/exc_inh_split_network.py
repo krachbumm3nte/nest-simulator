@@ -103,7 +103,7 @@ network types ({params.network_type}/{args.network}).")
         # TODO: how much does population size matter here?
         intn_inh_params = deepcopy(params.intn_params)
         intn_inh_params["use_phi"] = False
-        l.intn_2 = nest.Create(params, n_intn_inh, intn_inh_params)
+        l.intn_2 = nest.Create(params.neuron_model, n_intn_inh, intn_inh_params)
 
         # Connect excitatory interneurons to inhibitory interneuron population
         syn_spec_exc_2 = deepcopy(l.synapses["down"])
