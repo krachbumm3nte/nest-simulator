@@ -93,17 +93,17 @@ network types ({params.network_type}/{args.network}).")
         n_pyr = l.N_pyr
         n_intn = l.N_next
 
-        n_intn_inh = l.N_pyr
+        n_intn_inh = 2 * l.N_pyr
         # Modify existing connection to allow strictly positive weights
         w_exc_1 = NestNetwork.gen_weights(n_intn, n_pyr, 0, 0.5*params.Wmax)
-        l.pi.set({"Wmin": 0})
+        l.pi.set({"Wmin": 0, "delay": 2*params.delta_t})
         net.set_weights_from_syn(w_exc_1, l.pi)
 
         # Create inhibitory interneuron population
         # TODO: how much does population size matter here?
         intn_inh_params = deepcopy(params.intn_params)
         intn_inh_params["use_phi"] = False
-        l.intn_2 = nest.Create(params.neuron_model, n_intn_inh, intn_inh_params)
+        l.intn_2 = nest.Create(params, n_intn_inh, intn_inh_params)
 
         # Connect excitatory interneurons to inhibitory interneuron population
         syn_spec_exc_2 = deepcopy(l.synapses["down"])

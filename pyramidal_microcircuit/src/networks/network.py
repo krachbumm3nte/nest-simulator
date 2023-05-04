@@ -107,6 +107,8 @@ input and 3 output neurons, dims are: {p.dims}")
             self.test_samples = 5
             self.val_samples = 5
 
+            self.p.store_errors = True  # assume that error terms are of interest for self-pred experiments
+
             self.get_training_data = self.generate_selfpred_data
             self.get_val_data = self.generate_selfpred_data
             self.get_test_data = self.generate_selfpred_data
