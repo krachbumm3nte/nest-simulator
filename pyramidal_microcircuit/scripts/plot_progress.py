@@ -65,5 +65,5 @@ if __name__ == "__main__":
     net.apical_error = progress["apical_error"]
     net.epoch = progress["epochs_completed"]    
 
-    # plot_utils.plot_training_progress(net.epoch, net, out_file)
-    plot_utils.plot_pre_training(net.epoch, net, out_file)
+    plot_utils.plot_training_progress(net.epoch, net, out_file)
+    # plot_utils.plot_pre_training(net.epoch, net, out_file)

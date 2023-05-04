@@ -113,7 +113,7 @@ def plot_training_progress(epoch, net, out_file):
 
     # Synaptic weights
     # notice that all weights are scaled up again to ensure that derived metrics are comparible between simulations
-    WHI, WHY, WIH, WYH = calculate_weight_errors(net, epoch)
+    fb_, ff_, WHI, WHY, WIH, WYH = calculate_weight_errors(net.get_weight_dict())
 
     ax0.plot(*zip(*net.train_loss))
     ax1.plot(*zip(*ff_error))

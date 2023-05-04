@@ -138,11 +138,11 @@ input and 3 output neurons, dims are: {p.dims}")
         self.ff_error = []
         self.fb_error = []
 
-    def gen_weights(n_in, n_out, wmin=None, wmax=None):
-        if not wmin:
-            wmin = -0.1
-        if not wmax:
-            wmax = 0.1
+    def gen_weights(self, n_in, n_out, wmin=None, wmax=None):
+        if wmin is None:
+            wmin = self.p.wmin_init/self.weight_scale
+        if wmax is None:
+            wmax = self.p.wmax_init/self.weight_scale
         return np.random.uniform(wmin, wmax, (n_out, n_in))
 
     @abstractmethod

@@ -51,10 +51,7 @@ def run_simulations(net, params, root_dir, imgdir, datadir, plot_interval=0, pro
                 utils.store_progress(net, root_dir, epoch)
                 print("done.")
 
-            if epoch % 5 == 0:
-                v_intn = np.array([e["V_m"] for e in net.layers[0].intn.get("soma")])
-                v_intn_2 = np.array([e["V_m"] for e in net.layers[0].intn_2.get("soma")])
-                print(v_intn, v_intn_2, v_intn-v_intn_2)
+            if epoch % 10 == 0:
                 if net.mode == "self-pred":
                     print(
                         f"Epoch {epoch} completed: intn error: {net.intn_error[-1][1]:.3f}, apical error: {net.apical_error[-1][1]:.3f}")
@@ -150,9 +147,9 @@ network types ({params.network_type}/{args.network}).")
         n_pyr = l.N_pyr
         n_intn = l.N_next
 
-        n_intn_inh = l.N_next
+        n_intn_inh = 4 * n_pyr
         # Modify existing connection to allow strictly positive weights
-        w_exc_1 = NestNetwork.gen_weights(n_intn, n_pyr, 0, params.wmax_init)
+        w_exc_1 = net.gen_weights(n_intn, n_pyr, 0, params.wmax_init)
         l.pi.set({"Wmin": 0, "delay": 2*params.delta_t})
         net.set_weights_from_syn(w_exc_1, l.pi)
 
@@ -165,20 +162,29 @@ network types ({params.network_type}/{args.network}).")
 
         l.intn_2 = nest.Create(params.neuron_model, n_intn_inh, intn_inh_params)
         # l.intn_2 = nest.Create("parrot_neuron", n_intn_inh)
+        weight_factor = 1.5
 
         # Connect excitatory interneurons to inhibitory interneuron population
         # syn_spec_exc_2 = deepcopy(l.synapses["down"])
-        # syn_spec_exc_2["weight"] = NestNetwork.gen_weights(n_intn, n_intn_inh, 0, 0.5*params.Wmax)
         syn_spec_exc_2 = deepcopy(params.syn_static)
         syn_spec_exc_2["weight"] = 1  # np.random.random(n_intn_inh) * 0.5*params.Wmax
+        syn_spec_exc_2["weight"] = net.gen_weights(n_intn, n_intn_inh, 0, params.wmax_init/n_pyr)
         syn_spec_exc_2["receptor_type"] = params.compartments["soma"]
-        nest.Connect(l.intn, l.intn_2, conn_spec="one_to_one", syn_spec=syn_spec_exc_2)
+        l.syn_exc_2 = nest.Connect(l.intn, l.intn_2, conn_spec="all_to_all",
+                                 syn_spec=syn_spec_exc_2, return_synapsecollection=True)
 
         # Connect inhibitory interneurons to pyramidal targets.
         syn_spec_w_inh = deepcopy(l.synapses["pi"])
-        syn_spec_w_inh["weight"] = NestNetwork.gen_weights(n_intn_inh, n_pyr, -params.wmax_init, 0)
+        syn_spec_w_inh["weight"] = net.gen_weights(n_intn_inh, n_pyr, -weight_factor*params.wmax_init/n_intn_inh, 0)
         syn_spec_w_inh["Wmax"] = 0
-        nest.Connect(l.intn_2, l.pyr, conn_spec="all_to_all", syn_spec=syn_spec_w_inh)
+        l.syn_inh = nest.Connect(l.intn_2, l.pyr, conn_spec="all_to_all", syn_spec=syn_spec_w_inh, return_synapsecollection=True)
+
+        dropout = 0.3
+        if dropout > 0:
+            indices = np.random.choice(n_intn_inh, round(dropout * n_intn_inh), replace=False)
+            for i in indices:
+                nest.Disconnect(l.syn_exc_2[i])
+
 
     if args.cont:
         net.test_acc = progress["test_acc"]
