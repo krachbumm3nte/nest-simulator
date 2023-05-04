@@ -82,7 +82,7 @@ for i in range(2):
     syn_exc["Wmin"] = 0
     syn_exc["Wmax"] = wmax/p.weight_scale
     syn_exc["weight"] = nest.random.uniform(0, wmax/p.weight_scale)
-    # syn_exc["delay"] = 2 * p.delta_t
+    syn_exc["delay"] = 2 * p.delta_t
 
     syn_inh = deepcopy(p.syn_plastic)
     syn_inh["Wmax"] = 0

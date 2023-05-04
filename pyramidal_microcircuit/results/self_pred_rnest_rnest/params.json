@@ -2,8 +2,8 @@
     "C_m_api": 1,
     "C_m_bas": 1,
     "C_m_som": 1,
-    "Wmax": 4,
-    "Wmin": -4,
+    "Wmax": 8,
+    "Wmin": -8,
     "beta": 1,
     "compartments": {
         "apical_lat_curr": 6,
@@ -141,8 +141,8 @@
     "syn_plastic": {
         "synapse_model": "pyr_synapse_rate",
         "tau_Delta": 1.0,
-        "Wmin": -4.0,
-        "Wmax": 4.0,
+        "Wmin": -8.0,
+        "Wmax": 8.0,
         "delay": 0.1
     },
     "syn_static": {

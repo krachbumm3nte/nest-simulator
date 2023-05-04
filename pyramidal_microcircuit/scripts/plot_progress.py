@@ -37,7 +37,6 @@ if __name__ == "__main__":
     else:
         net = NestNetwork(p)
 
-
     weight_scale = p.weight_scale
     acc = np.array(progress["test_acc"])
 
@@ -53,7 +52,7 @@ if __name__ == "__main__":
 
             net.fb_error = sorted(net.fb_error)
             net.ff_error = sorted(net.ff_error)
-        
+
     net.set_all_weights(weights)
 
     net.test_acc = progress["test_acc"]
@@ -63,7 +62,7 @@ if __name__ == "__main__":
     # net.fb_error = progress["fb_error"]
     net.intn_error = progress["intn_error"]
     net.apical_error = progress["apical_error"]
-    net.epoch = progress["epochs_completed"]    
+    net.epoch = progress["epochs_completed"]
 
     # plot_utils.plot_training_progress(net.epoch, net, out_file)
     plot_utils.plot_pre_training(net.epoch, net, out_file)

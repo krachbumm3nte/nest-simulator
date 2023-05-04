@@ -80,17 +80,17 @@ def plot_pre_training(epoch, net, out_file):
             ax3.plot(i, WYH[j, i], ".", color=col, label=f"to {i}")
             ax3.plot(i, WIH[j, i], "x", color=col, label=f"from {i}")
 
-    intn_error = np.array(net.intn_error)
-    print(intn_error)
-    ax4.plot(intn_error[:, 0] * net.train_samples, utils.rolling_avg(intn_error[:, 1], 5))
     apical_error = np.array(net.apical_error)
-    ax5.plot(apical_error[:, 0] * net.train_samples, utils.rolling_avg(apical_error[:, 1], 5))
+    ax4.plot(apical_error[:, 0] * net.train_samples, utils.rolling_avg(apical_error[:, 1], 5))
+    intn_error = np.array(net.intn_error)
+    ax5.plot(intn_error[:, 0] * net.train_samples, utils.rolling_avg(intn_error[:, 1], 5))
 
     ax0.set_title("Feedback error")
+    ax1.set_title("Feedforward error")
     ax2.set_title("Feedback weights")
     ax3.set_title("Feedforward weights")
-    ax4.set_title("Interneuron error")
-    ax5.set_title("Apical error")
+    ax4.set_title("Apical error")
+    ax5.set_title("Interneuron error")
 
     ax0.set_ylim(bottom=0)
     ax1.set_ylim(bottom=0)

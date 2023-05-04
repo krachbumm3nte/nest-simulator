@@ -16,70 +16,110 @@ if __name__ == "__main__":
 
     plot_utils.setup_plt()
 
-    args = sys.argv[1:]
+    curdir = os.path.dirname(os.path.realpath(__file__))
 
-    directory = args[0]
-    out_file = args[1]
-    all_configs = sorted([name for name in os.listdir(directory) if os.path.isdir(os.path.join(directory, name))])
-    fig, [[ax0, ax1], [ax2, ax3]] = plt.subplots(2, 2, sharex=True)
+    result_dir = os.path.join(curdir, "../../results/par_study_dropout")
+    out_file = os.path.join(curdir, "../../data/fig_dropout.png")
 
-
-    apical_errors = []
-    intn_errors= []
-    ff_errors = []
-    fb_errors = []
-
-    for config in all_configs:
-
-        params = Params(os.path.join(directory, config, "params.json"))
-
-        p = 100*(1-params.p_conn)
-
-        with open(os.path.join(directory, config, "progress.json")) as f:
-            progress = json.load(f)
+    dirnames = os.listdir(result_dir)
+    apical_errors = {}
+    intn_errors = {}
+    ff_errors = {}
+    fb_errors = {}
+    for d in dirnames:
+        directory = os.path.join(result_dir, d)
+        all_configs = sorted([name for name in os.listdir(directory) if os.path.isdir(os.path.join(directory, name))])
+        fig, [[ax0, ax1], [ax2, ax3]] = plt.subplots(2, 2, sharex=True)
 
 
-        apical_error = np.array(progress["apical_error"])
-        intn_error = np.array(progress["intn_error"])
-        print()
-        apical_errors.append([p, np.mean(apical_error[-50:, 1])])
-        intn_errors.append([p, np.mean(intn_error[-50:, 1])])
 
-        with open(os.path.join(directory, config, "data", "weights_2000.json")) as f:
-            weights = json.load(f)
+        for config in all_configs:
 
+            params = Params(os.path.join(directory, config, "params.json"))
 
-        WHI = np.array(weights[-2]["pi"])
-        WHY = np.array(weights[-2]["down"])
-        WIH = np.array(weights[-2]["ip"])
-        WYH = np.array(weights[-1]["up"])
+            p = 100*(1-params.p_conn)  # neuron dropout percentage
 
-        for w_arr in [WHI, WHY, WIH, WYH]:
-            w_arr[np.isnan(w_arr)] = 0
+            with open(os.path.join(directory, config, "progress.json")) as f:
+                progress = json.load(f)
 
-        ff_errors.append([p, mse(WYH.flatten(), WIH.flatten())])
-        fb_errors.append([p, mse(WHY.flatten(), -WHI.flatten())])
+            apical_error = np.array(progress["apical_error"])
+            intn_error = np.array(progress["intn_error"])
+
+            n_avg = 1500
+            if p not in apical_errors:
+                apical_errors[p] = [np.mean(apical_error[-n_avg:, 1])]
+            else:
+                apical_errors[p].append(np.mean(apical_error[-n_avg:, 1]))
+
+            if p not in intn_errors:
+                intn_errors[p] = [np.mean(intn_error[-n_avg:, 1])]
+            else:
+                intn_errors[p].append(np.mean(intn_error[-n_avg:, 1]))
+
+            WHI = []
+            WHY = []
+            WIH = []
+            WYH = []
+
+            datadir = os.path.join(directory, config, "data")
+            for weight_file in sorted(os.listdir(datadir)[-5:]):
+                with open(os.path.join(datadir, weight_file)) as f:
+                    weights = json.load(f)
+
+                    WHI.append(weights[-2]["pi"])
+                    WHY.append(weights[-2]["down"])
+                    WIH.append(weights[-2]["ip"])
+                    WYH.append(weights[-1]["up"])
+
+            WHI = np.array(WHI)
+            WHY = np.array(WHY)
+            WIH = np.array(WIH)
+            WYH = np.array(WYH)
+
+            for w_arr in [WHI, WHY, WIH, WYH]:
+                w_arr[np.isnan(w_arr)] = 0
+
+            WHI = np.mean(WHI, axis=0)
+            WHY = np.mean(WHY, axis=0)
+            WIH = np.mean(WIH, axis=0)
+            WYH = np.mean(WYH, axis=0)
+
+            if p not in ff_errors:
+                ff_errors[p] = [mse(WYH.flatten(), WIH.flatten())]
+            else:
+                ff_errors[p].append(mse(WYH.flatten(), WIH.flatten()))
+
+            if p not in fb_errors:
+                fb_errors[p] = [mse(WHY.flatten(), -WHI.flatten())]
+            else:
+                fb_errors[p].append(mse(WHY.flatten(), -WHI.flatten()))
 
     print(apical_errors)
+
+    intn_errors = [[k, np.mean(v)] for (k, v) in intn_errors.items()]
+    apical_errors = [[k, np.mean(v)] for (k, v) in apical_errors.items()]
+    fb_errors = [[k, np.mean(v)] for (k, v) in fb_errors.items()]
+    ff_errors = [[k, np.mean(v)] for (k, v) in ff_errors.items()]
+
+    print(apical_errors)
+    print(ff_errors)
     ax0.plot(*zip(*sorted(apical_errors)))
     ax1.plot(*zip(*sorted(intn_errors)))
 
     ax2.plot(*zip(*sorted(ff_errors)))
     ax3.plot(*zip(*sorted(fb_errors)))
 
-    ax2.set_xlabel("Dropout (%)")
-    ax3.set_xlabel("Dropout (%)")
+    ax2.set_xlabel(r"Dropout (\%)")
+    ax3.set_xlabel(r"Dropout (\%)")
     ax0.set_title("Apical error")
     ax1.set_title("Interneuron error")
     ax2.set_title("Feedforward weight error")
     ax3.set_title("Feedback weight error")
 
-    # ax0.set_ylim(bottom=0, top=0.005)
-    # ax1.set_ylim(bottom=0, top=0.00001)
-    # ax2.set_ylim(bottom=0, top=0.15)
-    # ax3.set_ylim(bottom=0)
-
-    ax1.legend()
+    ax0.set_ylim(bottom=0)
+    ax1.set_ylim(bottom=0)
+    ax2.set_ylim(bottom=0)
+    ax3.set_ylim(bottom=0)
 
     # plt.show()
 
