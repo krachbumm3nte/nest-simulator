@@ -180,7 +180,9 @@ class NestNetwork(Network):
         nest.GetConnections(synapse_model=self.p.syn_model).set({"eta": 0})
 
     def enable_learning(self):
-        self.layers[0].syn_inh.set({"eta": self.layers[0].synapses["pi"]["eta"]})
+        if hasattr(self.layers[0], "syn_inh"):
+            # TODO: verify!
+            self.layers[0].syn_inh.set({"eta": self.layers[0].synapses["pi"]["eta"]})
         for layer in self.layers:
             layer.enable_learning()
 
