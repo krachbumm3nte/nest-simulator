@@ -56,12 +56,12 @@ if __name__ == "__main__":
         times = [entry[0] for entry in acc]
         acc = [1-entry[1] for entry in acc]
 
-        if reset == 1:
-            label = f"{reset_keys[reset]}, c_m = {params['C_m_api']}"
-        else:
-            label = reset_keys[reset]
+        label = reset_keys[reset]
 
         ax0.plot(times, utils.rolling_avg(acc, filter_window), label=label)
+
+
+    for config, label in ["bars_no_selfpred_soft_reset_rnest", ]
 
     le_data_1 = sorted(le_data_1)
     orig_data_1 = sorted(orig_data_1)
@@ -74,10 +74,10 @@ if __name__ == "__main__":
     ax0.set_ylim(0, 1)
     ax1.set_ylim(0, 1)
 
-    ax0.set_xlabel("epoch")
-    ax0.set_ylabel("test error")
-    ax1.set_xlabel("Apical compartment capacitance")
-    ax1.set_ylabel("test error")
+    ax0.set_ylabel("Test error")
+
+    ax1.set_xlabel("Epoch")
+    ax1.set_ylabel("Accuracy")
 
     ax0.annotate("A", xy=(0.02, 0.985), xycoords='figure fraction',
                  horizontalalignment='left', verticalalignment='top',

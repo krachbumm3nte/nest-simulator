@@ -180,6 +180,7 @@ class NestNetwork(Network):
         nest.GetConnections(synapse_model=self.p.syn_model).set({"eta": 0})
 
     def enable_learning(self):
+        self.layers[0].syn_inh.set({"eta": self.layers[0].synapses["pi"]["eta"]})
         for layer in self.layers:
             layer.enable_learning()
 
@@ -328,6 +329,10 @@ class NestNetwork(Network):
             # soft reset TODO: parametrize relaxation time?
             nest.Simulate(15)
 
+        all_nrns = nest.GetNodes({"model": self.p.neuron_model})
+        all_nrns.set({"soma": {"V_m": 0, "I_e": 0},
+                      "basal": {"V_m": 0, "I_e": 0},
+                      "apical_lat": {"V_m": 0, "I_e": 0}})
         if self.use_mm:
             self.mm.n_events = 0
 
