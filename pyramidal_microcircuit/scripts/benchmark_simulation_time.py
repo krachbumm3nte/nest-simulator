@@ -65,13 +65,13 @@ if __name__ == "__main__":
             t_stop = time()
             train_time = t_stop - t_start
             sim_times.append(train_time)
+            nest.ResetKernel()
         t_mean = np.mean(sim_times)
         t_std = np.std(sim_times)
         config["results"][name] = {"times": sim_times,
                                    "t_mean": t_mean,
                                    "std": t_std}
         print(f"mean time: {t_mean}s, std:{t_std}s. \n\n")
-        nest.ResetKernel()
 
     with open(args.out_file, "w") as f:
         json.dump(config, f, indent=4)
