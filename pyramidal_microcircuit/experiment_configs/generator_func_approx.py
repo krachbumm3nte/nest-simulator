@@ -1,5 +1,7 @@
 import os
 import json
+from copy import deepcopy
+
 
 root_dir = os.path.dirname(os.path.realpath(__file__))
 target_dir = os.path.join(root_dir, "par_study_function_approximator")
@@ -15,8 +17,8 @@ for n in n_hidden:
     config["out_lag"] = 60
     config["init_self_pred"] = False
     config["mode"] = "teacher"
-    config["dims_teacher"] = dims_teacher
-    config["dims"] = dims_teacher
+    config["dims_teacher"] = deepcopy(dims_teacher)
+    config["dims"] = deepcopy(dims_teacher)
     config["dims"][1] = n
     config["eta"] = {
         "ip": [

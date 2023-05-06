@@ -5,7 +5,7 @@
     "mode": "teacher",
     "dims_teacher": [
         30,
-        15,
+        20,
         10
     ],
     "dims": [
