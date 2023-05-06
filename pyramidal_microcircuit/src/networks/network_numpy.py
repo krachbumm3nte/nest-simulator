@@ -11,8 +11,8 @@ class NumpyNetwork(Network):
 
     def __init__(self, p: Params) -> None:
         super().__init__(p)
-        self.u_target = np.zeros(self.dims[-1])
         self.output_loss = []
+        self.u_target = np.zeros(self.dims[-1])
         self.r_in = np.zeros(self.dims[0])
         self.setup_populations()
         self.clear_records()
@@ -51,17 +51,6 @@ class NumpyNetwork(Network):
         self.V_by_record = np.zeros((1, self.dims[-1]))
         self.U_x_record = np.zeros((1, self.dims[0]))
 
-    def train_teacher(self, T):
-        input_currents = np.random.random(self.dims[0])
-
-        self.set_input(input_currents)
-
-        for i in range(int(T/self.dt)):
-            self.simulate(self.target_teacher)
-
-    def target_teacher(self):
-        return self.get_teacher_output(self.r_in)
-
     def copy_weights(self):
         weights = []
         for n in range(len(self.layers) - 1):
@@ -80,9 +69,8 @@ class NumpyNetwork(Network):
         for x, y in zip(x_batch, y_batch):
             self.reset()
             self.set_input(x)
-            self.target_seq = y
-            for i in range(int(self.t_pres/self.dt)):
-                self.simulate(self.target_filtered, enable_recording=True)
+            self.set_target(y)
+            self.simulate(self.t_pres, enable_recording=True)
             y_pred = np.mean(self.U_y_record[-n_samples:], axis=0)
             loss.append(mse(y_pred, y))
 
@@ -94,14 +82,18 @@ class NumpyNetwork(Network):
 
         return np.mean(loss)
 
+    def set_target(self, target_seq):
+        self.target_seq = target_seq
+
     def test_batch(self, x_batch, y_batch):
         acc = []
         loss_mse = []
         for x_test, y_actual in zip(x_batch, y_batch):
             self.set_input(x_test)
-            for i in range(int(self.t_pres/self.dt)):
-                self.simulate(lambda: np.zeros(self.dims[-1]), True, False)
+            self.set_target(np.zeros(self.dims[-1]))
+            self.simulate(self.t_pres, True, False)
             y_pred = np.mean(self.U_y_record[int((self.p.out_lag/self.t_pres)*self.record_interval):], axis=0)
+
             loss_mse.append(mse(y_actual, y_pred))
             acc.append(np.argmax(y_actual) == np.argmax(y_pred))
             self.reset()
@@ -109,36 +101,33 @@ class NumpyNetwork(Network):
 
         return np.mean(acc), np.mean(loss_mse)
 
-    def target_filtered(self):
-        u_old = deepcopy(self.u_target)
-        self.u_target += self.dt/self.tau_x * (self.target_seq - self.u_target)
-        return u_old if self.le else self.u_target
+    def simulate(self, t, enable_recording=False, plasticity=True):
+        for i in range(int(t/self.dt)):
+            self.r_in += (self.dt/self.tau_x) * (self.I_x - self.r_in)
+            self.u_target += (self.dt/self.tau_x) * (self.target_seq - self.u_target)
 
-    def simulate(self, train_function, enable_recording=False, plasticity=True):
-        self.r_in = self.r_in + (self.dt/self.tau_x) * (self.I_x - self.r_in)
+            if self.le:
+                self.layers[0].update(self.r_in, self.layers[1].u_pyr["forw"], plasticity)
+                for n in range(1, len(self.layers) - 1):
+                    self.layers[n].update(self.phi(self.layers[n - 1].u_pyr["forw"]), self.layers[n + 1].u_pyr["forw"],
+                                          plasticity)
+                self.layers[-1].update(self.phi(self.layers[-2].u_pyr["forw"]),
+                                       self.u_target, plasticity)
+            else:
+                self.layers[0].update(self.r_in, self.layers[1].u_pyr["soma"], plasticity)
+                for n in range(1, len(self.layers) - 1):
+                    self.layers[n].update(self.phi(self.layers[n - 1].u_pyr["soma"]), self.layers[n + 1].u_pyr["soma"],
+                                          plasticity)
+                self.layers[-1].update(self.phi(self.layers[-2].u_pyr["soma"]),
+                                       self.u_target, plasticity)
 
-        if self.le:
-            self.layers[0].update(self.r_in, self.layers[1].u_pyr["forw"], plasticity)
-            for n in range(1, len(self.layers) - 1):
-                self.layers[n].update(self.phi(self.layers[n - 1].u_pyr["forw"]), self.layers[n + 1].u_pyr["forw"],
-                                      plasticity)
-            self.layers[-1].update(self.phi(self.layers[-2].u_pyr["forw"]),
-                                   train_function(), plasticity)
-        else:
-            self.layers[0].update(self.r_in, self.layers[1].u_pyr["soma"], plasticity)
-            for n in range(1, len(self.layers) - 1):
-                self.layers[n].update(self.phi(self.layers[n - 1].u_pyr["soma"]), self.layers[n + 1].u_pyr["soma"],
-                                      plasticity)
-            self.layers[-1].update(self.phi(self.layers[-2].u_pyr["soma"]),
-                                   train_function(), plasticity)
+            for layer in self.layers:
+                layer.apply(plasticity)
 
-        for layer in self.layers:
-            layer.apply(plasticity)
-
-        if enable_recording:
-            if self.iteration*self.dt % self.record_interval < self.dt:
-                self.record_state()
-        self.iteration += 1
+            if enable_recording:
+                if self.iteration*self.dt % self.record_interval < self.dt:
+                    self.record_state()
+            self.iteration += 1
 
     def record_state(self):
         U_y = self.layers[-1].u_pyr["soma"]
@@ -183,6 +172,12 @@ class NumpyNetwork(Network):
         return weights
 
     def reset(self):
+        self.set_input(np.zeros(self.dims[0]))
+        self.I_x = np.zeros(self.dims[0])
+
+        self.set_target(np.zeros(self.dims[-1]))
+        self.u_target = np.zeros(self.dims[-1])
+
         for layer in self.layers:
             layer.reset()
         self.clear_records()

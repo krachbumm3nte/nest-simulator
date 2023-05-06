@@ -87,27 +87,29 @@ class NestOutputLayer(AbstractLayer):
     def __init__(self, net, p, init_weights=None) -> None:
         super().__init__(p, net, len(net.dims)-2)
 
+        self.synapses = {}
         self.ga = 0
         self.N_prev = net.dims[-2]
         self.N_out = net.dims[-1]
 
-        if self.eta["up"] > 0:
-            self.synapse_up = deepcopy(p.syn_plastic)
-            self.synapse_up["eta"] = self.eta["up"]
-        else:
-            self.synapse_up = deepcopy(p.syn_static)
 
-        self.synapse_up['receptor_type'] = p.compartments['basal']
-        if init_weights:
-            self.synapse_up["weight"] = np.array(init_weights["up"]) / self.weight_scale
+        if self.eta["up"] > 0:
+            self.synapses["up"] = deepcopy(p.syn_plastic)
+            self.synapses["up"]["eta"] = self.eta["up"]
         else:
-            self.synapse_up["weight"] = self.gen_weights(self.N_prev, self.N_out)
+            self.synapses["up"] = deepcopy(p.syn_static)
+
+        self.synapses["up"]['receptor_type'] = p.compartments['basal']
+        if init_weights:
+            self.synapses["up"]["weight"] = np.array(init_weights["up"]) / self.weight_scale
+        else:
+            self.synapses["up"]["weight"] = self.gen_weights(self.N_prev, self.N_out)
 
         self.pyr = nest.Create(p.neuron_model, self.N_out, p.pyr_params)
         self.pyr.set({"apical_lat": {"g": 0}})
 
     def connect(self, pyr_prev, intn_prev):
-        self.up = nest.Connect(pyr_prev, self.pyr, syn_spec=self.synapse_up, return_synapsecollection=True)
+        self.up = nest.Connect(pyr_prev, self.pyr, syn_spec=self.synapses["up"], return_synapsecollection=True)
 
         for i in range(len(self.pyr)):
             self.pyr[i].target = intn_prev[i].get("global_id")

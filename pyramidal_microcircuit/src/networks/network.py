@@ -83,21 +83,30 @@ input and 3 output neurons, dims are: {p.dims}")
 
         elif self.mode == "teacher":
             """
-            Network learns to match the input-output relation of a separate, randomly initialized, teacher
+            Network learns to match the input-output function of a separate, randomly initialized teacher
             network.
             """
             self.train_samples = 25
             self.val_samples = 8
             self.test_samples = 8
-            self.k_yh = 10         # hidden to output teacher weight scaling factor
+            # self.p.gamma = 0.1
+            # self.p.beta = 1
+            # self.p.theta = 3
+            self.k_yh = 2         # hidden to output teacher weight scaling factor
             self.k_hx = 1         # input to hidden teacher weight scaling factor
-            self.dims_teacher = self.dims
-            self.dims_teacher[1:-1] = self.dims_teacher[1:-1]
+            self.dims = self.p.dims
+            self.dims_teacher = self.p.dims_teacher
             self.whx_trgt = self.gen_weights(self.dims_teacher[0], self.dims_teacher[1], -1, 1)
             self.wyh_trgt = self.gen_weights(self.dims_teacher[1], self.dims_teacher[2], -1, 1)
-            self.y = np.random.random(self.dims_teacher[-1])
-            self.k_yh = self.p.k_yh
-            self.k_hx = self.p.k_hx
+            self.p.wmax_init = -1
+            self.p.wmin_init = 1
+            self.p.tau_x = 2
+            self.tau_x = self.p.tau_x
+            # self.k_yh = self.p.k_yh
+            # self.k_hx = self.p.k_hx
+            self.get_training_data = self.generate_teacher_data
+            self.get_val_data = self.generate_teacher_data
+            self.get_test_data = self.generate_teacher_data
         elif self.mode == "self-pred":
             """
             Network learns to reach the self-predicting state.
@@ -182,17 +191,15 @@ input and 3 output neurons, dims are: {p.dims}")
     def reset(self):
         pass
 
-    def generate_teacher_data(self):
-        x = np.random.random(self.dims[0])
-
+    def generate_teacher_data(self, n_samples):
+        x = np.random.random((n_samples, self.dims[0])) * 2 - 1
         return x, self.get_teacher_output(x)
 
     def generate_selfpred_data(self, n_samples):
         return np.random.random((n_samples, self.dims[0])), np.zeros((n_samples, self.dims[-1]))
 
     def get_teacher_output(self, input_currents):
-        assert self.teacher
-        return self.k_yh * self.wyh_trgt @ self.phi(self.k_hx * self.whx_trgt @ input_currents)
+        return np.array([self.k_yh * self.wyh_trgt @ self.phi(self.k_hx * self.whx_trgt @ x) for x in input_currents])
 
     def train_epoch(self):
         x_batch, y_batch = self.get_training_data(self.train_samples)
