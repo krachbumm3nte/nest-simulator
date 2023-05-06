@@ -39,6 +39,15 @@ def run_simulations(net, params, root_dir, imgdir, datadir, plot_interval=0, pro
                         print("-------------------------------\n")
                         break
 
+                if net.mode == "self-pred":
+                    print(f"Epoch {epoch} completed: intn error: {net.intn_error[-1][1]:.3f} \
+, apical error: {net.apical_error[-1][1]:.3f}")
+                else:
+                    print(f"Epoch {epoch} completed: test acc: {net.test_acc[-1][1]:.3f}, \
+loss: {net.test_loss[-1][1]:.3f}")
+                print(f"\t epoch time: {np.mean(simulation_times[-50:]):.2f}s, \
+ETA: {timedelta(seconds=np.round(t_epoch * (params.n_epochs-epoch)))}\n")
+
             if plot_interval > 0 and epoch % plot_interval == 0:
                 if net.mode == "self-pred":
                     plot_pre_training(epoch, net, os.path.join(imgdir, f"{epoch}.png"))
@@ -50,17 +59,6 @@ def run_simulations(net, params, root_dir, imgdir, datadir, plot_interval=0, pro
                 utils.store_synaptic_weights(net, os.path.join(datadir, f"weights_{epoch}.json"))
                 utils.store_progress(net, root_dir, epoch)
                 print("done.")
-
-            if epoch % 25 == 0:
-                if net.mode == "self-pred":
-                    print(
-                        f"Epoch {epoch} completed: intn error: {net.intn_error[-1][1]:.3f}, apical error: {net.apical_error[-1][1]:.3f}")
-                else:
-                    print(
-                        f"Epoch {epoch} completed: test acc: {net.test_acc[-1][1]:.3f}, loss: {net.test_loss[-1][1]:.3f}")
-                print(
-                    f"\t epoch time: {np.mean(simulation_times[-50:]):.2f}s, \
-ETA: {timedelta(seconds=np.round(t_epoch * (params.n_epochs-epoch)))}\n")
 
     except KeyboardInterrupt:
         print("KeyboardInterrupt received - storing progress...")
