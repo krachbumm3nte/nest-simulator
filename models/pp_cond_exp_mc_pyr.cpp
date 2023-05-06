@@ -729,6 +729,24 @@ nest::pp_cond_exp_mc_pyr::handle( CurrentEvent& e )
   // }
 }
 
+
+void
+nest::pp_cond_exp_mc_pyr::handle( DelayedRateConnectionEvent& e )
+{
+  // long port = e.get_rport();
+
+  std::vector< unsigned int >::iterator it = e.begin();
+  double rate_value = e.get_weight() * e.get_coeffvalue( it );
+  B_.spikes_[ e.get_rport() ].add_value(
+    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), rate_value );
+
+  // if ( port == APICAL_TD )
+  // {
+  //   B_.spikes_[ APICAL_LAT ].add_value(
+  //     e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), rate_value );
+  // }
+}
+
 void
 nest::pp_cond_exp_mc_pyr::handle( DataLoggingRequest& e )
 {

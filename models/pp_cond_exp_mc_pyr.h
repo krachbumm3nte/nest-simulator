@@ -274,7 +274,9 @@ public:
   void handle( SpikeEvent& ) override;
   void handle( CurrentEvent& ) override;
   void handle( DataLoggingRequest& ) override;
+  void handle( DelayedRateConnectionEvent& ) override;
 
+  port handles_test_event( DelayedRateConnectionEvent&, rport ) override;
   port handles_test_event( SpikeEvent&, rport ) override;
   port handles_test_event( CurrentEvent&, rport ) override;
   port handles_test_event( DataLoggingRequest&, rport ) override;
@@ -383,8 +385,8 @@ private:
     Parameters_( const Parameters_& );            //!< needed to copy C-arrays
     Parameters_& operator=( const Parameters_& ); //!< needed to copy C-arrays
 
-    void get( DictionaryDatum& ) const; //!< Store current values in dictionary
-    void set( const DictionaryDatum& ); //!< Set values from dictionary
+    void get( DictionaryDatum& ) const;           //!< Store current values in dictionary
+    void set( const DictionaryDatum& );           //!< Set values from dictionary
   };
 
 
@@ -416,7 +418,7 @@ public:
 
     //! neuron state, must be C-array for GSL solver
     double y_[ STATE_VEC_SIZE ];
-    int r_; //!< number of refractory steps remaining
+    int r_;                       //!< number of refractory steps remaining
 
     State_( const Parameters_& ); //!< Default initialization
     State_( const State_& );
@@ -594,6 +596,22 @@ pp_cond_exp_mc_pyr::handles_test_event( SpikeEvent&, rport receptor_type )
   return receptor_type - MIN_SPIKE_RECEPTOR;
 }
 
+inline port
+pp_cond_exp_mc_pyr::handles_test_event( DelayedRateConnectionEvent&, rport receptor_type )
+{
+  if ( receptor_type < MIN_SPIKE_RECEPTOR || receptor_type >= SUP_SPIKE_RECEPTOR )
+  {
+    if ( receptor_type < 0 || receptor_type >= SUP_CURR_RECEPTOR )
+    {
+      throw UnknownReceptorType( receptor_type, get_name() );
+    }
+    else
+    {
+      throw IncompatibleReceptorType( receptor_type, get_name(), "DelayedRateConnectionEvent" );
+    }
+  }
+  return receptor_type - MIN_SPIKE_RECEPTOR;
+}
 
 inline port
 pp_cond_exp_mc_pyr::handles_test_event( CurrentEvent&, rport receptor_type )
