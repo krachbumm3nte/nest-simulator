@@ -87,8 +87,8 @@ input and 3 output neurons, dims are: {p.dims}")
             network.
             """
             self.train_samples = 25
-            self.val_samples = 8
-            self.test_samples = 8
+            self.val_samples = 20
+            self.test_samples = 20
             # self.p.gamma = 0.1
             # self.p.beta = 1
             # self.p.theta = 3

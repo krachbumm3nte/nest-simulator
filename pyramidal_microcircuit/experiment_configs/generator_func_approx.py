@@ -20,6 +20,7 @@ for n in n_hidden:
     config["dims_teacher"] = deepcopy(dims_teacher)
     config["dims"] = deepcopy(dims_teacher)
     config["dims"][1] = n
+    config["test_interval"] = 25
     config["eta"] = {
         "ip": [
             0.002,

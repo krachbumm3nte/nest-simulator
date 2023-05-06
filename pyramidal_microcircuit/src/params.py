@@ -17,8 +17,8 @@ class Params:
         self.n_epochs = 1000  # number of training iterations
         self.out_lag = 35  # lag in ms before recording output neuron voltage during testing
         self.test_interval = 10  # test the network every N epochs
-        self.test_time = 10  # stimulus presentation time during testing in ms
-        self.test_delay = 5  # output layer recording delay during testing in ms
+        # self.test_time = 10  # stimulus presentation time during testing in ms
+        # self.test_delay = 5  # output layer recording delay during testing in ms
         self.latent_equilibrium = True  # flag for whether to use latent equilibrium
         self.dims = [9, 30, 3]  # network dimensions, i.e. neurons per layer
         self.init_self_pred = True  # flag to initialize weights to self-predicting state
