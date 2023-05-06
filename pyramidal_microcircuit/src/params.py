@@ -134,6 +134,7 @@ class Params:
         self.input_params["basal"]["g"] = 0
         self.input_params["apical_lat"]["g"] = 0
         self.input_params["use_phi"] = False
+        self.input_params["latent_equilibrium"] = False
 
         if self.spiking:
             self.input_params["gamma"] = self.weight_scale

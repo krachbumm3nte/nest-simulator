@@ -1,0 +1,124 @@
+{
+    "n_repetitions": 5,
+    "n_samples": 5,
+    "global_params": {
+        "t_pres": 10,
+        "latent_equilibrium": true,
+        "mode": "mnist",
+        "dims": [
+            784,
+            300,
+            100,
+            10
+        ],
+        "wmin_init": -0.1,
+        "wmax_init": 0.1,
+        "Wmin": -0.5,
+        "Wmax": 0.5,
+        "n_classes": 10,
+        "init_self_pred": false,
+        "weight_scale": 250
+    },
+    "configs": {
+        "rnest_plast": {
+            "network_type": "rnest",
+            "eta": {
+                "ip": [
+                    0.004,
+                    0.004,
+                    0.0
+                ],
+                "pi": [
+                    0.01,
+                    0.01,
+                    0.0
+                ],
+                "up": [
+                    0.01,
+                    0.01,
+                    0.003
+                ],
+                "down": [
+                    0,
+                    0,
+                    0
+                ]
+            }
+        },
+        "snest_plast": {
+            "network_type": "snest",
+            "eta": {
+                "ip": [
+                    0.004,
+                    0.004,
+                    0.0
+                ],
+                "pi": [
+                    0.01,
+                    0.01,
+                    0.0
+                ],
+                "up": [
+                    0.01,
+                    0.01,
+                    0.003
+                ],
+                "down": [
+                    0,
+                    0,
+                    0
+                ]
+            }
+        },
+        "snest_static": {
+            "network_type": "snest",
+            "eta": {
+                "ip": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "pi": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "up": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "down": [
+                    0,
+                    0,
+                    0
+                ]
+            }
+        },
+        "rnest_static": {
+            "network_type": "rnest",
+            "eta": {
+                "ip": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "pi": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "up": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "down": [
+                    0,
+                    0,
+                    0
+                ]
+            }
+        }
+    }
+}
