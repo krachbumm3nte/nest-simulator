@@ -4,19 +4,19 @@
     "use_mm": true,
     "eta": {
         "ip": [
-            0.1,
-            0.1,
+            0.3,
+            0.3,
             0
         ],
         "pi": [
-            0.1,
-            0.1,
+            0.3,
+            0.3,
             0
         ],
         "up": [
-            0.1,
-            0.1,
-            0.1
+            0.3,
+            0.3,
+            0.3
         ],
         "down": [
             0.0,
@@ -32,7 +32,9 @@
     "C_m_api": 1,
     "C_m_som": 1,
     "C_m_bas": 1,
-    "tau_x": 0.1,
-    "weight_scale": 50000,
-    "mode": "test"
+    "tau_x": 1,
+    "weight_scale": 20000,
+    "mode": "test",
+    "store_errors": true,
+    "record_weights": true
 }
