@@ -450,6 +450,7 @@ class PlasticityHY(DynamicsHY):
         axes[3].legend()
         axes[3].set_title("synaptic weight")
 
+
 class NetworkPlasticity(TestClass):
 
     def __init__(self, params, **kwargs) -> None:
@@ -476,10 +477,10 @@ class NetworkPlasticity(TestClass):
             self.nest_net.set_input(input_currents)
             self.numpy_net.set_input(input_currents)
             self.nest_net.set_target(target_currents)
+            self.numpy_net.set_target(target_currents)
 
             for i in range(int(self.t_pres/self.p.record_interval)):
-                for j in range(int(self.p.record_interval/self.delta_t)):
-                    self.numpy_net.simulate(lambda: target_currents, True)
+                self.numpy_net.simulate(self.p.record_interval, True)
                 self.nest_net.simulate(self.p.record_interval, False, False)
                 wgts = self.nest_net.get_weight_dict(True)
                 self.up_0.append(wgts[-2]["up"])
@@ -521,6 +522,7 @@ class NetworkPlasticity(TestClass):
         axes[0][0].set_ylabel("NEST computed")
         axes[1][0].set_ylabel("Target activation")
 
+
 class DeepNetworkPlasticity(TestClass):
 
     def __init__(self, params, **kwargs) -> None:
@@ -552,7 +554,6 @@ class DeepNetworkPlasticity(TestClass):
         self.nest_net = NestNetwork(deepcopy(params))
         self.numpy_net.set_all_weights(self.nest_net.get_weight_dict())
 
-
     def run(self):
 
         self.t_pres = 8
@@ -576,9 +577,8 @@ class DeepNetworkPlasticity(TestClass):
             self.nest_net.set_target(target_currents)
 
             for i in range(int(self.t_pres/self.p.record_interval)):
-                for j in range(int(self.p.record_interval/self.delta_t)):
-                    self.numpy_net.simulate(lambda: target_currents, True)
-                self.nest_net.simulate(self.p.record_interval, False, False)
+                self.numpy_net.simulate(self.p.record_interval, True)
+                self.nest_net.simulate(self.p.record_interval, True, False)
                 wgts = self.nest_net.get_weight_dict(True)
 
                 self.up_0.append(wgts[-3]["up"])
@@ -621,5 +621,7 @@ class DeepNetworkPlasticity(TestClass):
                     for target in range(weights_nest.shape[1]):
                         col = cmap(sender)
                         style = linestyles[target]
-                        axes[i][layer].plot(weights_nest[:, target, sender], linestyle="dashed", color=col, label="NEST")
-                        axes[i][layer].plot(weights_numpy[:, target, sender], linestyle="solid", color=col, alpha=0.8, label="numpy")
+                        axes[i][layer].plot(weights_nest[:, target, sender],
+                                            linestyle="dashed", color=col, label="NEST")
+                        axes[i][layer].plot(weights_numpy[:, target, sender], linestyle="solid",
+                                            color=col, alpha=0.8, label="numpy")
