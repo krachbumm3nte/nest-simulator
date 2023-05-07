@@ -26,11 +26,11 @@ if __name__ == "__main__":
     intn_errors = {}
     ff_errors = {}
     fb_errors = {}
+    fig, [[ax0, ax1], [ax2, ax3]] = plt.subplots(2, 2, sharex=True)
+
     for d in dirnames:
         directory = os.path.join(result_dir, d)
         all_configs = sorted([name for name in os.listdir(directory) if os.path.isdir(os.path.join(directory, name))])
-        fig, [[ax0, ax1], [ax2, ax3]] = plt.subplots(2, 2, sharex=True)
-
 
 
         for config in all_configs:
