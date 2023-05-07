@@ -2,10 +2,11 @@
 import numpy as np
 import torchvision.datasets as datasets
 from torch.utils.data import Dataset
+import torchvision.transforms as transforms
 
 
 class MnistDataset(Dataset):
-    def __init__(self, which='train', num_classes=10, n_samples=-1, zero_at=0, one_at=1):
+    def __init__(self, which='train', num_classes=10, n_samples=-1, zero_at=0, one_at=1, target_size=28):
         self.cs = []
         self.vals = []
         self.class_names = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
@@ -14,8 +15,16 @@ class MnistDataset(Dataset):
         assert 2 <= num_classes <= 10
         assert 100 <= n_samples <= 5000 or n_samples == -1
 
+        if target_size == 28:
+            self.transform = None
+        else:
+            self.transform = transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Resize(target_size, antialias=True)
+            ])
+
         if which == 'train':
-            self.data = datasets.MNIST(root='../data/mnist', train=True, download=True, transform=None)
+            self.data = datasets.MNIST(root='../data/mnist', train=True, download=True, transform=self.transform)
             if n_samples == -1:
                 n_samples = 5000
             for i in range(0, 10 * n_samples):
@@ -25,12 +34,12 @@ class MnistDataset(Dataset):
                 cs_flat[self.data.targets[i]] = 1
                 cs_flat = zero_at + cs_flat * (one_at - zero_at)
                 self.cs.append(cs_flat)
-                dat_flat = self.data.data[i].flatten().float()
-                dat_flat /= 256.
-                dat_flat = zero_at + dat_flat * (one_at - zero_at)
-                self.vals.append(dat_flat)
+                dat_float = self.data.data[i].float()
+                dat_float /= 256.
+                dat_float = zero_at + dat_float * (one_at - zero_at)
+                self.vals.append(dat_float)
         elif which == 'val':
-            self.data = datasets.MNIST(root='../data/mnist', train=True, download=True, transform=None)
+            self.data = datasets.MNIST(root='../data/mnist', train=True, download=True, transform=self.transform)
             if n_samples == -1:
                 n_samples = 1000
             for i in range(50 * n_samples, 60 * n_samples):
@@ -40,12 +49,12 @@ class MnistDataset(Dataset):
                 cs_flat[self.data.targets[i]] = 1
                 cs_flat = zero_at + cs_flat * (one_at - zero_at)
                 self.cs.append(cs_flat)
-                dat_flat = self.data.data[i].flatten().float()
-                dat_flat /= 256.
-                dat_flat = zero_at + dat_flat * (one_at - zero_at)
-                self.vals.append(dat_flat)
+                dat_float = self.data.data[i].float()
+                dat_float /= 256.
+                dat_float = zero_at + dat_float * (one_at - zero_at)
+                self.vals.append(dat_float)
         elif which == 'test':
-            self.data = datasets.MNIST(root='../data/mnist', train=False, download=True, transform=None)
+            self.data = datasets.MNIST(root='../data/mnist', train=False, download=True, transform=self.transform)
             if n_samples == -1:
                 n_samples = 1000
             for i in range(10 * n_samples):
@@ -55,17 +64,21 @@ class MnistDataset(Dataset):
                 cs_flat[self.data.targets[i]] = 1
                 cs_flat = zero_at + cs_flat * (one_at - zero_at)
                 self.cs.append(cs_flat)
-                dat_flat = self.data.data[i].flatten().float()
-                dat_flat /= 256.
-                dat_flat = zero_at + dat_flat * (one_at - zero_at)
-                self.vals.append(dat_flat)
+                dat_float = self.data.data[i].float()
+                dat_float /= 256.
+                dat_float = zero_at + dat_float * (one_at - zero_at)
+                self.vals.append(dat_float)
 
         self.vals = [t.numpy() for t in self.vals]
         self.vals = np.array(self.vals)
         self.cs = np.array(self.cs)
 
     def __getitem__(self, key):
-        return self.vals[key], self.cs[key]
+
+        vals = self.vals[key]
+        if self.transform:
+            vals = self.transform(vals)
+        return vals.flatten(), self.cs[key]
 
     def __setitem__(self, key, value):
         self.__dict__[key] = value

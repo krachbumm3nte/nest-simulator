@@ -60,16 +60,20 @@ input and 3 output neurons, dims are: {p.dims}")
             self.val_samples = 10
             self.test_samples = 10
 
+            in_size = p.in_size
+
+            assert (int(in_size**2) == self.dims[0])
+
             print("Preparing MNIST train images...", end=" ")
-            self.train_dataset = MnistDataset('train', self.n_classes)
+            self.train_dataset = MnistDataset('train', self.n_classes, target_size=in_size)
             print("Done.")
 
             print("Preparing MNIST validation images...", end=" ")
-            self.val_dataset = MnistDataset('val', self.n_classes)
+            self.val_dataset = MnistDataset('val', self.n_classes, target_size=in_size)
             print("Done.")
 
             print("Preparing MNIST test images...", end=" ")
-            self.test_dataset = MnistDataset('test', self.n_classes)
+            self.test_dataset = MnistDataset('test', self.n_classes, target_size=in_size)
             print("Done.")
 
             print("Shuffling MNIST train, validation & test images...", end=" ")
