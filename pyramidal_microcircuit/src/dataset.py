@@ -88,7 +88,8 @@ class MnistDataset(Dataset):
 
     def get_samples(self, n_samples):
         indices = np.random.choice(len(self.cs), n_samples)
-        return self.vals[indices], self.cs[indices]
+        vals = [self.__getitem__(i) for i in indices]
+        return vals, self.cs[indices]
 
     def shuffle(self):
         np.random.shuffle(self.vals)
