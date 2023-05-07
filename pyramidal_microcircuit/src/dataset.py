@@ -91,7 +91,7 @@ class MnistDataset(Dataset):
 
         items = np.array([self.__getitem__(i) for i in indices], dtype=object)
         items[:, 0] = [i.numpy() for i in items[:, 0]]
-        return items[0], items[1]
+        return items[:, 0], items[:, 1]
 
     def shuffle(self):
         np.random.shuffle(self.vals)
