@@ -89,7 +89,7 @@ class MnistDataset(Dataset):
     def get_samples(self, n_samples):
         indices = np.random.choice(len(self.cs), n_samples)
 
-        items = np.array([self.__getitem__(i) for i in indices])
+        items = np.array([self.__getitem__(i) for i in indices], dtype=object)
         items[:, 0] = [i.numpy() for i in items[:, 0]]
         return items[0], items[1]
 
