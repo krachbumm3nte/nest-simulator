@@ -3,7 +3,8 @@ import numpy as np
 import torchvision.datasets as datasets
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
-
+import warnings
+warnings.filterwarnings("ignore", message=r"Passing", category=FutureWarning)
 
 class MnistDataset(Dataset):
     def __init__(self, which='train', num_classes=10, n_samples=-1, zero_at=0, one_at=1, target_size=28):
