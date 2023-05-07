@@ -1,41 +1,38 @@
 {
     "t_pres": 50,
     "out_lag": 35.0,
+    "latent_equilibrium": true,
     "mode": "mnist",
-    "in_size": 10,
+    "in_size": 14,
     "dims": [
-        100,
-        150,
-        10
+        196,
+        250,
+        3
     ],
-    "wmin_init": -0.1,
-    "wmax_init": 0.1,
-    "Wmin": -1,
-    "Wmax": 1,
+    "n_epochs": 5000,
+    "wmin_init": -1,
+    "wmax_init": 1,
+    "Wmin": -6,
+    "Wmax": 6,
     "weight_scale": 150,
-    "n_classes": 10,
-    "test_interval": 25,
+    "n_classes": 3,
+    "test_interval": 50,
     "eta": {
         "ip": [
-            0.004,
             0.004,
             0.0
         ],
         "pi": [
             0.01,
-            0.01,
             0.0
         ],
         "up": [
-            0.01,
             0.01,
             0.003
         ],
         "down": [
             0,
-            0,
-            0
+            0.0
         ]
-    },
-    "tau_x": 0.25
+    }
 }

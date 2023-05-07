@@ -56,9 +56,9 @@ input and 3 output neurons, dims are: {p.dims}")
             self.n_classes = p.n_classes
             self.dims = p.dims
 
-            self.train_samples = 10
+            self.train_samples = 50
             self.val_samples = 10
-            self.test_samples = 10
+            self.test_samples = 20
 
             in_size = p.in_size
 
