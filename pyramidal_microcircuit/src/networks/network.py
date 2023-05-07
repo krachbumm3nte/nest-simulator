@@ -3,7 +3,8 @@ from abc import abstractmethod
 import numpy as np
 from src.dataset import BarDataset, MnistDataset
 from src.params import Params
-
+import json
+import os
 
 class Network:
 
@@ -91,23 +92,30 @@ input and 3 output neurons, dims are: {p.dims}")
             network.
             """
             self.train_samples = 25
-            self.val_samples = 20
-            self.test_samples = 20
-            # self.p.gamma = 0.1
-            # self.p.beta = 1
-            # self.p.theta = 3
+            self.val_samples = 25
+            self.test_samples = 25
+
             self.k_yh = 0.1         # hidden to output teacher weight scaling factor
             self.k_hx = 0.1         # input to hidden teacher weight scaling factor
             self.dims = self.p.dims
             self.dims_teacher = self.p.dims_teacher
-            self.whx_trgt = self.gen_weights(self.dims_teacher[0], self.dims_teacher[1], -1, 1)
-            self.wyh_trgt = self.gen_weights(self.dims_teacher[1], self.dims_teacher[2], -1, 1)
+            if hasattr(p, "teacher_weights"):
+                root_dir = os.path.dirname(os.path.realpath(__file__))
+                weight_dir = os.path.join(root_dir, "../../experiment_configs/init_weights")
+                weight_dir = os.path.join(weight_dir, p.teacher_weights)
+                print(f"Reading teacher weights from: {weight_dir}")
+                with open(weight_dir, "r") as f:
+                    teacher_weights = json.load(f)
+                self.whx_trgt = np.array(teacher_weights[0]["up"])
+                self.wyh_trgt = np.array(teacher_weights[1]["up"])
+            else:
+                self.whx_trgt = self.gen_weights(self.dims_teacher[0], self.dims_teacher[1], -1, 1)
+                self.wyh_trgt = self.gen_weights(self.dims_teacher[1], self.dims_teacher[2], -1, 1)
             self.p.wmax_init = -1
             self.p.wmin_init = 1
             self.p.tau_x = 0.3
             self.tau_x = self.p.tau_x
-            # self.k_yh = self.p.k_yh
-            # self.k_hx = self.p.k_hx
+
             self.get_training_data = self.generate_teacher_data
             self.get_val_data = self.generate_teacher_data
             self.get_test_data = self.generate_teacher_data
@@ -196,7 +204,7 @@ input and 3 output neurons, dims are: {p.dims}")
         pass
 
     def generate_teacher_data(self, n_samples):
-        x = np.random.random((n_samples, self.dims[0])) * 2 - 1
+        x = np.random.random((n_samples, self.dims[0]))
         return x, self.get_teacher_output(x)
 
     def generate_selfpred_data(self, n_samples):

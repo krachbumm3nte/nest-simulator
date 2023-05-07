@@ -1,6 +1,6 @@
 {
-    "t_pres": 100,
-    "out_lag": 60,
+    "t_pres": 50,
+    "out_lag": 35,
     "init_self_pred": false,
     "mode": "teacher",
     "dims_teacher": [
@@ -10,22 +10,25 @@
     ],
     "dims": [
         30,
-        35,
+        7,
         10
     ],
     "test_interval": 25,
+    "store_errors": true,
+    "n_epochs": 1500,
+    "teacher_weights": "init_weights_30_20_10.json",
     "eta": {
         "ip": [
-            0.002,
+            0.004,
             0.0
         ],
         "pi": [
-            0.005,
+            0.01,
             0.0
         ],
         "up": [
-            0.005,
-            0.0015
+            0.01,
+            0.003
         ],
         "down": [
             0,
