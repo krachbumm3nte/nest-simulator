@@ -3,8 +3,7 @@ import numpy as np
 import torchvision.datasets as datasets
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
-import warnings
-warnings.filterwarnings("ignore", message=r"Passing", category=FutureWarning)
+
 
 class MnistDataset(Dataset):
     def __init__(self, which='train', num_classes=10, n_samples=-1, zero_at=0, one_at=1, target_size=28):
@@ -90,9 +89,10 @@ class MnistDataset(Dataset):
     def get_samples(self, n_samples):
         indices = np.random.choice(len(self.cs), n_samples)
 
-        items = np.array([self.__getitem__(i) for i in indices], dtype=object)
-        items[:, 0] = [i.numpy() for i in items[:, 0]]
-        return items[:, 0], items[:, 1]
+        foo = [self.__getitem__(i) for i in indices]
+        vals = [k.numpy() for k, v in foo]
+        keys = [v for k, v in foo]
+        return vals, keys
 
     def shuffle(self):
         np.random.shuffle(self.vals)
