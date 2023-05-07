@@ -171,20 +171,20 @@ network types ({params.network_type}/{args.network}).")
         syn_spec_exc_2["weight"] = net.gen_weights(n_intn, n_intn_inh, 0, params.wmax_init/n_pyr)
         syn_spec_exc_2["receptor_type"] = params.compartments["soma"]
         l.syn_exc_2 = nest.Connect(l.intn, l.intn_2, conn_spec="all_to_all",
-                                 syn_spec=syn_spec_exc_2, return_synapsecollection=True)
+                                   syn_spec=syn_spec_exc_2, return_synapsecollection=True)
 
         # Connect inhibitory interneurons to pyramidal targets.
         syn_spec_w_inh = deepcopy(l.synapses["pi"])
         syn_spec_w_inh["weight"] = net.gen_weights(n_intn_inh, n_pyr, -weight_factor*params.wmax_init/n_intn_inh, 0)
         syn_spec_w_inh["Wmax"] = 0
-        l.syn_inh = nest.Connect(l.intn_2, l.pyr, conn_spec="all_to_all", syn_spec=syn_spec_w_inh, return_synapsecollection=True)
+        l.syn_inh = nest.Connect(l.intn_2, l.pyr, conn_spec="all_to_all",
+                                 syn_spec=syn_spec_w_inh, return_synapsecollection=True)
 
         dropout = 0.3
         if dropout > 0:
             indices = np.random.choice(n_intn_inh, round(dropout * n_intn_inh), replace=False)
             for i in indices:
                 nest.Disconnect(l.syn_exc_2[i])
-
 
     if args.cont:
         net.test_acc = progress["test_acc"]
