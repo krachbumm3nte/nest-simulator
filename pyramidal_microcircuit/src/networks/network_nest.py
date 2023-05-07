@@ -240,8 +240,6 @@ class NestNetwork(Network):
         self.disable_learning()
 
         for x_test, y_actual in zip(x_batch, y_batch):
-            print(x_test)
-            print(y_actual)
             self.set_input(x_test)
             self.simulate(self.t_pres, True)  # self.t_pres)
             mm_data = pd.DataFrame.from_dict(self.mm.events)
