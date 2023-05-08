@@ -147,6 +147,7 @@ class Params:
                     self.eta[syn_name] = [eta / (self.weight_scale **
                                           2 * self.tau_delta) for eta in lr]
                 elif syn_name == "down":
+                    # TODO: this particular scaling term contains a magic number and is so far unconfirmed
                     self.eta[syn_name] = [2.5 * eta / (self.weight_scale **
                                           3 * self.tau_delta) for eta in lr]
                 else:
