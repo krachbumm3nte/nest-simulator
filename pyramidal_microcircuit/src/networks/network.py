@@ -108,7 +108,7 @@ input and 3 output neurons, dims are: {p.dims}")
                 with open(weight_dir, "r") as f:
                     teacher_weights = json.load(f)
                 self.whx_trgt = np.array(teacher_weights[0]["up"])
-                self.wyh_trgt =  np.array(teacher_weights[1]["up"])
+                self.wyh_trgt = np.array(teacher_weights[1]["up"])
             else:
                 self.whx_trgt = self.gen_weights(self.dims_teacher[0], self.dims_teacher[1], -1, 1)
                 self.wyh_trgt = self.gen_weights(self.dims_teacher[1], self.dims_teacher[2], -1, 1)
@@ -212,12 +212,6 @@ input and 3 output neurons, dims are: {p.dims}")
         return np.random.random((n_samples, self.dims[0])), np.zeros((n_samples, self.dims[-1]))
 
     def get_teacher_output(self, input_currents):
-        foo = []
-        for x in input_currents:
-
-            foo.append(self.phi(self.k_yh * self.wyh_trgt @ self.phi(self.k_hx * self.whx_trgt @ x)))
-            print(x, foo[-1])
-        return np.array(foo)
         return np.array([self.phi(self.k_yh * self.wyh_trgt @ self.phi(self.k_hx * self.whx_trgt @ x)) for x in input_currents])
 
     def train_epoch(self):
