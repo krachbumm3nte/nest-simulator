@@ -102,8 +102,7 @@ input and 3 output neurons, dims are: {p.dims}")
             self.dims_teacher = self.p.dims_teacher
             if hasattr(p, "teacher_weights"):
                 root_dir = os.path.dirname(os.path.realpath(__file__))
-                weight_dir = os.path.join(root_dir, "../../experiment_configs/init_weights")
-                weight_dir = os.path.join(weight_dir, p.teacher_weights)
+                weight_dir = os.path.join(root_dir, "../../experiment_configs/init_weights", p.teacher_weights)
                 print(f"Reading teacher weights from: {weight_dir}")
                 with open(weight_dir, "r") as f:
                     teacher_weights = json.load(f)
@@ -112,8 +111,8 @@ input and 3 output neurons, dims are: {p.dims}")
             else:
                 self.whx_trgt = self.gen_weights(self.dims_teacher[0], self.dims_teacher[1], -1, 1)
                 self.wyh_trgt = self.gen_weights(self.dims_teacher[1], self.dims_teacher[2], -1, 1)
-            self.p.wmax_init = -1
-            self.p.wmin_init = 1
+            self.p.wmin_init = -0.1
+            self.p.wmax_init = 0.1
             self.p.tau_x = 0.3
             self.tau_x = self.p.tau_x
 
