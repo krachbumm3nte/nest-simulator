@@ -26,16 +26,16 @@ for n in n_hidden:
     config["teacher_weights"] = "init_weights_30_20_10.json"
     config["eta"] = {
         "ip": [
-            0.004,
+            0.0012,
             0.0
         ],
         "pi": [
-            0.01,
+            0.006,
             0.0
         ],
         "up": [
-            0.01,
-            0.003
+            0.0012,
+            0.0005
         ],
         "down": [
             0,
