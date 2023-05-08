@@ -136,10 +136,10 @@ class NestNetwork(Network):
 
         self.redefine_connections()
 
-        if self.mode == "teacher":
-            print("increasing pyr-pyr feedback weights")
-            wgts = self.get_weight_array_from_syn(self.layers[-2].down)
-            self.set_weights_from_syn(10 * wgts, self.layers[-2].down)
+        # if self.mode == "teacher":
+        #     print("increasing pyr-pyr feedback weights")
+        #     wgts = self.get_weight_array_from_syn(self.layers[-2].down)
+        #     self.set_weights_from_syn(10 * wgts, self.layers[-2].down)
 
         # if self.p.init_self_pred:
         #     print("\tSetting self-predicting weight... ", end="")
