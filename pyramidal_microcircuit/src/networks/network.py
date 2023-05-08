@@ -96,11 +96,11 @@ input and 3 output neurons, dims are: {p.dims}")
             self.val_samples = 25
             self.test_samples = 25
 
-            self.p.gamma = 0.1
-            self.p.beta = 1
-            self.p.theta = 3
+            # self.p.gamma = 0.1
+            # self.p.beta = 1
+            # self.p.theta = 3
 
-            self.k_yh = 1         # hidden to output teacher weight scaling factor
+            self.k_yh = 0.5         # hidden to output teacher weight scaling factor
             self.k_hx = 1         # input to hidden teacher weight scaling factor
             self.dims = self.p.dims
             self.dims_teacher = self.p.dims_teacher
