@@ -1,0 +1,39 @@
+{
+    "t_pres": 50,
+    "out_lag": 35.0,
+    "latent_equilibrium": true,
+    "mode": "mnist",
+    "in_size": 14,
+    "dims": [
+        196,
+        250,
+        10
+    ],
+    "n_epochs": 5000,
+    "init_self_pred": true,
+    "wmin_init": -1,
+    "wmax_init": 1,
+    "Wmin": -6,
+    "Wmax": 6,
+    "weight_scale": 150,
+    "n_classes": 10,
+    "test_interval": 50,
+    "eta": {
+        "ip": [
+            0.002,
+            0.0
+        ],
+        "pi": [
+            0.0,
+            0.0
+        ],
+        "up": [
+            0.005,
+            0.001
+        ],
+        "down": [
+            0.0,
+            0.0
+        ]
+    }
+}

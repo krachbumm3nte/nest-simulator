@@ -7,8 +7,8 @@ root_dir = os.path.dirname(os.path.realpath(__file__))
 target_dir = os.path.join(root_dir, "par_study_function_approximator")
 config = {}
 
-dims_teacher = [30, 20, 10]
-n_hidden = [5, 7, 10, 15, 20, 25, 30]
+dims_teacher = [30, 40, 10]
+n_hidden = [5, 7, 10, 15, 20, 30, 40]
 
 
 os.mkdir(target_dir)
@@ -23,7 +23,7 @@ for n in n_hidden:
     config["test_interval"] = 25
     config["store_errors"] = True
     config["n_epochs"] = 1500
-    config["teacher_weights"] = "init_weights_30_20_10.json"
+    config["teacher_weights"] = "init_weights_30_40_10.json"
     config["eta"] = {
         "ip": [
             0.004,

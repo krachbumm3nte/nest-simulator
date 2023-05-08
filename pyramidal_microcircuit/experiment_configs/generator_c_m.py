@@ -9,29 +9,28 @@ c_m_list = [1, 10, 50]
 
 
 config = {
-    "t_pres": 250,
-    "out_lag": 180.0,
+    "t_pres": 200,
+    "out_lag": 130.0,
     "latent_equilibrium": True,
     "dims": [9, 30, 3],
     "eta": {
         "ip": [
-            0.004,
+            0.001,
             0.0
         ],
         "pi": [
-            0.01,
+            0.0,
             0.0
         ],
         "up": [
-            0.01,
-            0.003
+            0.0025,
+            0.0005
         ],
         "down": [
-            0,
+            0.0,
             0.0
         ]
     },
-    "record_interval": 1,
     "dims": [
         9,
         30,
