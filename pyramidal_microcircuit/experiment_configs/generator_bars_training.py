@@ -2,8 +2,6 @@ import os
 import json
 
 
-
-
 t_pres = [0.3, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500]  # presentation times in ms
 
 eta_default = {

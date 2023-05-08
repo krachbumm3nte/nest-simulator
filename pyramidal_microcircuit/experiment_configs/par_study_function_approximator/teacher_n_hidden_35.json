@@ -5,18 +5,18 @@
     "mode": "teacher",
     "dims_teacher": [
         30,
-        40,
+        20,
         10
     ],
     "dims": [
         30,
-        7,
+        35,
         10
     ],
     "test_interval": 25,
     "store_errors": true,
     "n_epochs": 1500,
-    "teacher_weights": "init_weights_30_40_10.json",
+    "teacher_weights": "init_weights_30_20_10.json",
     "eta": {
         "ip": [
             0.004,
