@@ -6,6 +6,7 @@ from src.params import Params
 import json
 import os
 
+
 class Network:
 
     def __init__(self, p: Params) -> None:
@@ -95,8 +96,8 @@ input and 3 output neurons, dims are: {p.dims}")
             self.val_samples = 25
             self.test_samples = 25
 
-            self.k_yh = 0.1         # hidden to output teacher weight scaling factor
-            self.k_hx = 0.1         # input to hidden teacher weight scaling factor
+            self.k_yh = 1         # hidden to output teacher weight scaling factor
+            self.k_hx = 1         # input to hidden teacher weight scaling factor
             self.dims = self.p.dims
             self.dims_teacher = self.p.dims_teacher
             if hasattr(p, "teacher_weights"):
@@ -107,7 +108,7 @@ input and 3 output neurons, dims are: {p.dims}")
                 with open(weight_dir, "r") as f:
                     teacher_weights = json.load(f)
                 self.whx_trgt = np.array(teacher_weights[0]["up"])
-                self.wyh_trgt = np.array(teacher_weights[1]["up"])
+                self.wyh_trgt =  np.array(teacher_weights[1]["up"])
             else:
                 self.whx_trgt = self.gen_weights(self.dims_teacher[0], self.dims_teacher[1], -1, 1)
                 self.wyh_trgt = self.gen_weights(self.dims_teacher[1], self.dims_teacher[2], -1, 1)
@@ -204,14 +205,20 @@ input and 3 output neurons, dims are: {p.dims}")
         pass
 
     def generate_teacher_data(self, n_samples):
-        x = np.random.random((n_samples, self.dims[0]))
+        x = np.random.random((n_samples, self.dims[0])) * 2 - 1
         return x, self.get_teacher_output(x)
 
     def generate_selfpred_data(self, n_samples):
         return np.random.random((n_samples, self.dims[0])), np.zeros((n_samples, self.dims[-1]))
 
     def get_teacher_output(self, input_currents):
-        return np.array([self.k_yh * self.wyh_trgt @ self.phi(self.k_hx * self.whx_trgt @ x) for x in input_currents])
+        foo = []
+        for x in input_currents:
+
+            foo.append(self.phi(self.k_yh * self.wyh_trgt @ self.phi(self.k_hx * self.whx_trgt @ x)))
+            print(x, foo[-1])
+        return np.array(foo)
+        return np.array([self.phi(self.k_yh * self.wyh_trgt @ self.phi(self.k_hx * self.whx_trgt @ x)) for x in input_currents])
 
     def train_epoch(self):
         x_batch, y_batch = self.get_training_data(self.train_samples)
