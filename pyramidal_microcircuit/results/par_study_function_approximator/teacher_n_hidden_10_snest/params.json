@@ -16,14 +16,14 @@
     "config_file": "experiment_configs/par_study_function_approximator/teacher_n_hidden_10.json",
     "delta_t": 0.1,
     "dims": [
-        30,
+        15,
         10,
-        10
+        5
     ],
     "dims_teacher": [
-        30,
-        20,
-        10
+        15,
+        10,
+        5
     ],
     "eta": {
         "ip": [
@@ -104,7 +104,7 @@
     "lambda_out": 0.7692307692307693,
     "latent_equilibrium": true,
     "mode": "teacher",
-    "n_epochs": 1500,
+    "n_epochs": 5000,
     "network_type": "snest",
     "neuron_model": "pp_cond_exp_mc_pyr",
     "noise": false,
@@ -141,7 +141,7 @@
     "sigma": 0.3,
     "spiking": true,
     "static_syn_model": "static_synapse",
-    "store_errors": true,
+    "store_errors": false,
     "syn_model": "pyr_synapse",
     "syn_plastic": {
         "synapse_model": "pyr_synapse",
@@ -157,8 +157,8 @@
     "t_pres": 50,
     "tau_delta": 1.0,
     "tau_x": 0.1,
-    "teacher_weights": "init_weights_30_20_10.json",
-    "test_interval": 25,
+    "teacher_weights": "init_weights_15_10_5.json",
+    "test_interval": 250,
     "theta": 0,
     "threads": 8,
     "weight_scale": 100,
