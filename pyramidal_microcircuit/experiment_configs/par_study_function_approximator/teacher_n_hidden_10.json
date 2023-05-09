@@ -4,19 +4,18 @@
     "init_self_pred": false,
     "mode": "teacher",
     "dims_teacher": [
-        30,
-        20,
-        10
+        15,
+        10,
+        5
     ],
     "dims": [
-        30,
+        15,
         10,
-        10
+        5
     ],
-    "test_interval": 25,
-    "store_errors": true,
-    "n_epochs": 1500,
-    "teacher_weights": "init_weights_30_20_10.json",
+    "test_interval": 250,
+    "n_epochs": 5000,
+    "teacher_weights": "init_weights_15_10_5.json",
     "eta": {
         "ip": [
             0.0012,
