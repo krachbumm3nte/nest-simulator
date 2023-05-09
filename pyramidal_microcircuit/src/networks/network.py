@@ -92,7 +92,7 @@ input and 3 output neurons, dims are: {p.dims}")
             Network learns to match the input-output function of a separate, randomly initialized teacher
             network.
             """
-            self.train_samples = 25
+            self.train_samples = 50
             self.val_samples = 25
             self.test_samples = 25
 
@@ -215,7 +215,7 @@ input and 3 output neurons, dims are: {p.dims}")
         return np.random.random((n_samples, self.dims[0])), np.zeros((n_samples, self.dims[-1]))
 
     def get_teacher_output(self, input_currents):
-        return np.array([self.phi(self.k_yh * self.wyh_trgt @ self.phi(self.k_hx * self.whx_trgt @ x)) for x in input_currents])
+        return np.array([self.k_yh * self.phi(self.k_hx * self.wyh_trgt @ self.phi(self.whx_trgt @ x)) for x in input_currents])
 
     def train_epoch(self):
         x_batch, y_batch = self.get_training_data(self.train_samples)
