@@ -8,7 +8,7 @@ target_dir = os.path.join(root_dir, "par_study_function_approximator")
 config = {}
 
 dims_teacher = [15, 10, 5]
-n_hidden = [5, 8, 10, 15, 20]
+n_hidden = [4, 6, 8, 10, 15]
 
 
 os.mkdir(target_dir)
@@ -20,7 +20,7 @@ for n in n_hidden:
     config["dims_teacher"] = deepcopy(dims_teacher)
     config["dims"] = deepcopy(dims_teacher)
     config["dims"][1] = n
-    config["test_interval"] = 250
+    config["test_interval"] = 500
     config["n_epochs"] = 5000
     config["teacher_weights"] = "init_weights_15_10_5.json"
     config["eta"] = {

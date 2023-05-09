@@ -13,7 +13,7 @@
         8,
         5
     ],
-    "test_interval": 250,
+    "test_interval": 500,
     "n_epochs": 5000,
     "teacher_weights": "init_weights_15_10_5.json",
     "eta": {
