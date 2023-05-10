@@ -158,7 +158,7 @@
     "tau_delta": 1.0,
     "tau_x": 0.1,
     "teacher_weights": "init_weights_15_10_5.json",
-    "test_interval": 250,
+    "test_interval": 500,
     "theta": 0,
     "threads": 8,
     "weight_scale": 100,
