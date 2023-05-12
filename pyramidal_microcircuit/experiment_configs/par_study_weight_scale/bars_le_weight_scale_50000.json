@@ -1,9 +1,0 @@
-{
-    "dims": [
-        9,
-        30,
-        3
-    ],
-    "psi": 500,
-    "network_type": "snest"
-}

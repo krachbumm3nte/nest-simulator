@@ -1,7 +1,7 @@
 {
     "t_pres": 50,
     "out_lag": 35,
-    "init_self_pred": false,
+    "init_self_pred": true,
     "mode": "teacher",
     "dims_teacher": [
         15,
@@ -15,19 +15,21 @@
     ],
     "test_interval": 500,
     "n_epochs": 5000,
+    "noise": true,
+    "sigma": 0.1,
     "teacher_weights": "init_weights_15_10_5.json",
     "eta": {
         "ip": [
-            0.0012,
+            0.002,
             0.0
         ],
         "pi": [
-            0.006,
+            0.0,
             0.0
         ],
         "up": [
-            0.0012,
-            0.0005
+            0.005,
+            0.001
         ],
         "down": [
             0,
