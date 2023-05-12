@@ -92,7 +92,7 @@ input and 3 output neurons, dims are: {p.dims}")
             Network learns to match the input-output function of a separate, randomly initialized teacher
             network.
             """
-            self.train_samples = 100
+            self.train_samples = 10
             self.val_samples = 25
             self.test_samples = 25
 
