@@ -46,12 +46,12 @@ if __name__ == "__main__":
         with open(os.path.join(dirname, config, "params.json")) as f:
             params = json.load(f)
 
-        weight_scale = int(params["weight_scale"])
+        psi = int(params["psi"])
         reset = int(params["reset"])
         acc = np.array(progress["test_acc"])
 
         final_acc = np.mean([acc[-10:, 1]])  # average over last 10 accuracy readings
-        orig_data_1.append((weight_scale, final_acc))
+        orig_data_1.append((psi, final_acc))
 
         times = [entry[0] for entry in acc]
         acc = [1-entry[1] for entry in acc]

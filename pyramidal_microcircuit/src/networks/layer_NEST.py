@@ -35,7 +35,7 @@ class NestLayer(AbstractLayer):
         if init_weights:
             for type in ["up", "pi", "ip", "down"]:
                 # Init weights are assumed to be normalized and thus need to be scaled down.
-                self.synapses[type]["weight"] = np.array(init_weights[type]) / self.weight_scale
+                self.synapses[type]["weight"] = np.array(init_weights[type]) / self.psi
         else:
             self.synapses["up"]["weight"] = self.gen_weights(self.N_prev, self.N_pyr)
             self.synapses["pi"]["weight"] = self.gen_weights(self.N_next, self.N_pyr)
@@ -101,7 +101,7 @@ class NestOutputLayer(AbstractLayer):
 
         self.synapses["up"]['receptor_type'] = p.compartments['basal']
         if init_weights:
-            self.synapses["up"]["weight"] = np.array(init_weights["up"]) / self.weight_scale
+            self.synapses["up"]["weight"] = np.array(init_weights["up"]) / self.psi
         else:
             self.synapses["up"]["weight"] = self.gen_weights(self.N_prev, self.N_out)
 

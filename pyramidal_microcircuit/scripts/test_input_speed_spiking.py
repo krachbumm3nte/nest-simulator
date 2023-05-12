@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 p = Params()
 p.network_type = "snest"
 p.spiking = True
-p.weight_scale = 2
+p.psi = 2
 p.setup_nest_configs()
 utils.setup_nest(p)
 
@@ -54,7 +54,7 @@ parrots_new = nest.Create("parrot_neuron", n_neuron)
 out = nest.Create(p.neuron_model, n_hidden, p.pyr_params)
 nest.Connect(input_new, parrots_new, conn_spec="one_to_one")
 nest.Connect(parrots_new, out, syn_spec=syn)
-input_new.rate = p.weight_scale * i * 1000
+input_new.rate = p.psi * i * 1000
 
 print(f"testing new input neurons... ")
 

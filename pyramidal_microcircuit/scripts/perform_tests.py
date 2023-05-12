@@ -19,7 +19,7 @@ args = sys.argv[1:]
 root = args[0]
 datadir = os.path.join(root, "data")
 params = Params(os.path.join(root, "params.json"))
-params.weight_scale = 100
+params.psi = 100
 params.record_interval = 0.1
 utils.setup_nest(params, datadir)
 net = NestNetwork(params)

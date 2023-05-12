@@ -2,9 +2,9 @@ import os
 import json
 
 root_dir = os.path.dirname(os.path.realpath(__file__))
-target_dir = os.path.join(root_dir, "par_study_c_m_weight_scale")
+target_dir = os.path.join(root_dir, "par_study_c_m_psi")
 
-weight_scale_list = [10, 50, 100]
+psi_list = [10, 50, 100]
 c_m_list = [1, 10, 50]
 
 
@@ -36,11 +36,11 @@ config = {
 
 
 os.mkdir(target_dir)
-for scale in weight_scale_list:
+for scale in psi_list:
     for c_m in c_m_list:
-        config["weight_scale"] = scale
+        config["psi"] = scale
         config["network_type"] = "snest"
         config["C_m_api"] = c_m
-        config_name = f"bars_le_weight_scale_{scale}_c_m_{c_m}.json"
+        config_name = f"bars_le_psi_{scale}_c_m_{c_m}.json"
         with open(os.path.join(target_dir, config_name), "w") as f:
             json.dump(config, f, indent=4)

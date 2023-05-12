@@ -35,7 +35,7 @@ if __name__ == "__main__":
         params = Params(os.path.join(result_dir, config, "params.json"))
         n = params.dims[1]
         print(f"testing for n={n}")
-        params.weight_scale = 250
+        params.psi = 250
         params.eta = {
             "up": [0, 0],
             "down": [0, 0],

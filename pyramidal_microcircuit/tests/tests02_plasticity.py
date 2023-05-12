@@ -10,8 +10,8 @@ class PlasticityYH(DynamicsYH):
 
         conn = nest.GetConnections(self.neuron_01, self.neuron_02)
         if self.spiking:
-            conn.eta = self.eta/(self.weight_scale**2 * self.tau_delta)
-            conn.weight = self.weight / self.weight_scale
+            conn.eta = self.eta/(self.psi**2 * self.tau_delta)
+            conn.weight = self.weight / self.psi
         else:
             conn.eta = self.eta
 
@@ -61,7 +61,7 @@ class PlasticityYH(DynamicsYH):
 
     def evaluate(self) -> bool:
         if self.spiking:
-            self.weights_nest = [val*self.weight_scale for val in self.weights_nest]
+            self.weights_nest = [val*self.psi for val in self.weights_nest]
 
         return records_match(self.weights_nest, self.weights_numpy, 0.1)
 
@@ -94,8 +94,8 @@ class PlasticityHX(DynamicsHX):
 
         self.conn = nest.GetConnections(self.neuron_01, self.neuron_02)
         if self.spiking:
-            self.conn.eta = self.eta/(self.weight_scale**2 * self.tau_delta)
-            self.conn.weight = self.weight / self.weight_scale
+            self.conn.eta = self.eta/(self.psi**2 * self.tau_delta)
+            self.conn.weight = self.weight / self.psi
         else:
             self.conn.eta = self.eta
 
@@ -142,7 +142,7 @@ class PlasticityHX(DynamicsHX):
 
     def evaluate(self) -> bool:
         if self.spiking:
-            self.weights_nest = [val*self.weight_scale for val in self.weights_nest]
+            self.weights_nest = [val*self.psi for val in self.weights_nest]
         return records_match(self.weights_nest, self.weights_numpy)
 
     def plot_results(self):
@@ -179,8 +179,8 @@ class PlasticityHXMulti(PlasticityHX):
         self.weight2 = -0.5
         synapse = self.p.syn_plastic
         if self.spiking:
-            synapse["weight"] = self.weight2 / self.weight_scale
-            synapse["eta"] = self.eta/(self.weight_scale**2 * self.tau_delta)
+            synapse["weight"] = self.weight2 / self.psi
+            synapse["eta"] = self.eta/(self.psi**2 * self.tau_delta)
         else:
             synapse["weight"] = self.weight2
             synapse["eta"] = self.eta
@@ -253,8 +253,8 @@ class PlasticityHXMulti(PlasticityHX):
 
     def evaluate(self) -> bool:
         if self.spiking:
-            self.weights_nest = [val*self.weight_scale for val in self.weights_nest]
-            self.nest_weights_2 = [val*self.weight_scale for val in self.weights_nest_2]
+            self.weights_nest = [val*self.psi for val in self.weights_nest]
+            self.nest_weights_2 = [val*self.psi for val in self.weights_nest_2]
 
         return records_match(self.weights_nest, self.weights_numpy) \
             and records_match(self.weights_nest_2, self.weights_numpy_2)
@@ -302,8 +302,8 @@ class PlasticityHY(DynamicsHY):
 
         self.conn = nest.GetConnections(self.neuron_01, self.neuron_02)
         if self.spiking:
-            self.conn.eta = self.eta/(self.weight_scale**2 * self.tau_delta)
-            self.conn.weight = self.weight / self.weight_scale
+            self.conn.eta = self.eta/(self.psi**2 * self.tau_delta)
+            self.conn.weight = self.weight / self.psi
         else:
             self.conn.eta = self.eta
 
@@ -348,7 +348,7 @@ class PlasticityHY(DynamicsHY):
 
     def evaluate(self) -> bool:
         if self.spiking:
-            self.weights_nest = [val*self.weight_scale for val in self.weights_nest]
+            self.weights_nest = [val*self.psi for val in self.weights_nest]
 
         return records_match(self.weights_nest, self.weights_numpy)
 
@@ -380,8 +380,8 @@ class PlasticityHY(DynamicsHY):
 
         self.conn = nest.GetConnections(self.neuron_01, self.neuron_02)
         if self.spiking:
-            self.conn.eta = 2.5 * self.eta/(self.weight_scale**3 * self.tau_delta)
-            self.conn.weight = self.weight / self.weight_scale
+            self.conn.eta = 2.5 * self.eta/(self.psi**3 * self.tau_delta)
+            self.conn.weight = self.weight / self.psi
         else:
             self.conn.eta = 2.5 * self.eta
 
@@ -426,7 +426,7 @@ class PlasticityHY(DynamicsHY):
 
     def evaluate(self) -> bool:
         if self.spiking:
-            self.weights_nest = [val*self.weight_scale for val in self.weights_nest]
+            self.weights_nest = [val*self.psi for val in self.weights_nest]
 
         return records_match(self.weights_nest, self.weights_numpy)
 

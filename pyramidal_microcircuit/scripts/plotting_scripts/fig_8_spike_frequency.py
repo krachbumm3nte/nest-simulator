@@ -8,7 +8,7 @@ import nest
 params = Params()
 params.record_interval = 0.1
 params.threads = 1
-weight_scales = np.logspace(-1, 1, 200, endpoint=True)
+psis = np.logspace(-1, 1, 200, endpoint=True)
 
 
 acc = []
@@ -35,7 +35,7 @@ def get_hz_from_sr(spike_recorder, neuron, t_pres):
     return (1000 * n_spikes) / t_pres
 
 
-for scale in weight_scales:
+for scale in psis:
     sr.n_events = 0
     pyr.gamma = params.gamma * scale
     intn.gamma = params.gamma * scale

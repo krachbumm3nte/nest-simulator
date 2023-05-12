@@ -33,7 +33,7 @@ class AbstractLayer():
         self.gamma = p.gamma
         self.beta = p.beta
         self.theta = p.theta
-        self.weight_scale = p.weight_scale if p.spiking else 1
+        self.psi = p.psi if p.spiking else 1
         self.eta = {
             "up": p.eta["up"][self.layer],
             "ip": p.eta["ip"][self.layer],
@@ -55,9 +55,9 @@ class AbstractLayer():
 
     def gen_weights(self, n_in, n_out, wmin=None, wmax=None):
         if wmin is None:
-            wmin = self.p.wmin_init/self.weight_scale
+            wmin = self.p.wmin_init/self.psi
         if wmax is None:
-            wmax = self.p.wmax_init/self.weight_scale
+            wmax = self.p.wmax_init/self.psi
         return np.random.uniform(wmin, wmax, (n_out, n_in))
 
     def phi(self, x, thresh=15):

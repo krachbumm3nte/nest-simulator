@@ -13,7 +13,7 @@ styles_c_m = {1: "-",
               50: "--"}
 
 
-colors_weight_scale = {1: "green",
+colors_psi = {1: "green",
                        5: "blue",
                        10: "red",
                        50: "orange"}
@@ -45,18 +45,18 @@ if __name__ == "__main__":
         with open(os.path.join(dirname, config, "params.json")) as f:
             params = json.load(f)
 
-        weight_scale = int(params["weight_scale"])
+        psi = int(params["psi"])
         c_m = float(params["C_m_api"])
         acc = progress["test_acc"]
 
         final_acc = np.mean([datapoint[1] for datapoint in acc[-10:]])  # average over last 10 accuracy readings
-        orig_data_1.append((weight_scale, final_acc))
+        orig_data_1.append((psi, final_acc))
 
         times = [entry[0] for entry in acc]
         acc = [1-entry[1] for entry in acc]
         accuracies[c_m].append(final_acc)
         ax0.plot(times, utils.rolling_avg(acc, filter_window),
-                 color=colors_weight_scale[weight_scale], linestyle=styles_c_m[c_m])
+                 color=colors_psi[psi], linestyle=styles_c_m[c_m])
         # ax0.plot(times, acc,
         #  label=r"$t_{{pres}}={} \tau_{{eff}}$".format(round(t_pres)), color="orange", linestyle=linestyles[params["t_pres"]])
 
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     legend2 = ax0.legend(*zip(*dummy_lines), loc=1)
 
     dummy_lines_2 = [[ax0.plot((0, -1), color=col)[0], r"weight scale = {}".format(w_s)]
-                     for [w_s, col] in colors_weight_scale.items()]
+                     for [w_s, col] in colors_psi.items()]
     legend1 = ax0.legend(*zip(*dummy_lines_2), loc=4)
     # sax0.add_artist(legend1)
     ax0.add_artist(legend2)

@@ -35,12 +35,12 @@ if __name__ == "__main__":
         with open(os.path.join(dirname, config, "params.json")) as f:
             params = json.load(f)
 
-        weight_scale = params["weight_scale"]
+        psi = params["psi"]
         acc = np.array(progress["test_acc"])
 
         final_acc = np.mean(acc[-5:, 1])  # average over last 10 accuracy readings
 
-        final_performance.append([weight_scale, final_acc])
+        final_performance.append([psi, final_acc])
 
         if not np.any(acc[:, 1] == 1.0):
             t_success = 10000
@@ -48,13 +48,13 @@ if __name__ == "__main__":
             t_success = np.where(acc[:, 1] < 1.0)[0]
             t_success = acc[t_success[-1], 0]
 
-        training_duration.append([weight_scale, t_success])
+        training_duration.append([psi, t_success])
 
-        if weight_scale in linestyles.keys():
+        if psi in linestyles.keys():
             times = [entry[0] for entry in acc]
             acc = [1-entry[1] for entry in acc]
             ax0.plot(times, utils.rolling_avg(acc, filter_window), label=r"weight scale={}".format(
-                weight_scale), color="orange", linestyle=linestyles[weight_scale])
+                psi), color="orange", linestyle=linestyles[psi])
 
     ax1.set_xscale("log")
     ax2.set_xscale("log")

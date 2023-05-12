@@ -11,7 +11,7 @@ config = {
     "t_pres": 50,
     "out_lag": 0,
     "latent_equilibrium": True,
-    "weight_scale": 100,
+    "psi": 100,
     "mode": "self-pred",
     "init_self_pred": False,
     "test_interval": -1,

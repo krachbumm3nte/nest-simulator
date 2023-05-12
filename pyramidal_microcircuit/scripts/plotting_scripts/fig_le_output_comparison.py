@@ -30,7 +30,7 @@ if __name__ == "__main__":
         'up': [0.0, 0.0, 0],
         'down': [0, 0, 0]
     }
-    # p.weight_scale = 2000
+    # p.psi = 2000
 
     p.out_lag = 0
     p.t_pres = 50

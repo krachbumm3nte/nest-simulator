@@ -26,7 +26,7 @@ col_inh = "blue"
 
 p = Params()
 p.spiking = True
-p.weight_scale = 200
+p.psi = 200
 p.C_m_api = 5
 p.C_m_bas = 5
 p.threads = 3
@@ -63,12 +63,12 @@ for i in range(2):
 
     if i == 0:
         compname = 'apical_lat'
-        p.syn_plastic["eta"] = 0.0008 / (p.weight_scale**2 * p.delta_t)
+        p.syn_plastic["eta"] = 0.0008 / (p.psi**2 * p.delta_t)
         i_e = 0.75
         err_comp = "apical_lat"
     else:
         compname = 'basal'
-        p.syn_plastic["eta"] = 0.0006 / (p.weight_scale**3 * p.delta_t)
+        p.syn_plastic["eta"] = 0.0006 / (p.psi**3 * p.delta_t)
         target_neuron.set({"apical_lat": {"g": 0}})
         i_e = 0.43
         err_comp = "soma"
@@ -80,17 +80,17 @@ for i in range(2):
     wmax = 4
     syn_exc = deepcopy(p.syn_plastic)
     syn_exc["Wmin"] = 0
-    syn_exc["Wmax"] = wmax/p.weight_scale
-    syn_exc["weight"] = nest.random.uniform(0, wmax/p.weight_scale)
+    syn_exc["Wmax"] = wmax/p.psi
+    syn_exc["weight"] = nest.random.uniform(0, wmax/p.psi)
     syn_exc["delay"] = 2 * p.delta_t
 
     syn_inh = deepcopy(p.syn_plastic)
     syn_inh["Wmax"] = 0
-    syn_inh["Wmin"] = -wmax/p.weight_scale
-    syn_inh["weight"] = nest.random.uniform(-wmax/p.weight_scale, 0)
+    syn_inh["Wmin"] = -wmax/p.psi
+    syn_inh["weight"] = nest.random.uniform(-wmax/p.psi, 0)
 
     syn_static = p.syn_static
-    syn_static["weight"] = nest.random.uniform(min=0, max=0.3*wmax/p.weight_scale)
+    syn_static["weight"] = nest.random.uniform(min=0, max=0.3*wmax/p.psi)
 
     nest.Connect(input_neuron, target_neuron, syn_spec=syn_exc)
     nest.Connect(input_neuron, interneuron, syn_spec=syn_static)
@@ -115,8 +115,8 @@ for i in range(2):
     intn_id = interneuron.global_id
     out_id = target_neuron.global_id
 
-    w_exc = utils.read_wr(grouped_records, input_neuron, target_neuron, 2*t_sim) * p.weight_scale
-    w_inh = utils.read_wr(grouped_records, interneuron, target_neuron, 2*t_sim) * p.weight_scale
+    w_exc = utils.read_wr(grouped_records, input_neuron, target_neuron, 2*t_sim) * p.psi
+    w_inh = utils.read_wr(grouped_records, interneuron, target_neuron, 2*t_sim) * p.psi
 
     u_som = np.array(mm1.events["V_m.s"])
     v_api = np.array(mm1.events["V_m.a_lat"])

@@ -163,9 +163,9 @@ input and 3 output neurons, dims are: {p.dims}")
 
     def gen_weights(self, n_in, n_out, wmin=None, wmax=None):
         if wmin is None:
-            wmin = self.p.wmin_init/self.weight_scale
+            wmin = self.p.wmin_init/self.psi
         if wmax is None:
-            wmax = self.p.wmax_init/self.weight_scale
+            wmax = self.p.wmax_init/self.psi
         return np.random.uniform(wmin, wmax, (n_out, n_in))
 
     @abstractmethod

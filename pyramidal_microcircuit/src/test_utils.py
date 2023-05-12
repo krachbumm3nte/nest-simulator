@@ -28,7 +28,7 @@ class TestClass(ABC):
         self.lambda_bh = p.lambda_bh
         self.lambda_out = p.lambda_out
         self.tau_delta = p.tau_delta
-        self.weight_scale = p.weight_scale if self.spiking else 1
+        self.psi = p.psi if self.spiking else 1
 
     @abstractmethod
     def run(self):

@@ -49,7 +49,7 @@ i_e = [0.5, 0, 1]
 for i in i_e:
 
     input_orig.set({"soma": {"I_e": i / p.tau_x}})
-    input_new.rate = p.weight_scale * i * 1000
+    input_new.rate = p.psi * i * 1000
     nest.Simulate(50)
 
 

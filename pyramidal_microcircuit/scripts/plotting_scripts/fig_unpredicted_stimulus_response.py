@@ -15,7 +15,7 @@ plot_utils.setup_plt()
 simulation_dir = "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/results/bars_le_full_plast_deep_rnest"
 weight_loc = os.path.join(simulation_dir, "data/weights_1000.json")
 p = Params(os.path.join(simulation_dir, "params.json"))
-p.weight_scale = 500
+p.psi = 500
 p.t_pres = 5
 p.out_lag = 0
 p.test_delay = 0

@@ -16,7 +16,7 @@ class NestNetwork(Network):
         self.init_weights = init_weights
         self.noise_generator = None
         self.spiking = p.spiking
-        self.weight_scale = self.p.weight_scale if self.spiking else 1
+        self.psi = self.p.psi if self.spiking else 1
         self.recording_backend = "memory"         # backend for NEST multimeter recordings
         if self.p.record_interval <= 0:
             print("Disabling multimeter recroding.")
@@ -269,7 +269,7 @@ class NestNetwork(Network):
                 weight_array[(w["target"] - 1) % n_out, (w["source"] - 1) % n_in] = w["weight"]
 
         if normalized:
-            weight_array *= self.weight_scale
+            weight_array *= self.psi
         return weight_array
 
     def get_weight_array_from_syn(self, synapse_collection, normalized=False):
@@ -285,7 +285,7 @@ class NestNetwork(Network):
                 weight_array[(w["target"] - 1) % n_out, (w["source"] - 1) % n_in] = w["weight"]
 
         if normalized:
-            weight_array *= self.weight_scale
+            weight_array *= self.psi
         return weight_array
 
     def get_weight_dict(self, normalized=True):
@@ -335,7 +335,7 @@ class NestNetwork(Network):
         if normalized:
             for i, layer in enumerate(weight_dict):
                 for k, v in layer.items():
-                    weight_dict[i][k] = np.asarray(v) / self.weight_scale
+                    weight_dict[i][k] = np.asarray(v) / self.psi
         for i, layer in enumerate(self.layers[:-1]):
             self.set_weights_from_syn(weight_dict[i]["up"], layer.up)
             self.set_weights_from_syn(weight_dict[i]["ip"], layer.ip)

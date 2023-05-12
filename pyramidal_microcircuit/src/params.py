@@ -71,7 +71,7 @@ class Params:
 
         # parameters that regard only simulations in NEST
         self.record_weights = False  # flag to record weights in NEST using a 'weight_recorder'
-        self.weight_scale = 100  # weight scaling factor # TODO: rename this
+        self.psi = 100  # weight scaling factor # TODO: rename this
         self.spiking = True  # flag to enable simulation with spiking neurons
 
         # if a config file is provided, read the file and change all specified values
@@ -137,21 +137,21 @@ class Params:
         self.input_params["latent_equilibrium"] = False
 
         if self.spiking:
-            self.input_params["gamma"] = self.weight_scale
-            self.pyr_params["gamma"] = self.weight_scale * self.gamma
-            self.intn_params["gamma"] = self.weight_scale * self.gamma
+            self.input_params["gamma"] = self.psi
+            self.pyr_params["gamma"] = self.psi * self.gamma
+            self.intn_params["gamma"] = self.psi * self.gamma
 
             for syn_name in ["ip", "up", "down", "pi"]:
                 lr = self.eta[syn_name]
                 if syn_name == "pi":
-                    self.eta[syn_name] = [eta / (self.weight_scale **
+                    self.eta[syn_name] = [eta / (self.psi **
                                           2 * self.tau_delta) for eta in lr]
                 elif syn_name == "down":
                     # TODO: this particular scaling term contains a magic number and is so far unconfirmed
-                    self.eta[syn_name] = [2.5 * eta / (self.weight_scale **
+                    self.eta[syn_name] = [2.5 * eta / (self.psi **
                                           3 * self.tau_delta) for eta in lr]
                 else:
-                    self.eta[syn_name] = [eta / (self.weight_scale **
+                    self.eta[syn_name] = [eta / (self.psi **
                                           3 * self.tau_delta) for eta in lr]
 
         self.syn_static = {
@@ -163,9 +163,9 @@ class Params:
             "synapse_model": self.syn_model,
             'tau_Delta': self.tau_delta,
             # minimum weight
-            'Wmin': self.Wmin / (self.weight_scale if self.spiking else 1),
+            'Wmin': self.Wmin / (self.psi if self.spiking else 1),
             # maximum weight
-            'Wmax': self.Wmax / (self.weight_scale if self.spiking else 1),
+            'Wmax': self.Wmax / (self.psi if self.spiking else 1),
             'delay': self.delta_t
         }
 

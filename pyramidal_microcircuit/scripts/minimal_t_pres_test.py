@@ -19,7 +19,7 @@ args = sys.argv[1:]
 weight_loc = args[0]
 params_loc = args[1]
 params = Params(params_loc)
-params.weight_scale = 1
+params.psi = 1
 params.record_interval = 0.1
 utils.setup_nest(params, os.path.curdir)
 net = NestNetwork(params)

@@ -163,7 +163,7 @@ class DynamicsHX(TestClass):
         self.weight = 1
 
         conn_hx = self.p.syn_plastic
-        conn_hx.update({"weight": self.weight / self.weight_scale, "eta": 0,
+        conn_hx.update({"weight": self.weight / self.psi, "eta": 0,
                        "receptor_type": self.p.compartments["basal"]})
 
         self.neuron_01 = nest.Create(params.neuron_model, 1, params.input_params)
@@ -242,7 +242,7 @@ class DynamicsHXMulti(DynamicsHX):
 
         self.weight_2 = -0.5
         conn_hx = self.p.syn_plastic
-        conn_hx["weight"] = self.weight_2 / self.weight_scale
+        conn_hx["weight"] = self.weight_2 / self.psi
 
         self.neuron_03 = nest.Create(self.p.neuron_model, 1, self.p.input_params)
         self.mm_03 = nest.Create("multimeter", 1, {'record_from': ["V_m.s"]})
@@ -397,7 +397,7 @@ class DynamicsHY(DynamicsHX):
         super().__init__(params, **kwargs)
 
         synapse = self.p.syn_plastic
-        synapse.update({"weight": self.weight / self.weight_scale, "eta": 0,
+        synapse.update({"weight": self.weight / self.psi, "eta": 0,
                        "receptor_type": self.p.compartments["apical_td"]})
 
         self.neuron_01.set(params.intn_params)
