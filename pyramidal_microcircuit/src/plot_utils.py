@@ -113,33 +113,35 @@ def plot_training_progress(epoch, net, out_file):
 
     # Synaptic weights
     # notice that all weights are scaled up again to ensure that derived metrics are comparible between simulations
-    fb_, ff_, WHI, WHY, WIH, WYH = calculate_weight_errors(net.get_weight_dict())
 
     ax0.plot(*zip(*net.train_loss))
-    ax1.plot(*zip(*ff_error))
+    ax1.plot(*zip(*net.ff_error))
 
-    # plot synaptic weights
-    for i in range(net.dims[-1]):
-        col = cmap_2(i)
-        for j in range(net.dims[-2]):
-            ax2.plot(j, -WHY[j, i], ".", color=col, label=f"to {i}")
-            ax2.plot(j, WHI[j, i], "x", color=col, label=f"from {i}")
+    if sum(net.dims) < 100:
+        fb_, ff_, WHI, WHY, WIH, WYH = calculate_weight_errors(net.get_weight_dict())
 
-    for i in range(net.dims[-2]):
-        for j in range(net.dims[-1]):
-            col = cmap_2(j)
-            ax3.plot(i, WYH[j, i], ".", color=col, label=f"to {i}")
-            ax3.plot(i, WIH[j, i], "x", color=col, label=f"from {i}")
-
-    if len(net.dims) > 3:
-        WHI, WHY, WIH, WYH = calculate_weight_errors(net, epoch, 1)
-
-        for i in range(net.dims[-3]):
+        # plot synaptic weights
+        for i in range(net.dims[-1]):
+            col = cmap_2(i)
             for j in range(net.dims[-2]):
+                ax2.plot(j, -WHY[j, i], ".", color=col, label=f"to {i}")
+                ax2.plot(j, WHI[j, i], "x", color=col, label=f"from {i}")
+
+        for i in range(net.dims[-2]):
+            for j in range(net.dims[-1]):
                 col = cmap_2(j)
-                ax1.plot(i, WYH[j, i], ".", color=col, label=f"to {i}")
-                ax1.plot(i, WIH[j, i], "x", color=col, label=f"from {i}")
-        ax1.set_title("Feedforward weights 0")
+                ax3.plot(i, WYH[j, i], ".", color=col, label=f"to {i}")
+                ax3.plot(i, WIH[j, i], "x", color=col, label=f"from {i}")
+
+        if len(net.dims) > 3:
+            WHI, WHY, WIH, WYH = calculate_weight_errors(net, epoch, 1)
+
+            for i in range(net.dims[-3]):
+                for j in range(net.dims[-2]):
+                    col = cmap_2(j)
+                    ax1.plot(i, WYH[j, i], ".", color=col, label=f"to {i}")
+                    ax1.plot(i, WIH[j, i], "x", color=col, label=f"from {i}")
+            ax1.set_title("Feedforward weights 0")
 
     ax4.plot(*zip(*net.test_acc))
     ax5.plot(*zip(*net.test_loss))

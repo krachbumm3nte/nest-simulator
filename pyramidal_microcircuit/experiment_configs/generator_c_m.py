@@ -31,11 +31,6 @@ config = {
             0.0
         ]
     },
-    "dims": [
-        9,
-        30,
-        3
-    ],
     "network_type": "snest"
 }
 

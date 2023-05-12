@@ -30,18 +30,14 @@ if __name__ == "__main__":
     p.p_conn = 1
     with open(os.path.join(dirname, "progress.json")) as f:
         progress = json.load(f)
-    # with open(os.path.join(dirname, "weights.json")) as f:
-    #     weights = json.load(f)
+
     if p.network_type == "numpy":
         net = NumpyNetwork(p)
     else:
         net = NestNetwork(p)
 
-    weight_scale = p.weight_scale
-    acc = np.array(progress["test_acc"])
-
     datadir = os.path.join(dirname, "data")
-    print(sorted(os.listdir(datadir)))
+
     for filename in sorted(os.listdir(datadir)):
         with open(os.path.join(datadir, filename)) as f:
             weights = json.load(f)
@@ -50,10 +46,9 @@ if __name__ == "__main__":
             net.fb_error.append([epoch, fb_error])
             net.ff_error.append([epoch, ff_error])
 
-            net.fb_error = sorted(net.fb_error)
-            net.ff_error = sorted(net.ff_error)
+    net.fb_error = sorted(net.fb_error)
+    net.ff_error = sorted(net.ff_error)
 
-    net.set_all_weights(weights)
 
     net.test_acc = progress["test_acc"]
     net.test_loss = progress["test_loss"]

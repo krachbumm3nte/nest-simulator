@@ -92,15 +92,15 @@ input and 3 output neurons, dims are: {p.dims}")
             Network learns to match the input-output function of a separate, randomly initialized teacher
             network.
             """
-            self.train_samples = 50
+            self.train_samples = 100
             self.val_samples = 25
             self.test_samples = 25
 
-            # self.p.gamma = 0.1
-            # self.p.beta = 1
-            # self.p.theta = 3
+            self.p.gamma = 0.1
+            self.p.beta = 1
+            self.p.theta = 3
 
-            self.k_yh = 0.5         # hidden to output teacher weight scaling factor
+            self.k_yh = 1         # hidden to output teacher weight scaling factor
             self.k_hx = 1         # input to hidden teacher weight scaling factor
             self.dims = self.p.dims
             self.dims_teacher = self.p.dims_teacher
@@ -117,8 +117,6 @@ input and 3 output neurons, dims are: {p.dims}")
                 self.wyh_trgt = self.gen_weights(self.dims_teacher[1], self.dims_teacher[2], -1, 1)
             self.p.wmin_init = -0.1
             self.p.wmax_init = 0.1
-            # self.p.tau_x = 0.1
-            # self.tau_x = self.p.tau_x
 
             self.get_training_data = self.generate_teacher_data
             self.get_val_data = self.generate_teacher_data
