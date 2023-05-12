@@ -71,16 +71,14 @@ class NestNetwork(Network):
         nest.Connect(self.output_stimulators,
                      self.layers[-1].pyr, conn_spec="one_to_one", syn_spec=syn_stim)
 
+        all_neurons = nest.GetNodes({"neuron_model": self.p.neuron_model})
+
         if self.p.noise:
             # Inject Gaussian white noise into neuron somata.
-            self.noise_generator = nest.Create("noise_generator", 1, {"mean": 0., "std": self.sigma_noise})
-            for layer in self.layers[:-1]:
-                nest.Connect(self.noise_generator, layer.pyr, syn_spec={
+            self.noise_generator = nest.Create("noise_generator", 1, {"mean": 0., "std": self.std_noise})
+            nest.Connect(self.noise_generator, all_neurons, syn_spec={
                              "receptor_type": self.p.compartments["soma_curr"]})
-                nest.Connect(self.noise_generator, layer.intn, syn_spec={
-                             "receptor_type": self.p.compartments["soma_curr"]})
-            nest.Connect(self.noise_generator, self.layers[-1].pyr,
-                         syn_spec={"receptor_type": self.p.compartments["soma_curr"]})
+            print(f"\tNoise with standard deviation of {self.std_noise} is injected into all neurons.")
 
         if self.use_mm:
             record_from = ["V_m.a_lat", "V_m.s", "V_m.b"] if self.p.store_errors else ["V_m.s"]

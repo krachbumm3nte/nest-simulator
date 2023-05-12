@@ -96,11 +96,11 @@ input and 3 output neurons, dims are: {p.dims}")
             self.val_samples = 25
             self.test_samples = 25
 
-            self.p.gamma = 0.1
-            self.p.beta = 1
-            self.p.theta = 3
+            # self.p.gamma = 0.1
+            # self.p.beta = 1
+            # self.p.theta = 3
 
-            self.k_yh = 1         # hidden to output teacher weight scaling factor
+            self.k_yh = 1      # hidden to output teacher weight scaling factor
             self.k_hx = 1         # input to hidden teacher weight scaling factor
             self.dims = self.p.dims
             self.dims_teacher = self.p.dims_teacher
@@ -140,7 +140,7 @@ input and 3 output neurons, dims are: {p.dims}")
 
         self.t_pres = self.p.t_pres
         self.dt = self.p.delta_t
-        self.sigma_noise = self.p.sigma
+        self.std_noise = self.p.sigma
         self.record_interval = self.p.record_interval
 
         self.gamma = self.p.gamma
@@ -213,7 +213,7 @@ input and 3 output neurons, dims are: {p.dims}")
         return np.random.random((n_samples, self.dims[0])), np.zeros((n_samples, self.dims[-1]))
 
     def get_teacher_output(self, input_currents):
-        return np.array([self.k_yh * self.phi(self.k_hx * self.wyh_trgt @ self.phi(self.whx_trgt @ x)) for x in input_currents])
+        return np.array([self.phi((self.k_yh * self.wyh_trgt) @ self.phi((self.k_hx * self.whx_trgt) @ x)) for x in input_currents])
 
     def train_epoch(self):
         x_batch, y_batch = self.get_training_data(self.train_samples)
