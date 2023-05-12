@@ -41,7 +41,7 @@
         },
         "network_type": "snest",
         "spiking": true,
-        "weight_scale": 250
+        "psi": 250
     },
     "configs": {
         "8": {

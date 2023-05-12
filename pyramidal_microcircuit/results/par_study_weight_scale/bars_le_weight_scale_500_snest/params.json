@@ -13,7 +13,7 @@
         "soma_curr": 4,
         "soma": 1
     },
-    "config_file": "experiment_configs/par_study_weight_scale/bars_le_weight_scale_500.json",
+    "config_file": "experiment_configs/par_study_psi/bars_le_psi_500.json",
     "delta_t": 0.1,
     "dims": [
         9,
@@ -157,7 +157,7 @@
     "test_time": 10,
     "theta": 0,
     "threads": 8,
-    "weight_scale": 5,
+    "psi": 5,
     "wmax_init": 1,
     "wmin_init": -1
 }

@@ -150,7 +150,7 @@
     "theta": 0,
     "threads": 8,
     "timestamp": "bars_orig_tpres_500_snest",
-    "weight_scale": 500,
+    "psi": 500,
     "wmax_init": 1,
     "wmin_init": -1
 }

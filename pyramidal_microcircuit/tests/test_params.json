@@ -33,7 +33,7 @@
     "C_m_som": 1,
     "C_m_bas": 1,
     "tau_x": 1,
-    "weight_scale": 20000,
+    "psi": 20000,
     "mode": "test",
     "store_errors": true,
     "record_weights": true

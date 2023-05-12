@@ -148,5 +148,5 @@
     "theta": 0,
     "threads": 8,
     "timestamp": "bars_orig_tpres_10_rnest",
-    "weight_scale": 150
+    "psi": 150
 }

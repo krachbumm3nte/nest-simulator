@@ -3,7 +3,7 @@
     "out_lag": 0,
     "latent_equilibrium": true,
     "record_interval": 1,
-    "weight_scale": 250,
+    "psi": 250,
     "mode": "self-pred",
     "init_self_pred": false,
     "test_interval": -1,

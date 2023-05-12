@@ -26,6 +26,6 @@
         ]
     },
     "network_type": "snest",
-    "weight_scale": 50,
+    "psi": 50,
     "C_m_api": 10
 }

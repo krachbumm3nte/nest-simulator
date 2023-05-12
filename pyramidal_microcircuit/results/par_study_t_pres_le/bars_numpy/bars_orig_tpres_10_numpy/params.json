@@ -60,5 +60,5 @@
     "theta": 0,
     "threads": 1,
     "timestamp": "bars_orig_tpres_10_numpy",
-    "weight_scale": 150
+    "psi": 150
 }

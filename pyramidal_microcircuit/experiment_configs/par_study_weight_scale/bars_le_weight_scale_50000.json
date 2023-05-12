@@ -4,6 +4,6 @@
         30,
         3
     ],
-    "weight_scale": 500,
+    "psi": 500,
     "network_type": "snest"
 }

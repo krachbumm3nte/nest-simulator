@@ -12,7 +12,7 @@
     "wmax_init": 0.1,
     "Wmin": -0.5,
     "Wmax": 0.5,
-    "weight_scale": 25,
+    "psi": 25,
     "n_classes": 10,
     "test_interval": 10,
     "test_time": 5,

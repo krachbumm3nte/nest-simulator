@@ -67,7 +67,7 @@
     "theta": 0,
     "threads": 9,
     "timestamp": "bars_le_full_plast_None",
-    "weight_scale": 250,
+    "psi": 250,
     "wmax_init": 1,
     "wmin_init": -1
 }

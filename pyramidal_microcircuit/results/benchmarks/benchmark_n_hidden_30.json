@@ -14,12 +14,12 @@
         "snest_high": {
             "network_type": "snest",
             "spiking": true,
-            "weight_scale": 250
+            "psi": 250
         },
         "snest_low": {
             "network_type": "snest",
             "spiking": true,
-            "weight_scale": 1
+            "psi": 1
         },
         "rnest": {
             "network_type": "rnest",

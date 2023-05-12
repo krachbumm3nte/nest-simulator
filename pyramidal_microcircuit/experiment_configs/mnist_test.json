@@ -30,5 +30,5 @@
         ]
     },
     "record_interval": 1,
-    "weight_scale": 50
+    "psi": 50
 }

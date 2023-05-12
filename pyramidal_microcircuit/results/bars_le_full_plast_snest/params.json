@@ -155,7 +155,7 @@
     "test_interval": 10,
     "theta": 0,
     "threads": 8,
-    "weight_scale": 100,
+    "psi": 100,
     "wmax_init": 1,
     "wmin_init": -1
 }

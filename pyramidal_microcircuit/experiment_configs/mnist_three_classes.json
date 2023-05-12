@@ -29,5 +29,5 @@
         ]
     },
     "record_interval": 0.5,
-    "weight_scale": 500
+    "psi": 500
 }

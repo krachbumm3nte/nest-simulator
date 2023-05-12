@@ -45,13 +45,13 @@
     },
     "configs": {
         "ws_1": {
-            "weight_scale": 1
+            "psi": 1
         },
         "ws_10": {
-            "weight_scale": 10
+            "psi": 10
         },
         "ws_100": {
-            "weight_scale": 100
+            "psi": 100
         }
     }
 }

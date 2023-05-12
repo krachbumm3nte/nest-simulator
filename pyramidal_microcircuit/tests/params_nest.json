@@ -180,7 +180,7 @@
     "theta": 0,
     "threads": 8,
     "use_mm": true,
-    "weight_scale": 50000,
+    "psi": 50000,
     "wmax_init": 1,
     "wmin_init": -1
 }
