@@ -16,6 +16,7 @@
     "Wmin": -6,
     "Wmax": 6,
     "psi": 150,
+    "noise": true,
     "sigma": 0.1,
     "n_classes": 3,
     "test_interval": 50,
