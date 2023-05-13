@@ -34,6 +34,7 @@ default_config = {
     },
     "network_type": "snest",
     "psi": 100,
+    "n_epochs": 500,
     "C_m_api": 1
 }
 

@@ -27,5 +27,6 @@
     },
     "network_type": "snest",
     "psi": 10,
+    "n_epochs": 500,
     "C_m_api": 1
 }
