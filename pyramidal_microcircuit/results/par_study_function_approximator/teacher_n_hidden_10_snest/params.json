@@ -27,16 +27,16 @@
     ],
     "eta": {
         "ip": [
-            1.2e-09,
+            2e-09,
             0.0
         ],
         "pi": [
-            6e-07,
+            0.0,
             0.0
         ],
         "up": [
-            1.2e-09,
-            5e-10
+            5e-09,
+            1e-09
         ],
         "down": [
             0.0,
@@ -50,7 +50,7 @@
     "g_lk_dnd": 0.1,
     "g_som": 0.06,
     "gamma": 1,
-    "init_self_pred": false,
+    "init_self_pred": true,
     "input_params": {
         "soma": {
             "g_L": 0.03,
@@ -107,10 +107,11 @@
     "n_epochs": 5000,
     "network_type": "snest",
     "neuron_model": "pp_cond_exp_mc_pyr",
-    "noise": false,
+    "noise": true,
     "noise_factor": 0.09486832980505137,
     "out_lag": 35,
     "p_conn": 1.0,
+    "psi": 100,
     "pyr_params": {
         "soma": {
             "g_L": 0.03,
@@ -138,7 +139,7 @@
     "record_interval": 1,
     "record_weights": false,
     "reset": 2,
-    "sigma": 0.3,
+    "sigma": 0.1,
     "spiking": true,
     "static_syn_model": "static_synapse",
     "store_errors": false,
@@ -161,7 +162,6 @@
     "test_interval": 500,
     "theta": 0,
     "threads": 8,
-    "psi": 100,
     "wmax_init": 0.1,
     "wmin_init": -0.1
 }
