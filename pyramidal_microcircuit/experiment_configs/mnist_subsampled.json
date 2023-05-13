@@ -11,18 +11,18 @@
     ],
     "n_epochs": 5000,
     "init_self_pred": true,
-    "wmin_init": -0.5,
-    "wmax_init": 0.5,
-    "Wmin": -2,
-    "Wmax": 2,
-    "psi": 150,
+    "wmin_init": -0.8,
+    "wmax_init": 0.8,
+    "Wmin": -3.5,
+    "Wmax": 3.5,
+    "psi": 250,
     "noise": true,
-    "sigma": 0.01,
+    "sigma": 0.05,
     "n_classes": 3,
     "test_interval": 50,
     "eta": {
         "ip": [
-            0.002,
+            0.0005,
             0.0
         ],
         "pi": [
@@ -30,8 +30,8 @@
             0.0
         ],
         "up": [
-            0.005,
-            0.001
+            0.00125,
+            0.00025
         ],
         "down": [
             0.0,
