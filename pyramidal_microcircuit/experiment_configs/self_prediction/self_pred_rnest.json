@@ -1,8 +1,6 @@
 {
     "t_pres": 50,
     "out_lag": 0,
-    "latent_equilibrium": true,
-    "record_interval": 1,
     "psi": 250,
     "mode": "self-pred",
     "init_self_pred": false,

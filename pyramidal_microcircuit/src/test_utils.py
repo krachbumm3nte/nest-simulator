@@ -24,9 +24,6 @@ class TestClass(ABC):
         self.theta = p.theta
         self.dims = p.dims
         self.spiking = p.spiking
-        self.lambda_ah = p.lambda_ah
-        self.lambda_bh = p.lambda_bh
-        self.lambda_out = p.lambda_out
         self.tau_delta = p.tau_delta
         self.psi = p.psi if self.spiking else 1
 
