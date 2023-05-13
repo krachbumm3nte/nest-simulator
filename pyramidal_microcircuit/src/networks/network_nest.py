@@ -175,7 +175,7 @@ class NestNetwork(Network):
         nest.Simulate(T)
         self.iteration += 1
 
-    def disable_learning(self):
+    def disable_plasticity(self):
         nest.GetConnections(synapse_model=self.p.syn_model).set({"eta": 0})
 
     def enable_learning(self):
@@ -240,7 +240,7 @@ class NestNetwork(Network):
         acc = []
         loss_mse = []
         # set all learning rates to zero during testing
-        self.disable_learning()
+        self.disable_plasticity()
 
         for x_test, y_actual in zip(x_batch, y_batch):
             self.set_input(x_test)

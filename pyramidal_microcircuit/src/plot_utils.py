@@ -155,7 +155,7 @@ def plot_training_progress(epoch, net, out_file):
 
     ax0.set_ylim(bottom=0)
     ax4.set_ylim(0, 1)
-    ax5.set_ylim(0, 1)
+    ax5.set_ylim(bottom=0)
 
     plt.savefig(out_file)
     plt.close()

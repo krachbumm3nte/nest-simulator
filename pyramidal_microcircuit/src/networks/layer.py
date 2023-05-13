@@ -19,14 +19,10 @@ class AbstractLayer():
         self.tau_x = p.tau_x
         self.le = p.latent_equilibrium
 
-        self.noise_factor = p.noise_factor if p.noise else 0
         self.tau_delta = p.tau_delta
         self.dt = p.delta_t
 
         self.leakage = self.gl + self.ga + self.gb
-        self.lambda_out = p.lambda_out
-        self.lambda_ah = p.lambda_ah
-        self.lambda_bh = p.lambda_bh
 
         self.Wmin = -4
         self.Wmax = 4  # TODO: read from config

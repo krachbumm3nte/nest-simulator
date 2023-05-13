@@ -17,14 +17,11 @@ class Params:
         self.n_epochs = 1000  # number of training iterations
         self.out_lag = 35  # lag in ms before recording output neuron voltage during testing
         self.test_interval = 10  # test the network every N epochs
-        # self.test_time = 10  # stimulus presentation time during testing in ms
-        # self.test_delay = 5  # output layer recording delay during testing in ms
         self.latent_equilibrium = True  # flag for whether to use latent equilibrium
         self.dims = [9, 30, 3]  # network dimensions, i.e. neurons per layer
         self.init_self_pred = True  # flag to initialize weights to self-predicting state
         self.noise = False  # flag to apply noise to membrane potentials
         self.sigma = 0.3  # standard deviation for membrane potential noise
-        self.noise_factor = np.sqrt(self.delta_t) * self.sigma  # constant noise factor (arb. units)
         self.mode = "bars"  # Which dataset to train on. Default: Bars dataset from Haider (2021)
         self.store_errors = False  # compute and store apical and interneuron errors during traininng
         self.network_type = "snest"
@@ -42,12 +39,9 @@ class Params:
         self.C_m_som = 1  # membrane capacitance of somatic compartment in pF
         self.C_m_bas = 1  # membrane capacitance of basal compartment in pF
         self.C_m_api = 1  # membrane capacitance of apical compartment in pF
-
-        # Useful constants for scaling learning rates
-        self.lambda_ah = self.g_a / (self.g_d + self.g_a + self.g_l)
-        self.lambda_bh = self.g_d / (self.g_d + self.g_a + self.g_l)
-        self.lambda_out = self.g_d / (self.g_d + self.g_l)
-
+        self.psi = 100  # weight scaling factor # TODO: rename this
+        self.spiking = True  # flag to enable simulation with spiking neurons
+        self.t_ref = 0  # refractory period in ms
         # parameters for activation function phi()
         self.gamma = 1
         self.beta = 1
@@ -71,8 +65,6 @@ class Params:
 
         # parameters that regard only simulations in NEST
         self.record_weights = False  # flag to record weights in NEST using a 'weight_recorder'
-        self.psi = 100  # weight scaling factor # TODO: rename this
-        self.spiking = True  # flag to enable simulation with spiking neurons
 
         # if a config file is provided, read the file and change all specified values
         if config_file:
@@ -84,10 +76,6 @@ class Params:
         self.syn_model = 'pyr_synapse' if self.spiking else 'pyr_synapse_rate'
         self.static_syn_model = 'static_synapse' if self.spiking else 'rate_connection_delayed'
         self.compartments = nest.GetDefaults(self.neuron_model)["receptor_types"]
-
-        # if self.spiking:
-        #     self.C_m_api = 0.6
-        #     self.C_m_bas = 0.4
 
         self.pyr_params = {
             'soma': {
@@ -117,7 +105,7 @@ class Params:
             'beta': self.beta,
             'theta': self.theta,
             'use_phi': True,  # If False, membrane potentials are transmitted without use of the activation function
-            't_ref': 0.,  # refractory period in ms
+            't_ref': self.t_ref,  # refractory period in ms
             'latent_equilibrium': self.latent_equilibrium
         }
 

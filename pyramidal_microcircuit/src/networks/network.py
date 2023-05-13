@@ -115,8 +115,8 @@ input and 3 output neurons, dims are: {p.dims}")
             else:
                 self.whx_trgt = self.gen_weights(self.dims_teacher[0], self.dims_teacher[1], -1, 1)
                 self.wyh_trgt = self.gen_weights(self.dims_teacher[1], self.dims_teacher[2], -1, 1)
-            self.p.wmin_init = -0.1
-            self.p.wmax_init = 0.1
+            self.p.wmin_init = -1
+            self.p.wmax_init = 1
 
             self.get_training_data = self.generate_teacher_data
             self.get_val_data = self.generate_teacher_data
@@ -206,7 +206,7 @@ input and 3 output neurons, dims are: {p.dims}")
         pass
 
     def generate_teacher_data(self, n_samples):
-        x = np.random.random((n_samples, self.dims[0])) * 2 - 1
+        x = np.random.random((n_samples, self.dims[0]))
         return x, self.get_teacher_output(x)
 
     def generate_selfpred_data(self, n_samples):

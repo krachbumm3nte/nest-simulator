@@ -90,7 +90,7 @@ if __name__ == "__main__":
                         help="path to a .json file specifying which parameters should deviate from their defaults.")
     parser.add_argument("--threads",
                         type=int,
-                        default=10,
+                        default=8,
                         help="number of threads to allocate. Only has an effect when simulating with NEST.")
     parser.add_argument("--progress",
                         type=int,
