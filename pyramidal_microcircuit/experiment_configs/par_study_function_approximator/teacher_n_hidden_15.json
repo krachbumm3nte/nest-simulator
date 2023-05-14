@@ -13,15 +13,15 @@
         15,
         5
     ],
-    "test_interval": 500,
-    "n_epochs": 5000,
+    "test_interval": 1000,
+    "n_epochs": 10000,
     "noise": true,
     "sigma": 0.1,
     "gamma": 0.8,
     "teacher_weights": "init_weights_15_15_5.json",
     "eta": {
         "ip": [
-            5e-05,
+            1e-05,
             0.0
         ],
         "pi": [
@@ -29,8 +29,8 @@
             0.0
         ],
         "up": [
-            0.000125,
-            2.5e-05
+            2.5e-05,
+            5e-06
         ],
         "down": [
             0,

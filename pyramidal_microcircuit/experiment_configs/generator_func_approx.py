@@ -16,15 +16,15 @@ config = {
     "mode": "teacher",
     "dims_teacher": deepcopy(dims_teacher),
     "dims": deepcopy(dims_teacher),
-    "test_interval": 500,
-    "n_epochs": 5000,
+    "test_interval": 1000,
+    "n_epochs": 10000,
     "noise": True,
     "sigma": 0.1,
     "gamma": 0.8,
     "teacher_weights": "init_weights_15_15_5.json",
     "eta": {
         "ip": [
-            0.00005,
+            0.00001,
             0.0
         ],
         "pi": [
@@ -32,8 +32,8 @@ config = {
             0.0
         ],
         "up": [
-            0.000125,
-            0.000025
+            0.000025,
+            0.000005
         ],
         "down": [
             0,
