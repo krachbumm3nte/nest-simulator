@@ -7,7 +7,7 @@ root_dir = os.path.dirname(os.path.realpath(__file__))
 target_dir = os.path.join(root_dir, "par_study_function_approximator")
 
 
-dims_teacher = [15, 10, 5]
+dims_teacher = [15, 15, 5]
 
 config = {
     "t_pres": 50,
@@ -20,10 +20,11 @@ config = {
     "n_epochs": 5000,
     "noise": True,
     "sigma": 0.1,
-    "teacher_weights": "init_weights_15_10_5.json",
+    "gamma": 0.8,
+    "teacher_weights": "init_weights_15_15_5.json",
     "eta": {
         "ip": [
-            0.0001,
+            0.00005,
             0.0
         ],
         "pi": [
@@ -31,8 +32,8 @@ config = {
             0.0
         ],
         "up": [
-            0.00025,
-            0.00005
+            0.000125,
+            0.000025
         ],
         "down": [
             0,
@@ -43,7 +44,7 @@ config = {
 
 }
 
-n_hidden = [2, 5, 10, 15]
+n_hidden = [5, 10, 15, 20]
 
 
 os.mkdir(target_dir)
