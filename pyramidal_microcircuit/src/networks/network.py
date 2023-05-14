@@ -177,7 +177,6 @@ input and 3 output neurons, dims are: {p.dims}")
         return np.random.random((n_samples, self.dims[0])), np.zeros((n_samples, self.dims[-1]))
 
     def generate_teacher_data(self, n_samples):
-        print(n_samples, self.dims[0])
         x_batch = np.random.random((n_samples, self.dims[0])) * 2 - 1
         y_batch = np.zeros((n_samples, self.dims[-1]))
 
@@ -197,7 +196,6 @@ input and 3 output neurons, dims are: {p.dims}")
 
     def test_epoch(self):
         x_batch, y_batch = self.get_test_data(self.test_samples)
-        print(x_batch, y_batch)
         acc, loss = self.test_batch(x_batch, y_batch)
 
         self.test_acc.append([self.epoch, acc])
