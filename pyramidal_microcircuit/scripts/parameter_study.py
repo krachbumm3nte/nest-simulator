@@ -15,9 +15,9 @@ from src.params import Params
 import nest
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_help(
-        "Processes multiple configurations in sequence, with the option to unify some common simulation parameters.")
+    parser = argparse.ArgumentParser(
+        prog="parameter_study.py",
+        description="Processes multiple configurations in sequence, with the option to unify some common simulation parameters.")
     parser.add_argument("--network",
                         type=str, choices=["numpy", "rnest", "snest"],
                         help="""Type of network to train. Choice between exact mathematical simulation ('numpy') and \
