@@ -66,8 +66,13 @@ ETA: {timedelta(seconds=np.round(t_epoch * (params.n_epochs-epoch)))}\n")
         utils.store_synaptic_weights(net, os.path.join(root_dir, "weights.json"))
         print("Weights stored to disk.")
         utils.store_progress(net, root_dir, epoch)
-        print("progress stored to disk, exiting.")
-
+        print("progress stored to disk.")
+        if net.mode == "self-pred":
+            plot_pre_training(epoch, net, os.path.join(imgdir, f"{epoch}.png"))
+        else:
+            plot_training_progress(epoch, net, os.path.join(imgdir, f"{epoch}.png"))
+        print("progression plot stored to disk.")
+        print("Exiting.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -77,10 +82,10 @@ if __name__ == "__main__":
     NEST simulations with rate- or spiking neurons ('rnest', 'snest')""")
     parser.add_argument("--cont",
                         type=str,
-                        help="""continue training from a previous simulation""")
+                        help="""continue training the simulation at the specified location.""")
     parser.add_argument("--weights",
                         type=str,
-                        help="Start simulations from a given set of weights to ensure comparable results.")
+                        help="Start simulations from a set of weights stored in the specified .json file.")
     parser.add_argument("--plot",
                         type=int,
                         default=0,

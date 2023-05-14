@@ -16,26 +16,28 @@ import nest
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_help(
+        "Processes multiple configurations in sequence, with the option to unify some common simulation parameters.")
     parser.add_argument("--network",
                         type=str, choices=["numpy", "rnest", "snest"],
                         help="""Type of network to train. Choice between exact mathematical simulation ('numpy') and \
     NEST simulations with rate- or spiking neurons ('rnest', 'snest')""")
     parser.add_argument("--config_dir",
                         type=str,
-                        help="folder in which to search for config files")
+                        help="folder in which to search for config files.")
     parser.add_argument("--target_dir",
                         type=str,
-                        help="directory in which to store")
+                        help="directory in which to store results.")
     parser.add_argument("--overwrite",
                         action="store_true",
-                        help="overwrite existing simulations using the same configuration")
+                        help="automatically overwrite existing simulations in the target directory.")
     parser.add_argument("--threads",
                         type=int,
                         default=8,
                         help="number of threads to allocate. Only has an effect when simulating with NEST.")
     parser.add_argument("--weights",
                         type=str,
-                        help="Set of initial weights to be used for all simulations.")
+                        help="Set of initial weights to be used for all simulations. Should be a path to a .json file.")
 
     args = parser.parse_args()
 
@@ -43,7 +45,7 @@ if __name__ == "__main__":
 
     init_weights = None
     if args.weights:
-        print(f"initializing networks with weights from {args.weights}")
+        print(f"initializing all simulations with weights from {args.weights}")
         with open(args.weights) as f:
             init_weights = json.load(f)
 
@@ -55,24 +57,20 @@ if __name__ == "__main__":
             continue
 
         params = Params(os.path.join(args.config_dir, config))
-        print("created params")
-        print(args.network)
-
         if args.network:
-            if params.network_type:
-                print(
-                    f"both input file and script parameters specify different network types ({params.network_type}/{args.network}).")
+            if params.network_type != args.network:
+                print(f"WARNING: both input file and script parameters specify \
+ different network types ({params.network_type}/{args.network}).")
             params.network_type = args.network
         elif not params.network_type:
             print("no network type specified, aborting.")
             sys.exit()
 
-        print(f"preparing simulation for network type: {params.network_type}")
+        print(f"Preparing simulation for network type: {params.network_type}")
 
         spiking = params.network_type == "snest"
         params.spiking = spiking
         params.threads = args.threads
-
         use_nest = params.network_type != "numpy"
 
         config_name = os.path.split(config)[-1].split(".")[0]
@@ -103,15 +101,15 @@ if __name__ == "__main__":
             utils.store_synaptic_weights(net, init_weight_fp)
 
         print(f"Setup complete, beginning to train...")
-
         run_simulations(net, params, root_dir, imgdir, datadir)
-
         print("training complete.")
+
         if use_nest:
             nest.ResetKernel()
-        print("simulator reset.")
+            print("simulator reset.")
+
         global_t_processed = time.time() - global_t_start
 
         t_config = global_t_processed / (i + 1)
         print(
-            f"time per training: {t_config:.2f}s, ETA: {timedelta(seconds=np.round(t_config * (len(all_configs)-i)))}\n\n")
+            f"Avg. time per config: {t_config:.2f}s, ETA: {timedelta(seconds=np.round(t_config * (len(all_configs)-(i+1))))}\n\n")
