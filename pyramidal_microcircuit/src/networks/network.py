@@ -96,12 +96,9 @@ input and 3 output neurons, dims are: {p.dims}")
             self.val_samples = 25
             self.test_samples = 25
 
-            # self.p.gamma = 0.1
-            # self.p.beta = 1
-            # self.p.theta = 3
+            # Negative inputs are allowed here, so we need separate stimualtors for SNN
+            self.p.add_inhibitory_stims = True
 
-            self.k_yh = 1      # hidden to output teacher weight scaling factor
-            self.k_hx = 1         # input to hidden teacher weight scaling factor
             self.dims = self.p.dims
             self.dims_teacher = self.p.dims_teacher
             if hasattr(p, "teacher_weights"):
@@ -168,6 +165,54 @@ input and 3 output neurons, dims are: {p.dims}")
             wmax = self.p.wmax_init/self.psi
         return np.random.uniform(wmin, wmax, (n_out, n_in))
 
+    def phi(self, x, thresh=20):
+
+        res = x.copy()
+        ind = np.abs(x) < thresh
+        res[x < -thresh] = 0
+        res[ind] = self.gamma * np.log(1 + np.exp(self.beta * (x[ind] - self.theta)))
+        return res
+
+    def generate_selfpred_data(self, n_samples):
+        return np.random.random((n_samples, self.dims[0])), np.zeros((n_samples, self.dims[-1]))
+
+    def generate_teacher_data(self, n_samples):
+        print(n_samples, self.dims[0])
+        x_batch = np.random.random((n_samples, self.dims[0])) * 2 - 1
+        y_batch = np.zeros((n_samples, self.dims[-1]))
+
+        for i, x in enumerate(x_batch):
+            y_batch[i, :] = self.phi(self.wyh_trgt @ self.phi(self.whx_trgt @ x))
+
+        return x_batch, y_batch
+
+    def train_epoch(self):
+        x_batch, y_batch = self.get_training_data(self.train_samples)
+        loss = self.train_batch(x_batch, y_batch)
+        if loss > 1e4:
+            print(f"absurd train loss ({loss})")
+        self.train_loss.append((self.epoch, loss))
+        self.reset()
+        self.epoch += 1
+
+    def test_epoch(self):
+        x_batch, y_batch = self.get_test_data(self.test_samples)
+        print(x_batch, y_batch)
+        acc, loss = self.test_batch(x_batch, y_batch)
+
+        self.test_acc.append([self.epoch, acc])
+        self.test_loss.append([self.epoch, loss])
+        self.reset()
+
+    def validate_epoch(self):
+        x_batch, y_batch = self.get_val_data(self.val_samples)
+        acc, loss = self.test_batch(x_batch, y_batch)
+
+        self.val_acc.append([self.epoch, acc])
+        self.val_loss.append([self.epoch, loss])
+
+        self.reset()
+
     @abstractmethod
     def set_all_weights(self, weights):
         pass
@@ -188,58 +233,6 @@ input and 3 output neurons, dims are: {p.dims}")
     def test_batch(self, x_batch, y_batch):
         pass
 
-    def phi(self, x, thresh=15):
-
-        res = x.copy()
-        ind = np.abs(x) < thresh
-        res[x < -thresh] = 0
-        res[ind] = self.gamma * np.log(1 + np.exp(self.beta * (x[ind] - self.theta)))
-        return res
-
-    def phi_constant(self, x):
-        return np.log(1.0 + np.exp(x))
-
-    def phi_inverse(self, x):
-        return (1 / self.beta) * (self.beta * self.theta + np.log(np.exp(x/self.gamma) - 1))
-
+    @abstractmethod
     def reset(self):
         pass
-
-    def generate_teacher_data(self, n_samples):
-        x = np.random.random((n_samples, self.dims[0]))
-        return x, self.get_teacher_output(x)
-
-    def generate_selfpred_data(self, n_samples):
-        return np.random.random((n_samples, self.dims[0])), np.zeros((n_samples, self.dims[-1]))
-
-    def get_teacher_output(self, input_currents):
-        return np.array([self.phi((self.k_yh * self.wyh_trgt) @ self.phi((self.k_hx * self.whx_trgt) @ x)) for x in input_currents])
-
-    def train_epoch(self):
-        x_batch, y_batch = self.get_training_data(self.train_samples)
-        loss = self.train_batch(x_batch, y_batch)
-        if loss > 1e4:
-            print(f"absurd train loss ({loss})")
-        self.train_loss.append((self.epoch, loss))
-        self.reset()
-        self.epoch += 1
-
-    def test_epoch(self):
-        x_batch, y_batch = self.get_test_data(self.test_samples)
-
-        acc, loss = self.test_batch(x_batch, y_batch)
-        # acc_2, loss_2 = self.test_batch_old(x_batch, y_batch)
-
-        # print(f"acc n/o: {acc:.3f}, {acc_2:.3f}, loss: {loss:.3f}, {loss_2:.3f}")
-        self.reset()
-        self.test_acc.append([self.epoch, acc])
-        self.test_loss.append([self.epoch, loss])
-
-    def validate_epoch(self):
-        x_batch, y_batch = self.get_val_data(self.val_samples)
-        acc, loss = self.test_batch(x_batch, y_batch)
-
-        self.val_acc.append([self.epoch, acc])
-        self.val_loss.append([self.epoch, loss])
-
-        self.reset()

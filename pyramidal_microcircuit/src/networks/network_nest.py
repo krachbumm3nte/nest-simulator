@@ -44,9 +44,9 @@ class NestNetwork(Network):
         # set up dictionaries for neuron and synapse initialization
         self.p.setup_nest_configs()
 
+        # Create input neurons
         self.input_neurons = nest.Create(self.p.neuron_model, self.dims[0], self.p.input_params)
-        self.output_stimulators = nest.Create("rate_neuron_pyr", self.dims[-1], self.p.input_params)
-        self.output_stimulators.gamma = 1
+
         # Create hidden layers
         pyr_prev = self.input_neurons
         intn_prev = None
@@ -57,9 +57,12 @@ class NestNetwork(Network):
             pyr_prev = layer.pyr
             intn_prev = layer.intn
 
-        # output layer
+        # Create output layer
         init_weights = self.init_weights[-1] if self.init_weights else None
         self.layers.append(NestOutputLayer(self, self.p, init_weights))
+
+        self.output_stimulators = nest.Create("rate_neuron_pyr", self.dims[-1], self.p.input_params)
+        self.output_stimulators.gamma = 1
 
         syn_stim = {
             "synapse_model": 'rate_connection_delayed',
@@ -73,13 +76,14 @@ class NestNetwork(Network):
 
         all_neurons = nest.GetNodes({"neuron_model": self.p.neuron_model})
 
+        # Inject Gaussian white noise into neuron somata.
         if self.p.noise:
-            # Inject Gaussian white noise into neuron somata.
             self.noise_generator = nest.Create("noise_generator", 1, {"mean": 0., "std": self.std_noise})
             nest.Connect(self.noise_generator, all_neurons, syn_spec={
-                             "receptor_type": self.p.compartments["soma_curr"]})
+                "receptor_type": self.p.compartments["soma_curr"]})
             print(f"\tNoise with standard deviation of {self.std_noise} is injected into all neurons.")
 
+        # Set up recording
         if self.use_mm:
             record_from = ["V_m.a_lat", "V_m.s", "V_m.b"] if self.p.store_errors else ["V_m.s"]
             self.mm = nest.Create('multimeter', 1, {'record_to': self.recording_backend,
@@ -104,19 +108,33 @@ class NestNetwork(Network):
                 layer.synapses["pi"]["weight"] = -layer.synapses["down"]["weight"]
 
                 l_next = self.layers[i+1]
+                # all these conductances cancel each other out, except for networks with >1 hidden layer
                 l_next.synapses["up"]["weight"] = layer.synapses["ip"]["weight"] * \
                     ((l_next.gl + l_next.ga + l_next.gb) / l_next.gb) * (layer.gd / (layer.gl + layer.gd))
 
             layer.connect(pyr_prev, pyr_next, intn_prev)
             pyr_prev = layer.pyr
             intn_prev = layer.intn
+
+        # Connect output layer
         self.layers[-1].connect(pyr_prev, intn_prev)
 
+        if self.p.add_inhibitory_stims:
+            # Spiking input neurons cannot communicate negative inputs under default parametrization. ,
+            # A secondary population is therefore required.
+            syn_stim_inh = deepcopy(self.layers[0].synapses["up"])
+            syn_stim_inh["weight"] = syn_stim_inh["weight"] * -1  # invert synaptic weights
+            self.input_neurons_inh = nest.Create(self.p.neuron_model, self.dims[0], self.p.input_params)
+            nest.Connect(self.input_neurons_inh, self.layers[0].pyr, conn_spec="all_to_all", syn_spec=syn_stim_inh)
+            # TODO: this feature so far is incompatible with dropout
+
+        # Apply neuron dropout
         if self.p.p_conn < 1.0:
 
             dropout = 1 - self.p.p_conn
             print(f"Processing neuron dropout of {round(100*dropout, 2)}% ...")
 
+            # count total number of synapses between neurons (i.e. ecluding recorders and stimulators)
             all_neurons = nest.GetNodes({"neuron_model": self.p.neuron_model})
             n_total = len(nest.GetConnections(source=all_neurons, target=all_neurons))
             n_deleted = 0
@@ -126,23 +144,13 @@ class NestNetwork(Network):
                 for synapse_collection in conns_layer:
                     n_synapses = len(synapse_collection)
                     indices = np.random.choice(n_synapses, round(dropout * n_synapses), replace=False)
-                    n_deleted += len(indices)
                     for i in indices:
                         nest.Disconnect(synapse_collection[i])
+                    n_deleted += len(indices)
 
             print(f"{n_deleted}/{n_total} synapses were deleted ({round(100*n_deleted/n_total, 2)}%).")
 
         self.redefine_connections()
-
-        # if self.mode == "teacher":
-        #     print("increasing pyr-pyr feedback weights")
-        #     wgts = self.get_weight_array_from_syn(self.layers[-2].down)
-        #     self.set_weights_from_syn(10 * wgts, self.layers[-2].down)
-
-        # if self.p.init_self_pred:
-        #     print("\tSetting self-predicting weight... ", end="")
-        #     self.set_selfpredicting_weights()
-        #     print("Done.")
 
     def set_selfpredicting_weights(self):
         """Initialize weights to the self-predicting state. Note that this approach is highly
@@ -159,6 +167,9 @@ class NestNetwork(Network):
                                       (layer.gl + layer.gd) / layer.gd, layer.ip)
 
     def redefine_connections(self):
+        """reset SynapseCollections across all layers. In NEST, SynapseCollections break whenever a new Node is 
+        created. Hence, in some cases variables holding SynapseCollections need to be re-instantiated.
+        """
         pyr_prev = self.input_neurons
         for i in range(len(self.layers)-1):
             self.layers[i].redefine_connections(pyr_prev, self.layers[i+1].pyr)
@@ -195,7 +206,12 @@ class NestNetwork(Network):
             input_currents -- Iterable of length equal to the input dimension.
         """
         for i in range(self.dims[0]):
-            self.input_neurons[i].set({"soma": {"I_e": input_currents[i] / self.tau_x}})
+            I_e = input_currents[i]
+
+            if self.p.add_inhibitory_stims and I_e < 0:
+                self.input_neurons_inh[i].set({"soma": {"I_e": -I_e / self.tau_x}})
+            else:
+                self.input_neurons[i].set({"soma": {"I_e": I_e / self.tau_x}})
 
     def set_target(self, target_currents):
         """Inject a constant current into all neurons in the output layer.
@@ -233,7 +249,7 @@ class NestNetwork(Network):
                     for hidden_id in self.layers[-2].pyr.global_id]
             V_ah = np.mean(V_ah, axis=1)
             # self.apical_error.append((self.epoch, float(np.linalg.norm(V_ah))))
-            self.apical_error.append((self.epoch, float(np.abs(np.mean(V_ah)))))
+            self.apical_error.append((self.epoch, float(np.mean(np.abs(V_ah)))))
             self.intn_error.append([self.epoch, mse(self.phi(U_I), self.phi(y_pred))])
 
         return np.mean(loss)

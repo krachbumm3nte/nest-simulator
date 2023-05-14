@@ -16,7 +16,7 @@ class Params:
         self.t_pres = 50  # stimulus presentation time during training in ms
         self.n_epochs = 1000  # number of training iterations
         self.out_lag = 35  # lag in ms before recording output neuron voltage during testing
-        self.target_delay = 0 # lag in ms befor target is presented during training
+        self.target_delay = 0  # lag in ms befor target is presented during training
         self.test_interval = 10  # test the network every N epochs
         self.latent_equilibrium = True  # flag for whether to use latent equilibrium
         self.dims = [9, 30, 3]  # network dimensions, i.e. neurons per layer
@@ -27,6 +27,7 @@ class Params:
         self.store_errors = False  # compute and store apical and interneuron errors during traininng
         self.network_type = "snest"
         self.reset = 2  # how to reset the network between simualtions
+        self.add_inhibitory_stims = False # add secondary input population to transmit negative inputs in SNN
         # (0: not at all, 1: simulate a relaxation period, 2: hard reset all neuron states)
 
         # parameters regarding neurons
@@ -40,7 +41,7 @@ class Params:
         self.C_m_som = 1  # membrane capacitance of somatic compartment in pF
         self.C_m_bas = 1  # membrane capacitance of basal compartment in pF
         self.C_m_api = 1  # membrane capacitance of apical compartment in pF
-        self.psi = 100  # weight scaling factor # TODO: rename this
+        self.psi = 100  # scaling factor for spiking neuron rates
         self.spiking = True  # flag to enable simulation with spiking neurons
         self.t_ref = 0  # refractory period in ms
         # parameters for activation function phi()
@@ -133,15 +134,12 @@ class Params:
             for syn_name in ["ip", "up", "down", "pi"]:
                 lr = self.eta[syn_name]
                 if syn_name == "pi":
-                    self.eta[syn_name] = [eta / (self.psi **
-                                          2 * self.tau_delta) for eta in lr]
+                    self.eta[syn_name] = [eta / (self.psi ** 2 * self.tau_delta) for eta in lr]
                 elif syn_name == "down":
                     # TODO: this particular scaling term contains a magic number and is so far unconfirmed
-                    self.eta[syn_name] = [2.5 * eta / (self.psi **
-                                          3 * self.tau_delta) for eta in lr]
+                    self.eta[syn_name] = [2.5 * eta / (self.psi ** 3 * self.tau_delta) for eta in lr]
                 else:
-                    self.eta[syn_name] = [eta / (self.psi **
-                                          3 * self.tau_delta) for eta in lr]
+                    self.eta[syn_name] = [eta / (self.psi ** 3 * self.tau_delta) for eta in lr]
 
         self.syn_static = {
             "synapse_model": self.static_syn_model,
@@ -151,9 +149,7 @@ class Params:
         self.syn_plastic = {
             "synapse_model": self.syn_model,
             'tau_Delta': self.tau_delta,
-            # minimum weight
             'Wmin': self.Wmin / (self.psi if self.spiking else 1),
-            # maximum weight
             'Wmax': self.Wmax / (self.psi if self.spiking else 1),
             'delay': self.delta_t
         }
