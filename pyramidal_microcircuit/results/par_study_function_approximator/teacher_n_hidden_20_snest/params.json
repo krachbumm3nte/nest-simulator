@@ -1,0 +1,164 @@
+{
+    "C_m_api": 1,
+    "C_m_bas": 1,
+    "C_m_som": 1,
+    "Wmax": 4,
+    "Wmin": -4,
+    "beta": 1,
+    "compartments": {
+        "apical_lat_curr": 6,
+        "apical_lat": 3,
+        "basal_curr": 5,
+        "basal": 2,
+        "soma_curr": 4,
+        "soma": 1
+    },
+    "config_file": "experiment_configs/par_study_function_approximator/teacher_n_hidden_20.json",
+    "delta_t": 0.1,
+    "dims": [
+        15,
+        20,
+        5
+    ],
+    "dims_teacher": [
+        15,
+        15,
+        5
+    ],
+    "eta": {
+        "ip": [
+            5e-11,
+            0.0
+        ],
+        "pi": [
+            0.0,
+            0.0
+        ],
+        "up": [
+            1.25e-10,
+            2.5e-11
+        ],
+        "down": [
+            0.0,
+            0.0
+        ]
+    },
+    "g_a": 0.06,
+    "g_d": 0.1,
+    "g_l": 0.03,
+    "g_l_eff": 0.19,
+    "g_lk_dnd": 0.1,
+    "g_som": 0.06,
+    "gamma": 0.8,
+    "init_self_pred": true,
+    "input_params": {
+        "soma": {
+            "g_L": 0.03,
+            "g": 10.0,
+            "C_m": 1
+        },
+        "basal": {
+            "g_L": 0.1,
+            "g": 0,
+            "C_m": 1
+        },
+        "apical_lat": {
+            "g_L": 0.1,
+            "g": 0,
+            "C_m": 1
+        },
+        "lambda": 0.06,
+        "gamma": 100,
+        "beta": 1,
+        "theta": 0,
+        "use_phi": false,
+        "t_ref": 0,
+        "latent_equilibrium": false
+    },
+    "intn_params": {
+        "soma": {
+            "g_L": 0.03,
+            "g": 0.19,
+            "C_m": 1
+        },
+        "basal": {
+            "g_L": 0.1,
+            "g": 0.1,
+            "C_m": 1
+        },
+        "apical_lat": {
+            "g_L": 0.1,
+            "g": 0,
+            "C_m": 1
+        },
+        "lambda": 0.06,
+        "gamma": 80.0,
+        "beta": 1,
+        "theta": 0,
+        "use_phi": true,
+        "t_ref": 0,
+        "latent_equilibrium": true
+    },
+    "latent_equilibrium": true,
+    "mode": "teacher",
+    "n_epochs": 5000,
+    "network_type": "snest",
+    "neuron_model": "pp_cond_exp_mc_pyr",
+    "noise": true,
+    "out_lag": 35,
+    "p_conn": 1.0,
+    "psi": 100,
+    "pyr_params": {
+        "soma": {
+            "g_L": 0.03,
+            "g": 0.19,
+            "C_m": 1
+        },
+        "basal": {
+            "g_L": 0.1,
+            "g": 0.1,
+            "C_m": 1
+        },
+        "apical_lat": {
+            "g_L": 0.1,
+            "g": 0.06,
+            "C_m": 1
+        },
+        "lambda": 0.06,
+        "gamma": 80.0,
+        "beta": 1,
+        "theta": 0,
+        "use_phi": true,
+        "t_ref": 0,
+        "latent_equilibrium": true
+    },
+    "record_interval": 1,
+    "record_weights": false,
+    "reset": 2,
+    "sigma": 0.1,
+    "spiking": true,
+    "static_syn_model": "static_synapse",
+    "store_errors": false,
+    "syn_model": "pyr_synapse",
+    "syn_plastic": {
+        "synapse_model": "pyr_synapse",
+        "tau_Delta": 1.0,
+        "Wmin": -0.04,
+        "Wmax": 0.04,
+        "delay": 0.1
+    },
+    "syn_static": {
+        "synapse_model": "static_synapse",
+        "delay": 0.1
+    },
+    "t_pres": 50,
+    "t_ref": 0,
+    "tau_delta": 1.0,
+    "tau_x": 0.1,
+    "teacher_weights": "init_weights_15_15_5.json",
+    "test_interval": 500,
+    "theta": 0,
+    "threads": 8,
+    "wmax_init": 1,
+    "wmin_init": -1
+}

@@ -22,12 +22,12 @@
     ],
     "dims_teacher": [
         15,
-        10,
+        15,
         5
     ],
     "eta": {
         "ip": [
-            1e-10,
+            5e-11,
             0.0
         ],
         "pi": [
@@ -35,8 +35,8 @@
             0.0
         ],
         "up": [
-            2.5e-10,
-            5e-11
+            1.25e-10,
+            2.5e-11
         ],
         "down": [
             0.0,
@@ -49,7 +49,7 @@
     "g_l_eff": 0.19,
     "g_lk_dnd": 0.1,
     "g_som": 0.06,
-    "gamma": 1,
+    "gamma": 0.8,
     "init_self_pred": true,
     "input_params": {
         "soma": {
@@ -92,7 +92,7 @@
             "C_m": 1
         },
         "lambda": 0.06,
-        "gamma": 100,
+        "gamma": 80.0,
         "beta": 1,
         "theta": 0,
         "use_phi": true,
@@ -125,7 +125,7 @@
             "C_m": 1
         },
         "lambda": 0.06,
-        "gamma": 100,
+        "gamma": 80.0,
         "beta": 1,
         "theta": 0,
         "use_phi": true,
@@ -155,7 +155,7 @@
     "t_ref": 0,
     "tau_delta": 1.0,
     "tau_x": 0.1,
-    "teacher_weights": "init_weights_15_10_5.json",
+    "teacher_weights": "init_weights_15_15_5.json",
     "test_interval": 500,
     "theta": 0,
     "threads": 8,
