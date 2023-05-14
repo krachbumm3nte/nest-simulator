@@ -165,9 +165,9 @@ class NestNetwork(Network):
             pyr_prev = self.layers[i].pyr
         self.layers[-1].redefine_connections(pyr_prev)
 
-    def simulate(self, T, enable_recording=False, with_delay=True):
+    def simulate(self, T, enable_recording=False, recording_delay=True):
         if enable_recording and self.use_mm:
-            self.mm.set({"start": self.p.out_lag if with_delay else 0,
+            self.mm.set({"start": self.p.out_lag if recording_delay else 0,
                         'stop': self.t_pres, 'origin': nest.biological_time})
             if self.recording_backend == "ascii":
                 nest.SetKernelStatus({"data_prefix": f"it{str(self.iteration).zfill(8)}_"})
@@ -214,6 +214,8 @@ class NestNetwork(Network):
         for x, y in zip(x_batch, y_batch):
             self.reset()
             self.set_input(x)
+            if self.p.target_delay > 0:
+                self.simulate(self.p.target_delay, enable_recording=False, recording_delay=False)
             self.set_target(y)
             self.simulate(self.t_pres, enable_recording=True)
             if self.use_mm:

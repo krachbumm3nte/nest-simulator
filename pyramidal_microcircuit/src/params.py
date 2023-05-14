@@ -16,6 +16,7 @@ class Params:
         self.t_pres = 50  # stimulus presentation time during training in ms
         self.n_epochs = 1000  # number of training iterations
         self.out_lag = 35  # lag in ms before recording output neuron voltage during testing
+        self.target_delay = 0 # lag in ms befor target is presented during training
         self.test_interval = 10  # test the network every N epochs
         self.latent_equilibrium = True  # flag for whether to use latent equilibrium
         self.dims = [9, 30, 3]  # network dimensions, i.e. neurons per layer

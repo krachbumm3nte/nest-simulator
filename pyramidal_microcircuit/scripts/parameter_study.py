@@ -17,11 +17,12 @@ import nest
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog="parameter_study.py",
-        description="Processes multiple configurations in sequence, with the option to unify some common simulation parameters.")
+        description="Processes multiple configurations in sequence, with the option " +
+                    "to unify some common simulation parameters.")
     parser.add_argument("--network",
                         type=str, choices=["numpy", "rnest", "snest"],
-                        help="""Type of network to train. Choice between exact mathematical simulation ('numpy') and \
-    NEST simulations with rate- or spiking neurons ('rnest', 'snest')""")
+                        help="Type of network to train. Choice between exact mathematical simulation ('numpy') and" +
+                        "NEST simulations with rate- or spiking neurons ('rnest', 'snest')")
     parser.add_argument("--config_dir",
                         type=str,
                         help="folder in which to search for config files.")
@@ -59,8 +60,8 @@ if __name__ == "__main__":
         params = Params(os.path.join(args.config_dir, config))
         if args.network:
             if params.network_type != args.network:
-                print(f"WARNING: both input file and script parameters specify \
- different network types ({params.network_type}/{args.network}).")
+                print(f"WARNING: both input file and script parameters specify " +
+                      f"different network types ({params.network_type}/{args.network}).")
             params.network_type = args.network
         elif not params.network_type:
             print("no network type specified, aborting.")
@@ -111,5 +112,5 @@ if __name__ == "__main__":
         global_t_processed = time.time() - global_t_start
 
         t_config = global_t_processed / (i + 1)
-        print(
-            f"Avg. time per config: {t_config:.2f}s, ETA: {timedelta(seconds=np.round(t_config * (len(all_configs)-(i+1))))}\n\n")
+        print(f"Avg. time per config: {t_config:.2f}s, " +
+              f"ETA: {timedelta(seconds=np.round(t_config * (len(all_configs)-(i+1))))}\n\n")

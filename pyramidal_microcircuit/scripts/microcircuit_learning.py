@@ -19,19 +19,23 @@ warnings.simplefilter('error', RuntimeWarning)
 def run_simulations(net, params, root_dir, imgdir, datadir, plot_interval=0, progress_interval=200, epoch_offset=0):
     simulation_times = []
 
-    try:  # catches KeyboardInterruptException to ensure proper cleanup and storage of progress
-        t_start_training = time()
+    try:  # catches KeyboardInterruptException to ensure proper cleanup and storage of progress upon abort
         net.test_epoch()  # begin with initial test
+
+        # core training loop
         for epoch in range(epoch_offset, params.n_epochs + 1):
             t_start_epoch = time()
             net.train_epoch()
             t_epoch = time() - t_start_epoch
             simulation_times.append(t_epoch)
 
+            # perform tests
             if epoch % params.test_interval == 0 and params.test_interval > 0:
                 net.test_epoch()
 
                 if epoch > 0:
+                    # Under some circumstances, gradients and weights explode, breaking the network and vastly
+                    # increasing simulation time. Current approach is to abort training altogether.
                     current_loss = net.test_loss[-1][1]
                     if current_loss > 5000:
                         print("-------------------------------")
@@ -40,13 +44,14 @@ def run_simulations(net, params, root_dir, imgdir, datadir, plot_interval=0, pro
                         break
 
                 if net.mode == "self-pred":
-                    print(f"Epoch {epoch} completed: intn error: {net.intn_error[-1][1]:.3f} \
-, apical error: {net.apical_error[-1][1]:.3f}")
+                    print(f"Epoch {epoch}: intn error: {net.intn_error[-1][1]:.3f}," +
+                          f"apical error: {net.apical_error[-1][1]:.3f}")
                 else:
-                    print(f"Epoch {epoch} completed: test acc: {net.test_acc[-1][1]:.3f}, \
-loss: {net.test_loss[-1][1]:.7f}")
-                print(f"\t epoch time: {np.mean(simulation_times[-50:]):.2f}s, \
-ETA: {timedelta(seconds=np.round(t_epoch * (params.n_epochs-epoch)))}\n")
+                    print(f"Epoch {epoch}: test acc: {net.test_acc[-1][1]:.3f}, " +
+                          f"test loss: {net.test_loss[-1][1]:.5f}, train loss: {net.train_loss[-1][1]:.5f}")
+
+                print(f"\t epoch time: {np.mean(simulation_times[-50:]):.2f}s, " +
+                      f"ETA: {timedelta(seconds=np.round(t_epoch * (params.n_epochs-epoch)))}\n")
 
             if plot_interval > 0 and epoch % plot_interval == 0:
                 if net.mode == "self-pred":
@@ -73,6 +78,7 @@ ETA: {timedelta(seconds=np.round(t_epoch * (params.n_epochs-epoch)))}\n")
             plot_training_progress(epoch, net, os.path.join(imgdir, f"{epoch}.png"))
         print("progression plot stored to disk.")
         print("Exiting.")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -125,9 +131,9 @@ if __name__ == "__main__":
             print("no network type specified, aborting.")
             sys.exit()
         if params.network_type and args.network and args.network != params.network_type:
-            print(
-                f"both input file and script parameters specify different \
-network types ({params.network_type}/{args.network}).")
+            print(f"both input file and script parameters specify different" +
+                  f"network types ({params.network_type}/{args.network}).")
+
             print(f"overwriting with argument and using {args.network} network type")
             params.network_type = args.network
 
