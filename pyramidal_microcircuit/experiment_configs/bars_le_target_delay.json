@@ -1,15 +1,8 @@
 {
-    "t_pres": 50,
-    "out_lag": 35.0,
-    "n_epochs": 1000,
+    "t_pres": 45,
+    "out_lag": 20.0,
+    "target_delay": 5,
     "latent_equilibrium": true,
-    "mode": "mnist",
-    "dims": [
-        784,
-        600,
-        3
-    ],
-    "n_classes": 3,
     "eta": {
         "ip": [
             0.004,
@@ -28,6 +21,5 @@
             0.0
         ]
     },
-    "record_interval": 0.5,
-    "psi": 500
+    "record_interval": 0.5
 }
