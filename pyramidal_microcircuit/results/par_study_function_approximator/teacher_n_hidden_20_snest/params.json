@@ -4,6 +4,7 @@
     "C_m_som": 1,
     "Wmax": 4,
     "Wmin": -4,
+    "add_inhibitory_stims": true,
     "beta": 1,
     "compartments": {
         "apical_lat_curr": 6,
@@ -27,7 +28,7 @@
     ],
     "eta": {
         "ip": [
-            5e-11,
+            1.0000000000000001e-11,
             0.0
         ],
         "pi": [
@@ -35,8 +36,8 @@
             0.0
         ],
         "up": [
-            1.25e-10,
-            2.5e-11
+            2.5e-11,
+            5.0000000000000005e-12
         ],
         "down": [
             0.0,
@@ -101,7 +102,7 @@
     },
     "latent_equilibrium": true,
     "mode": "teacher",
-    "n_epochs": 5000,
+    "n_epochs": 10000,
     "network_type": "snest",
     "neuron_model": "pp_cond_exp_mc_pyr",
     "noise": true,
@@ -153,10 +154,11 @@
     },
     "t_pres": 50,
     "t_ref": 0,
+    "target_delay": 0,
     "tau_delta": 1.0,
     "tau_x": 0.1,
     "teacher_weights": "init_weights_15_15_5.json",
-    "test_interval": 500,
+    "test_interval": 1000,
     "theta": 0,
     "threads": 8,
     "wmax_init": 1,
