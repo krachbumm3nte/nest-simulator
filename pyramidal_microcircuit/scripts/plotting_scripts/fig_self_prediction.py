@@ -2,6 +2,7 @@ import json
 import os
 import re
 import sys
+import pandas as pd
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,25 +10,10 @@ import src.plot_utils as plot_utils
 import src.utils as utils
 from sklearn.metrics import mean_squared_error as mse
 
-# networks = {
-#     "numpy": {"color": "orange", "label": "NumPy"},
-#     "rnest": {"color": "green", "label": "NEST rate"},
-#     "snest": {"color": "blue", "label": "NEST spiking"},
-# }
-
 networks = {
-    "10": {"color": "orange", "label": r"$C_m = 1$"},
-    # "15": {"color": "red", "label": r"$C_m = 1.5$"},
-    # "20": {"color": "green", "label": r"$C_m = 2$"},
-    # "25": {"color": "purple", "label": r"$C_m = 2.5$"},
-    # "50": {"color": "blue", "label": r"$C_m = 5$"},
-    "100": {"color": "magenta", "label": r"$C_m = 10$"},
-    "200": {"color": "grey", "label": r"$C_m = 20$"},
-    "500": {"color": "black", "label": r"$C_m = 50$"},
-    # "750": {"color": "red", "label": r"$C_m = 75$"},
-    "1000": {"color": "cyan", "label": r"$C_m = 100$"},
-    # "2000": {"color": "red", "label": r"$C_m = 200$"},
-    # "2500": {"color": "blue", "label": r"$C_m = 250$"},
+    "numpy": {"color": "orange", "label": "NumPy"},
+    "rnest": {"color": "green", "label": "NEST rate"},
+    "snest": {"color": "blue", "label": "NEST spiking"},
 }
 
 
@@ -36,20 +22,21 @@ if __name__ == "__main__":
 
     plot_utils.setup_plt()
 
-    args = sys.argv[1:]
+    curdir = os.path.dirname(os.path.realpath(__file__))
 
-    directory = args[0]
-    out_file = args[1]
+    directory = os.path.join(curdir, "../../results/par_study_self_prediction")
+    out_file = os.path.join(curdir, "../../data/fig_self_prediction.png")
     all_configs = sorted([name for name in os.listdir(directory) if os.path.isdir(os.path.join(directory, name))])
     fig, [[ax0, ax1], [ax2, ax3]] = plt.subplots(2, 2, sharex=True)
 
     final_performance = []
     training_duration = []
 
+    errors = pd.DataFrame(columns=["Apical", "Intn", "FF", "FB"])
+
     for config in all_configs:
 
-        net_name = config.split("_")[-2]
-        print(net_name)
+        net_name = config.split("_")[-1]
         if net_name not in networks:
             continue
         col = networks[net_name]["color"]
@@ -61,13 +48,13 @@ if __name__ == "__main__":
         apical_error = np.array(progress["apical_error"])
         intnt_error = np.array(progress["intn_error"])
 
-        ax0.plot(apical_error[:, 0], utils.rolling_avg(apical_error[:, 1], 350), color=col, label=network_type)
+        ax0.plot(apical_error[:, 0], utils.rolling_avg(apical_error[:, 1], 50), color=col, label=network_type)
         ax1.plot(intnt_error[:, 0], utils.rolling_avg(intnt_error[:, 1], 100), color=col, label=network_type)
 
         ff_error = []
         fb_error = []
         curdir = os.path.join(directory, config)
-        for file in os.listdir(os.path.join(curdir, "data"), ):
+        for file in sorted(os.listdir(os.path.join(curdir, "data"))):
             with open(os.path.join(curdir, "data", file), "r") as f:
                 weights = json.load(f)
 
@@ -81,23 +68,29 @@ if __name__ == "__main__":
             ff_error.append([epoch, mse(WYH.flatten(), WIH.flatten())])
             fb_error.append([epoch, mse(WHY.flatten(), -WHI.flatten())])
 
-        ax2.plot(*zip(*sorted(ff_error)), color=col, label=network_type)
-        ax3.plot(*zip(*sorted(fb_error)), color=col, label=network_type)
+        # ff_error = np.array(ff_error)
+        # fb_error = np.array(fb_error)
+        errors.loc[net_name, :] = [np.mean(apical_error[-50:, 1]), np.mean(intnt_error[-50:, 1]),
+                                   np.mean(np.array(ff_error)[-5:, 1]), np.mean(np.array(fb_error)[-5:, 1])]
 
-    ax2.set_xlabel("epoch")
-    ax3.set_xlabel("epoch")
+        ax3.plot(*zip(*sorted(ff_error)), color=col, label=network_type)
+        ax2.plot(*zip(*sorted(fb_error)), color=col, label=network_type)
+
+    ax2.set_xlabel("Epoch")
+    ax3.set_xlabel("Epoch")
     ax0.set_title("Apical error")
     ax1.set_title("Interneuron error")
-    ax2.set_title("Feedforward weight error")
-    ax3.set_title("Feedback weight error")
+    ax2.set_title("Feedback weight error")
+    ax3.set_title("Feedforward weight error")
 
-    ax0.set_ylim(bottom=0, top=0.005)
+    ax0.set_ylim(bottom=0, top=0.007)
     ax1.set_ylim(bottom=0, top=0.00001)
-    ax2.set_ylim(bottom=0, top=0.15)
-    ax3.set_ylim(bottom=0)
+    ax2.set_ylim(bottom=0, top=0.25)
+    ax3.set_ylim(bottom=0, top=0.15)
 
     ax1.legend()
-
+    print("Errors:")
+    print(errors)
     # plt.show()
 
     plt.savefig(out_file)

@@ -32,8 +32,6 @@ if __name__ == "__main__":
     orig_data_1 = []
     le_data_1 = []
 
-    tau_eff = 1 / 0.19
-
     for config in configs_orig:
 
         with open(os.path.join(dirname, config, "progress.json")) as f:
@@ -41,7 +39,7 @@ if __name__ == "__main__":
         with open(os.path.join(dirname, config, "params.json")) as f:
             params = json.load(f)
 
-        t_pres = params["t_pres"] / tau_eff
+        t_pres = params["t_pres"]
         acc = progress["test_acc"]
 
         final_acc = np.mean([datapoint[1] for datapoint in acc[-10:]])  # average over last 10 accuracy readings
@@ -50,10 +48,8 @@ if __name__ == "__main__":
         if params["t_pres"] in [500, 50, 5]:
             times = [entry[0] for entry in acc]
             acc = [1-entry[1] for entry in acc]
-            ax0.plot(times, utils.rolling_avg(acc, filter_window),
-                     label=r"$t_{{pres}}={} \tau_{{eff}}$".format(round(t_pres)), color="orange", linestyle=linestyles[params["t_pres"]])
-            # ax0.plot(times, acc,
-            #  label=r"$t_{{pres}}={} \tau_{{eff}}$".format(round(t_pres)), color="orange", linestyle=linestyles[params["t_pres"]])
+            ax0.plot(times, utils.rolling_avg(acc, filter_window), label=r"$t_{{pres}}={}ms$".format(round(t_pres)),
+                     color="orange", linestyle=linestyles[params["t_pres"]])
 
     for config in configs_le:
 
@@ -62,7 +58,7 @@ if __name__ == "__main__":
         with open(os.path.join(dirname, config, "params.json")) as f:
             params = json.load(f)
 
-        t_pres = params["t_pres"] / tau_eff
+        t_pres = params["t_pres"]
         acc = progress["test_acc"]
 
         final_acc = np.mean([datapoint[1] for datapoint in acc[-10:]])  # average over last 10 accuracy readings
@@ -71,8 +67,8 @@ if __name__ == "__main__":
         if params["t_pres"] in [500, 50, 5]:
             times = [entry[0] for entry in acc]
             acc = [1-entry[1] for entry in acc]
-            ax0.plot(times, utils.rolling_avg(acc, filter_window),
-                     label=r"$t_{{pres}}={} \tau_{{eff}}$, le".format(round(t_pres)), color="blue", linestyle=linestyles[params["t_pres"]])
+            ax0.plot(times, utils.rolling_avg(acc, filter_window), label=r"$t_{{pres}}={}ms$, le".format(round(t_pres)),
+                     color="blue", linestyle=linestyles[params["t_pres"]])
 
     # ax0.legend()
     le_data_1 = sorted(le_data_1)
@@ -90,7 +86,7 @@ if __name__ == "__main__":
 
     ax0.set_xlabel("epoch")
     ax0.set_ylabel("test error")
-    ax1.set_xlabel(r'$t_{pres}  \left[ \tau_{eff} \right]$')
+    ax1.set_xlabel(r'$t_{pres}  \left[ ms \right]$')
     ax1.set_ylabel("test error")
 
     lines = ax0.get_lines()
@@ -98,12 +94,12 @@ if __name__ == "__main__":
     ax0.annotate("A", xy=(0.02, 0.985), xycoords='figure fraction',
                  horizontalalignment='left', verticalalignment='top',
                  fontsize=20)
-    
+
     ax0.annotate("B", xy=(0.02, 0.485), xycoords='figure fraction',
                  horizontalalignment='left', verticalalignment='top',
                  fontsize=20)
 
-    legend1 = ax0.legend(lines[:3], [r"$t_{{pres}}={} \tau_{{eff}}$".format(t) for t in [100, 10, 1]], loc=1)
+    legend1 = ax0.legend(lines[:3], [r"$t_{{pres}}={}ms$".format(t) for t in [500, 50, 5]], loc=1)
     legend2 = ax0.legend(lines[2::3], ["Sacramento", "Latent Equilibrium"], loc=4)
     ax0.add_artist(legend1)
 

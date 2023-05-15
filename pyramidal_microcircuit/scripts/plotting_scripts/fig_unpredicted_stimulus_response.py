@@ -53,7 +53,7 @@ nest.Connect(net.layers[-1].pyr, sr_pyr)
 
 print("training with random weights")
 
-x, y = net.get_training_data(n_samples)
+x, y_batch = net.get_training_data(n_samples)
 
 for i in range(3):
     if i == 1:
@@ -65,12 +65,12 @@ for i in range(3):
         net.set_all_weights(wgts)
         print("training with final weights")
 
-    net.test_batch(x, y)
+    net.test_batch(x, y_batch)
     pyr_spikes_test.append(sr_pyr.n_events)
     intn_spikes_test.append(sr_intn.n_events)
     reset_recorders()
 
-    net.train_batch(x, y)
+    net.train_batch(x, y_batch)
     pyr_spikes_train.append(sr_pyr.n_events)
     intn_spikes_train.append(sr_intn.n_events)
     reset_recorders()

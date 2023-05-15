@@ -32,7 +32,6 @@ if __name__ == "__main__":
         directory = os.path.join(result_dir, d)
         all_configs = sorted([name for name in os.listdir(directory) if os.path.isdir(os.path.join(directory, name))])
 
-
         for config in all_configs:
 
             params = Params(os.path.join(directory, config, "params.json"))
@@ -76,13 +75,21 @@ if __name__ == "__main__":
             WIH = np.array(WIH)
             WYH = np.array(WYH)
 
-            for w_arr in [WHI, WHY, WIH, WYH]:
-                w_arr[np.isnan(w_arr)] = 0
-
             WHI = np.mean(WHI, axis=0)
             WHY = np.mean(WHY, axis=0)
             WIH = np.mean(WIH, axis=0)
             WYH = np.mean(WYH, axis=0)
+
+            absent_whi = np.isnan(WHI)
+            print(np.mean(np.abs(WHY)))
+
+
+            absent_wih = np.isnan(WIH)
+            print(np.mean(np.abs(WYH)))
+            print()
+
+            for w_arr in [WHI, WHY, WIH, WYH]:
+                w_arr[np.isnan(w_arr)] = 0
 
             if p not in ff_errors:
                 ff_errors[p] = [mse(WYH.flatten(), WIH.flatten())]
