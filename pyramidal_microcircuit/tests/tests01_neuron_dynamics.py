@@ -557,7 +557,7 @@ class NetworkDynamics(TestClass):
 
             self.nest_net.set_input(input_currents)
             self.nest_net.set_target(target_currents)
-            self.nest_net.simulate(self.t_pres, enable_recording=True, with_delay=False)
+            self.nest_net.simulate(self.t_pres, enable_recording=True, recording_delay=False)
 
             self.numpy_net.set_input(input_currents)
             self.numpy_net.set_target(target_currents)

@@ -20,7 +20,8 @@ def run_simulations(net, params, root_dir, imgdir, datadir, plot_interval=0, pro
     simulation_times = []
 
     try:  # catches KeyboardInterruptException to ensure proper cleanup and storage of progress upon abort
-        net.test_epoch()  # begin with initial test
+        if epoch_offset == 0:
+            net.test_epoch()  # begin with initial test
 
         # core training loop
         for epoch in range(epoch_offset, params.n_epochs + 1):
@@ -118,6 +119,7 @@ if __name__ == "__main__":
         params = Params(os.path.join(root_dir, "params.json"))
         with open(os.path.join(root_dir, "progress.json"), "r") as f:
             progress = json.load(f)
+        params.init_self_pred = False
         spiking = params.spiking
     else:
         if args.config:

@@ -12,14 +12,13 @@ import nest
 
 p = Params()
 p.mode = "teacher"
-p.dims_teacher = [15, 15, 5]
+p.dims_teacher = [30, 20, 10]
 p.dims = p.dims_teacher
 net = NestNetwork(p)
 np.set_printoptions(suppress=True)
-x, y = net.get_training_data(20000)
+x, y_batch = net.get_training_data(20000)
 print(x[-10:])
 print()
-print(y[-10:])
+print(y_batch[-8:])
 
-print(np.std(y, axis=0))
-print(f"min: {np.min(y)}, max: {np.max(y)}, std: {np.mean(np.std(y, axis=0))}")
+print(f"min: {np.min(y_batch)}, max: {np.max(y_batch)}, std: {np.mean(np.std(y_batch, axis=0))}")
