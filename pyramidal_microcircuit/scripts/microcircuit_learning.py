@@ -64,7 +64,7 @@ def run_simulations(net, params, root_dir, imgdir, datadir, plot_interval=0, pro
                 print("storing progress...", end="")
                 utils.store_synaptic_weights(net, os.path.join(datadir, f"weights_{epoch}.json"))
                 utils.store_progress(net, root_dir, epoch)
-                print("done.")
+                print("Done.")
 
     except KeyboardInterrupt:
         print("KeyboardInterrupt received - storing progress...")

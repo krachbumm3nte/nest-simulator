@@ -134,7 +134,7 @@ def plot_training_progress(epoch, net, out_file):
                 ax3.plot(i, WIH[j, i], "x", color=col, label=f"from {i}")
 
         if len(net.dims) > 3:
-            WHI, WHY, WIH, WYH = calculate_weight_errors(net, epoch, 1)
+            fb_, ff_, WHI, WHY, WIH, WYH = calculate_weight_errors(net.get_weight_dict(), 1)
 
             for i in range(net.dims[-3]):
                 for j in range(net.dims[-2]):

@@ -26,6 +26,7 @@ if __name__ == "__main__":
     result_dir = os.path.join(curdir, "../../results/par_study_function_approximator")
     out_file = os.path.join(curdir, "../../data/fig_function_approximator.png")
 
+
     dirnames = os.listdir(result_dir)
     test_error = []
     test_loss = []
@@ -36,6 +37,10 @@ if __name__ == "__main__":
     all_configs = sorted([name for name in os.listdir(result_dir) if os.path.isdir(os.path.join(result_dir, name))])
 
     for config in all_configs:
+
+
+        if "weights.json" not in os.listdir(os.path.join(result_dir, config)):
+            continue
 
         params = Params(os.path.join(result_dir, config, "params.json"))
         n = params.dims[1]
