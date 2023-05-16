@@ -3,21 +3,19 @@
     "n_samples": 5,
     "global_params": {
         "t_pres": 10,
-        "latent_equilibrium": true,
-        "mode": "mnist",
+        "mode": "self-pred",
         "dims": [
-            784,
             300,
+            200,
             100,
             10
         ],
         "wmin_init": -0.1,
         "wmax_init": 0.1,
-        "Wmin": -0.5,
-        "Wmax": 0.5,
         "n_classes": 10,
         "init_self_pred": false,
-        "psi": 250
+        "psi": 100,
+        "threads": 8
     },
     "configs": {
         "rnest_plast": {
@@ -25,19 +23,19 @@
             "spiking": false,
             "eta": {
                 "ip": [
-                    0.004,
-                    0.004,
+                    1e-10,
+                    1e-10,
                     0.0
                 ],
                 "pi": [
-                    0.01,
-                    0.01,
+                    1e-10,
+                    1e-10,
                     0.0
                 ],
                 "up": [
-                    0.01,
-                    0.01,
-                    0.003
+                    1e-10,
+                    1e-10,
+                    1e-10
                 ],
                 "down": [
                     0,
@@ -51,19 +49,19 @@
             "spiking": true,
             "eta": {
                 "ip": [
-                    0.004,
-                    0.004,
+                    1e-10,
+                    1e-10,
                     0.0
                 ],
                 "pi": [
-                    0.01,
-                    0.01,
+                    1e-10,
+                    1e-10,
                     0.0
                 ],
                 "up": [
-                    0.01,
-                    0.01,
-                    0.003
+                    1e-10,
+                    1e-10,
+                    1e-10
                 ],
                 "down": [
                     0,

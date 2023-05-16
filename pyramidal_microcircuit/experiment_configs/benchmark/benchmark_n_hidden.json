@@ -1,0 +1,81 @@
+{
+    "n_repetitions": 5,
+    "n_samples": 10,
+    "global_params": {
+        "threads": 8
+    },
+    "configs": {
+        "snest_30": {
+            "dims": [
+                9,
+                30,
+                3
+            ],
+            "network_type": "snest"
+        },
+        "rnest_30": {
+            "dims": [
+                9,
+                30,
+                3
+            ],
+            "network_type": "rnest"
+        },
+        "numpy_30": {
+            "dims": [
+                9,
+                30,
+                3
+            ],
+            "network_type": "numpy"
+        },
+        "snest_100": {
+            "dims": [
+                9,
+                100,
+                3
+            ],
+            "network_type": "snest"
+        },
+        "rnest_100": {
+            "dims": [
+                9,
+                100,
+                3
+            ],
+            "network_type": "rnest"
+        },
+        "numpy_100": {
+            "dims": [
+                9,
+                100,
+                3
+            ],
+            "network_type": "numpy"
+        },
+        "snest_250": {
+            "dims": [
+                9,
+                250,
+                3
+            ],
+            "network_type": "snest"
+        },
+        "rnest_250": {
+            "dims": [
+                9,
+                250,
+                3
+            ],
+            "network_type": "rnest"
+        },
+        "numpy_250": {
+            "dims": [
+                9,
+                250,
+                3
+            ],
+            "network_type": "numpy"
+        }
+    }
+}
