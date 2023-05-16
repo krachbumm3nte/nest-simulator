@@ -30,6 +30,7 @@ default_config = {
             0.0
         ]
     },
+    "init_self_pred": False,
     "network_type": "snest",
     "psi": 100,
     "n_epochs": 1000,

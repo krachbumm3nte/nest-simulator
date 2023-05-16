@@ -19,6 +19,7 @@
             0.0
         ]
     },
+    "init_self_pred": false,
     "network_type": "snest",
     "psi": 10,
     "n_epochs": 1000,
