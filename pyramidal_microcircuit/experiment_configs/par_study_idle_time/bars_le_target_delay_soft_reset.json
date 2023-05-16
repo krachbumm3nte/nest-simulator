@@ -1,0 +1,26 @@
+{
+    "t_pres": 45,
+    "out_lag": 20.0,
+    "target_delay": 5,
+    "latent_equilibrium": true,
+    "eta": {
+        "ip": [
+            0.004,
+            0.0
+        ],
+        "pi": [
+            0.0,
+            0.0
+        ],
+        "up": [
+            0.01,
+            0.002
+        ],
+        "down": [
+            0.0,
+            0.0
+        ]
+    },
+    "reset": 1,
+    "record_interval": 0.5
+}

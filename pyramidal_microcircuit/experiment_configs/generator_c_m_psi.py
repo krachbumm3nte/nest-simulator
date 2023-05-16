@@ -12,20 +12,18 @@ c_m_list = [1, 10, 50]
 default_config = {
     "t_pres": 200,
     "out_lag": 130.0,
-    "latent_equilibrium": True,
-    "dims": [9, 30, 3],
     "eta": {
         "ip": [
-            0.001,
+            0.0001,
             0.0
         ],
         "pi": [
-            0.0025,
+            0.00025,
             0.0
         ],
         "up": [
-            0.0025,
-            0.0005
+            0.00025,
+            0.00005
         ],
         "down": [
             0.0,
@@ -34,7 +32,7 @@ default_config = {
     },
     "network_type": "snest",
     "psi": 100,
-    "n_epochs": 500,
+    "n_epochs": 1000,
     "C_m_api": 1
 }
 

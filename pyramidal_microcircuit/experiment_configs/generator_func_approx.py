@@ -17,10 +17,9 @@ config = {
     "dims_teacher": deepcopy(dims_teacher),
     "dims": deepcopy(dims_teacher),
     "test_interval": 1000,
-    "n_epochs": 10000,
+    "n_epochs": 20000,
     "noise": True,
-    "sigma": 0.1,
-    "gamma": 0.8,
+    "sigma": 0.01,
     "teacher_weights": "init_weights_15_15_5.json",
     "eta": {
         "ip": [
