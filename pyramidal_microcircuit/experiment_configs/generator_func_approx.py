@@ -20,6 +20,7 @@ config = {
     "n_epochs": 20000,
     "noise": True,
     "sigma": 0.01,
+    "gamma": 0.8,
     "teacher_weights": "init_weights_15_15_5.json",
     "eta": {
         "ip": [
