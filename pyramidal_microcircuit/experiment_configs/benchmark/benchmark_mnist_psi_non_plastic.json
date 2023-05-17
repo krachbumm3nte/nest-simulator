@@ -6,7 +6,7 @@
         "t_pres": 50,
         "latent_equilibrium": true,
         "mode": "mnist",
-        "in_size": 10,
+        "in_size": 28,
         "dims": [
             784,
             300,
