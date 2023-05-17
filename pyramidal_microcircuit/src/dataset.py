@@ -14,7 +14,7 @@ class MnistDataset(Dataset):
         # ensure valid parameters
         assert 2 <= num_classes <= 10
         assert 100 <= n_samples <= 5000 or n_samples == -1
-
+        self.target_size = target_size
         if target_size == 28:
             self.transform = None
         else:
