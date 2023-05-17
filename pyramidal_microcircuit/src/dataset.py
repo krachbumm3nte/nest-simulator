@@ -90,7 +90,10 @@ class MnistDataset(Dataset):
         indices = np.random.choice(len(self.cs), n_samples)
 
         foo = [self.__getitem__(i) for i in indices]
-        vals = [k.numpy() for k, v in foo]
+        if self.target_size != 28:
+            vals = [k.numpy() for k, v in foo]
+        else:
+            vals = [k for k, v in foo]
         keys = [v for k, v in foo]
         return vals, keys
 
