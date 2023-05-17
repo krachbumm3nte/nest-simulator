@@ -1,10 +1,11 @@
 {
-    "n_repetitions": 1,
+    "n_repetitions": 5,
     "n_samples": 10,
     "global_params": {
         "t_pres": 50,
         "latent_equilibrium": true,
         "mode": "mnist",
+        "in_size": 28,
         "dims": [
             784,
             300,
