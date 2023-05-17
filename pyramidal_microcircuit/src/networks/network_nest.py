@@ -316,6 +316,9 @@ class NestNetwork(Network):
                             "down": self.get_weight_array(self.layers[i+1].pyr, layer.pyr, normalized)})
             pyr_prev = layer.pyr
         weights.append({"up": self.get_weight_array(pyr_prev, self.layers[-1].pyr, normalized)})
+
+        if self.p.add_inhibitory_stims:
+            weights[0]["up_inh"] = self.get_weight_array(self.input_neurons_inh, self.layers[0].pyr, normalized)
         return weights
 
     def reset(self):
