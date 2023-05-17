@@ -2,7 +2,7 @@
     "n_repetitions": 5,
     "n_samples": 10,
     "global_params": {
-        "threads": 16,
+        "threads": 32,
         "t_pres": 50,
         "latent_equilibrium": true,
         "mode": "mnist",
