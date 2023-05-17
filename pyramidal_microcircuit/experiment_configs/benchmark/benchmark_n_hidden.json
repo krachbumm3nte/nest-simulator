@@ -11,7 +11,8 @@
                 30,
                 3
             ],
-            "network_type": "snest"
+            "network_type": "snest",
+            "spiking": true
         },
         "rnest_30": {
             "dims": [
@@ -19,7 +20,8 @@
                 30,
                 3
             ],
-            "network_type": "rnest"
+            "network_type": "rnest",
+            "spiking": false
         },
         "numpy_30": {
             "dims": [
@@ -35,7 +37,8 @@
                 100,
                 3
             ],
-            "network_type": "snest"
+            "network_type": "snest",
+            "spiking": true
         },
         "rnest_100": {
             "dims": [
@@ -43,7 +46,8 @@
                 100,
                 3
             ],
-            "network_type": "rnest"
+            "network_type": "rnest",
+            "spiking": false
         },
         "numpy_100": {
             "dims": [
@@ -59,7 +63,8 @@
                 250,
                 3
             ],
-            "network_type": "snest"
+            "network_type": "snest",
+            "spiking": true
         },
         "rnest_250": {
             "dims": [
@@ -67,7 +72,8 @@
                 250,
                 3
             ],
-            "network_type": "rnest"
+            "network_type": "rnest",
+            "spiking": false
         },
         "numpy_250": {
             "dims": [
