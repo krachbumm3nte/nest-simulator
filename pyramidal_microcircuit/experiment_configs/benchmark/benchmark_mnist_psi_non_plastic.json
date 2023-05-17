@@ -1,5 +1,5 @@
 {
-    "n_repetitions": 1,
+    "n_repetitions": 5,
     "n_samples": 10,
     "global_params": {
         "threads": 16,
@@ -20,19 +20,19 @@
         "init_self_pred": false,
         "eta": {
             "ip": [
-                0.004,
-                0.004,
+                0.0,
+                0.0,
                 0.0
             ],
             "pi": [
-                0.01,
-                0.01,
+                0.0,
+                0.0,
                 0.0
             ],
             "up": [
-                0.01,
-                0.01,
-                0.003
+                0.0,
+                0.0,
+                0.0
             ],
             "down": [
                 0,
@@ -44,13 +44,13 @@
         "spiking": true
     },
     "configs": {
-        "ws_1": {
+        "psi_1": {
             "psi": 1
         },
-        "ws_10": {
+        "psi_10": {
             "psi": 10
         },
-        "ws_100": {
+        "psi_100": {
             "psi": 100
         }
     }
