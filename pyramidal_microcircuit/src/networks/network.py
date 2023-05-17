@@ -94,7 +94,7 @@ input and 3 output neurons, dims are: {p.dims}")
             """
             self.train_samples = 10
             self.val_samples = 25
-            self.test_samples = 25
+            self.test_samples = 50
 
             # Negative inputs are allowed here, so we need separate stimualtors for SNN
             self.p.add_inhibitory_stims = True
