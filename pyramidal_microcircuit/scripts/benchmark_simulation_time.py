@@ -16,11 +16,13 @@ import argparse
 import numpy as np
 
 if __name__ == "__main__":
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str,
                         help="configuration file")
     parser.add_argument("--out_file",
                         type=str,
+
                         help="file in which to store simulation results")
     args = parser.parse_args()
     plot_utils.setup_plt()
