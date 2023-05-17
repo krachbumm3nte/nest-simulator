@@ -75,32 +75,35 @@ if __name__ == "__main__":
 
         y_pred_total = []
 
-        net.disable_plasticity()
-        for i, (x, y) in enumerate(zip(x_batch, y_batch)):
-            net.set_input(x)
-            net.simulate(net.t_pres, True)
-            mm_data = pd.DataFrame.from_dict(net.mm.events)
-            U_Y = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in net.layers[-1].pyr.global_id]
-            y_pred = np.mean(U_Y, axis=1)
+        # net.disable_plasticity()
+        # for i, (x, y) in enumerate(zip(x_batch, y_batch)):
+        #     net.set_input(x)
+        #     net.simulate(net.t_pres, True)
+        #     mm_data = pd.DataFrame.from_dict(net.mm.events)
+        #     U_Y = [mm_data[mm_data["senders"] == out_id]["V_m.s"] for out_id in net.layers[-1].pyr.global_id]
+        #     y_pred = np.mean(U_Y, axis=1)
 
-            net_test_loss.append(mse(y, y_pred))
-            net_test_acc.append(np.argmax(y) == np.argmax(y_pred))
-            y_pred_total.append(y_pred)
-            net.reset()
+        #     net_test_loss.append(mse(y, y_pred))
+        #     net_test_acc.append(np.argmax(y) == np.argmax(y_pred))
+        #     y_pred_total.append(y_pred)
+        #     net.reset()
 
-        print(y_batch.shape)
+        # print(y_batch.shape)
 
-        test_error.append([n, 1-np.mean(net_test_acc)])
-        test_loss.append([n, np.mean(net_test_loss)])
-        r2_scores.append([n, r2_score(y_true=y_batch, y_pred=y_pred_total)])
+        # test_error.append([n, 1-np.mean(net_test_acc)])
+        # test_loss.append([n, np.mean(net_test_loss)])
+        # r2_scores.append([n, r2_score(y_true=y_batch, y_pred=y_pred_total)])
         train_loss.append([n, np.mean([i[1] for i in progress["train_loss"][-n_samples:]])])
+        test_error.append([n, np.mean([1-i[1] for i in progress["test_acc"][-8:]])])
+        test_loss.append([n, np.mean([i[1] for i in progress["test_loss"][-8:]])])
         nest.ResetKernel()
-        print(test_error[-1], test_loss[-1], r2_scores[-1])
-
+        
+        # print(test_error[-1], test_loss[-1], r2_scores[-1])
+    print(test_loss)
     ax0.plot(*zip(*sorted(test_loss)), label="Test")
     ax0.plot(*zip(*sorted(train_loss)), label="Train")
     ax1.plot(*zip(*sorted(test_error)))
-    ax2.plot(*zip(*sorted(r2_scores)), label="explained variance")
+    # ax2.plot(*zip(*sorted(r2_scores)), label="explained variance")
 
     ax0.set_title("Loss")
     ax1.set_title("Test error")

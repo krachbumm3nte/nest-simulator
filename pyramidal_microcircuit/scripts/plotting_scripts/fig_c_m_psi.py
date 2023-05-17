@@ -28,7 +28,7 @@ if __name__ == "__main__":
     all_configs = sorted(os.listdir(dirname))
     fig, [ax0, ax1] = plt.subplots(1, 2)
 
-    n_epochs = 50
+    n_epochs = 30
 
     error_all = {10: [], 50: [], 100: []}
     loss_all = {10: [], 50: [], 100: []}
