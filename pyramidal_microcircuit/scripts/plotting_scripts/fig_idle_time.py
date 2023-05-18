@@ -33,7 +33,7 @@ if __name__ == "__main__":
     test_loss = []
     train_loss = []
     r2_scores = []
-    fig, [ax0, ax1] = plt.subplots(1, 2, sharex=True)
+    fig, [ax0, ax1] = plt.subplots(1, 2, sharex=True, figsize=[8, 3])
 
     all_configs = sorted([name for name in os.listdir(result_dir) if os.path.isdir(os.path.join(result_dir, name))])
 
@@ -45,16 +45,17 @@ if __name__ == "__main__":
 
         test_acc = np.array(sorted(progress["test_acc"]))
         test_loss = np.array(sorted(progress["test_loss"]))
-
-        ax0.plot(test_acc[:, 0], utils.rolling_avg(test_acc[:, 1], 3), label=conf_names[config])
+        test_acc[:, 1] = 1 - test_acc[:, 1]
+        ax0.plot(test_acc[:, 0], utils.rolling_avg(test_acc[:, 1], 5), label=conf_names[config])
         ax1.plot(test_loss[:, 0], utils.rolling_avg(test_loss[:, 1], 10), label=conf_names[config])
     ax0.set_xlim(0, 500)
     ax1.set_xlim(0, 500)
 
-    ax0.set_ylim(0.4, 1.05)
+    ax0.set_ylim(-0.01, 0.7)
+    ax1.set_ylim(-0.005, 0.25)
 
-    ax0.set_title("Accuracy")
-    ax1.set_title("Loss")
+    ax0.set_title("Test error")
+    ax1.set_title("Test loss")
 
     ax0.set_xlabel("Epoch")
     ax1.set_xlabel("Epoch")
