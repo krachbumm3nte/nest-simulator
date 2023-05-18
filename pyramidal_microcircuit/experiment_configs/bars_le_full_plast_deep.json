@@ -1,33 +1,29 @@
 {
-    "t_pres": 25,
-    "out_lag": 15.0,
-    "noise": true,
-    "sigma": 0.3,
-    "store_errors": true,
-    "init_self_pred": true,
+    "t_pres": 75,
+    "out_lag": 50,
+    "tau_x": 0.3,
+    "latent_equilibrium": true,
     "dims": [
         9,
         30,
         10,
         3
     ],
-    "wmin_init": -0.1,
-    "wmax_init": 0.1,
     "eta": {
         "ip": [
-            0.04,
-            0.02,
+            0.002,
+            0.002,
             0.0
         ],
         "pi": [
-            0.0,
-            0.0,
+            0.002,
+            0.002,
             0.0
         ],
         "up": [
-            0.333,
-            0.0333,
-            0.01
+            0.02,
+            0.02,
+            0.001
         ],
         "down": [
             0.0,
