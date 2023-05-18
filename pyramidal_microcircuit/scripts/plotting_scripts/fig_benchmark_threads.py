@@ -15,30 +15,33 @@ with open(in_file) as f:
 
 results = data["results"]
 
-width = 0.3
+width = 0.4
+
+color = "orange"
 
 labels = {
     "8": {"label": "8",
           "X": 0,
-          "color": "blue"},
+          "color": color},
     "16": {"label": "16",
            "X": 1,
-           "color": "blue"},
+           "color": color},
     "24": {"label": "24",
            "X": 2,
-           "color": "blue"},
+           "color": color},
     "32": {"label": "32",
            "X": 3,
-           "color": "blue"},
+           "color": color},
 }
 
 fig, ax = plt.subplots()
 all_bars = []
 for name, cfg in labels.items():
-    bar = ax.bar(cfg["X"], results[name]["t_mean"], color=cfg["color"], label=cfg["label"], width=width*1.5)
+    bar = ax.bar(cfg["X"], results[name]["t_mean"], color=cfg["color"], label=cfg["label"], width=width)
     all_bars.append(bar)
 
-ax.set_ylabel(r"$t_{sim} [ms]$")
+ax.set_ylabel(r"$t_{sim}\ [s]$")
+ax.set_xlabel(r"Threads")
 ax.set_xticks([0, 1, 2, 3])
 ax.set_xticklabels([8, 16, 24, 32])
 

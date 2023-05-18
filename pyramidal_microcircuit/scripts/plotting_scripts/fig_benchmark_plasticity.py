@@ -17,6 +17,8 @@ results = data["results"]
 
 width = 0.15
 
+
+x1 = 0.85
 labels = {
     "rnest_plast": {"label": "plastic",
                     "X": 0 + width,
@@ -24,15 +26,15 @@ labels = {
                     "linestyle": "-"},
     "rnest_static": {"label": "non-plastic",
                      "X": 0 - width,
-                     "color": "red",
+                     "color": "orange",
                      "linestyle": "--"},
     "snest_plast": {"label": "plastic",
-                    "X": 1 + width,
+                    "X": x1 + width,
                     "color": "blue",
                     "linestyle": "-"},
     "snest_static": {"label": "non-plastic",
-                     "X": 1 - width,
-                     "color": "red",
+                     "X": x1 - width,
+                     "color": "orange",
                      "linestyle": "--"},
 }
 
@@ -42,7 +44,8 @@ for name, cfg in labels.items():
     bar = ax.bar(cfg["X"], results[name]["t_mean"], color=cfg["color"], label=cfg["label"], width=width*1.5)
     all_bars.append(bar)
 
-ax.set_xticks([0, 1])
+ax.set_ylabel(r"$t_{sim}\ [s]$")
+ax.set_xticks([0, x1])
 ax.set_xticklabels(["Rate neurons", "Spiking neurons"])
 
 ax.legend(handles=all_bars[1:3])
