@@ -1,0 +1,42 @@
+{
+    "n_repetitions": 5,
+    "n_samples": 50,
+    "global_params": {
+        "threads": 8,
+        "init_self_pred": false,
+        "eta": {
+            "ip": [
+                1e-100,
+                0.0
+            ],
+            "pi": [
+                1e-100,
+                0.0
+            ],
+            "up": [
+                1e-100,
+                1e-100
+            ],
+            "down": [
+                0.0,
+                0.0
+            ]
+        },
+        "network_type": "snest",
+        "spiking": true
+    },
+    "configs": {
+        "psi_1": {
+            "psi": 1
+        },
+        "psi_10": {
+            "psi": 10
+        },
+        "psi_100": {
+            "psi": 100
+        },
+        "psi_1000": {
+            "psi": 1000
+        }
+    }
+}
