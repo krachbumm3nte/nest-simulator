@@ -23,27 +23,27 @@ p.store_errors = True
 p.init_self_pred = False
 p.dims = [9, 30, 10, 3]
 p.eta = {
-        "ip": [
-            0.0,
-            0.0,
-            0.0
-        ],
-        "pi": [
-            0.0,
-            0.0,
-            0.0
-        ],
-        "up": [
-            0.0,
-            0.0,
-            0.0
-        ],
-        "down": [
-            0,
-            0,
-            0
-        ]
-    }
+    "ip": [
+        0.0,
+        0.0,
+        0.0
+    ],
+    "pi": [
+        0.0,
+        0.0,
+        0.0
+    ],
+    "up": [
+        0.0,
+        0.0,
+        0.0
+    ],
+    "down": [
+        0,
+        0,
+        0
+    ]
+}
 utils.setup_nest(p)
 
 net = NestNetwork(p)
@@ -66,9 +66,9 @@ pyr_spikes_train = []
 intn_spikes_train = []
 
 
-for l in net.layers[:-1]:
-    nest.Connect(l.pyr, sr_pyr)
-    nest.Connect(l.intn, sr_intn)
+for layer in net.layers[:-1]:
+    nest.Connect(layer.pyr, sr_pyr)
+    nest.Connect(layer.intn, sr_intn)
 nest.Connect(net.layers[-1].pyr, sr_pyr)
 
 

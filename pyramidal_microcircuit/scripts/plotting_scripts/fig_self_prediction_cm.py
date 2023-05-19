@@ -1,14 +1,11 @@
 import json
 import os
-import re
 import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
 import src.plot_utils as plot_utils
-import src.utils as utils
 from sklearn.metrics import mean_squared_error as mse
-
 from src.params import Params
 
 filter_window = 4
@@ -23,9 +20,8 @@ if __name__ == "__main__":
     all_configs = sorted([name for name in os.listdir(directory) if os.path.isdir(os.path.join(directory, name))])
     fig, [[ax0, ax1], [ax2, ax3]] = plt.subplots(2, 2, sharex=True)
 
-
     apical_errors = []
-    intn_errors= []
+    intn_errors = []
     ff_errors = []
     fb_errors = []
 
@@ -38,14 +34,12 @@ if __name__ == "__main__":
         with open(os.path.join(directory, config, "progress.json")) as f:
             progress = json.load(f)
 
-
         apical_error = np.array(progress["apical_error"])
         intn_error = np.array(progress["intn_error"])
 
         n_avg = 1000
         apical_errors.append([c_m_api, np.mean(apical_error[-n_avg:, 1])])
         intn_errors.append([c_m_api, np.mean(intn_error[-n_avg:, 1])])
-
 
         WHI = []
         WHY = []
@@ -56,7 +50,6 @@ if __name__ == "__main__":
         for weight_file in sorted(os.listdir(datadir)[-10:]):
             with open(os.path.join(datadir, weight_file)) as f:
                 weights = json.load(f)
-
 
                 WHI.append(weights[-2]["pi"])
                 WHY.append(weights[-2]["down"])
@@ -92,7 +85,7 @@ if __name__ == "__main__":
     ax2.set_ylim(bottom=0)
     ax3.set_ylim(bottom=0)
 
-    #ax1.legend()
+    # ax1.legend()
 
     # plt.show()
 

@@ -1,14 +1,15 @@
-import numpy as np
-from src.params import Params
-import src.plot_utils as plot_utils
-import matplotlib.pyplot as plt
 import sys
+
+import matplotlib.pyplot as plt
+import numpy as np
+import src.plot_utils as plot_utils
+from src.params import Params
 
 p = Params()
 
 
-def phi(x):
-    return p.gamma * np.log(1 + np.exp(p.beta * (x - p.theta)))
+# def phi(x):
+#     return p.gamma * np.log(1 + np.exp(p.beta * (x - p.theta)))
 
 
 def phi(x):

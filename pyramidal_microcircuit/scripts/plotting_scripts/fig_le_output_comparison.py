@@ -1,28 +1,21 @@
+import json
+from copy import deepcopy
+
+import matplotlib.pyplot as plt
 import numpy as np
-from src.params import Params
+import pandas as pd
 import src.plot_utils as plot_utils
 import src.utils as utils
-import matplotlib.pyplot as plt
-import sys
-import json
-from src.networks.network_numpy import NumpyNetwork
 from src.networks.network_nest import NestNetwork
-from copy import deepcopy
-import pandas as pd
-
-
-
+from src.params import Params
 
 p = Params()
-
 utils.setup_nest(p)
 
 ls = ["solid", "dashed", "dotted"]
 if __name__ == "__main__":
 
     weights = "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/results/par_study_t_pres_le/bars_snest/bars_le_tpres_1000_snest/data/weights_1000.json"
-    #weights = sys.argv[1]
-    #out_file = sys.argv[2]
     plot_utils.setup_plt()
     p.eta = {
         'ip': [0.0, 0, 0],
@@ -30,7 +23,6 @@ if __name__ == "__main__":
         'up': [0.0, 0.0, 0],
         'down': [0, 0, 0]
     }
-    # p.psi = 2000
 
     p.out_lag = 0
     p.t_pres = 50
@@ -51,7 +43,6 @@ if __name__ == "__main__":
     print(net_le.dims, net_sac.dims)
     net_le.set_all_weights(wgts)
     net_sac.set_all_weights(wgts)
-
 
     stim_in, stim_out = net_le.get_training_data(1)
     stim_in = [stim_in[0]]

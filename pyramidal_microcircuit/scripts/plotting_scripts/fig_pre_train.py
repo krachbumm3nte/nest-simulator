@@ -1,5 +1,6 @@
 import json
 import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import src.plot_utils as plot_utils
@@ -8,9 +9,9 @@ import src.utils as utils
 filter_window = 4
 test_samples = 250
 
-conf_names = {"bars_le_default_snest": "Default",
-              "bars_le_target_delay_snest": "Delayed target",
-              "bars_le_target_delay_soft_reset_snest": "Delayed target + soft reset"}
+conf_names = {"bars_default_snest": "Default",
+              "bars_no_selfpred_snest": "Random weights",
+              "bars_no_selfpred_soft_reset_snest": "Random weights + soft reset"}
 
 if __name__ == "__main__":
 
@@ -18,8 +19,8 @@ if __name__ == "__main__":
 
     curdir = os.path.dirname(os.path.realpath(__file__))
 
-    result_dir = os.path.join(curdir, "../../results/par_study_idle_time")
-    out_file = os.path.join(curdir, "../../data/fig_idle_time.png")
+    result_dir = os.path.join(curdir, "../../results/par_study_pre_train")
+    out_file = os.path.join(curdir, "../../data/fig_pre_train.png")
 
     dirnames = os.listdir(result_dir)
     test_error = []

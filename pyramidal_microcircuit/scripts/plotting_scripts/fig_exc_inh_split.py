@@ -1,10 +1,5 @@
 import nest
-import argparse
 import os
-import sys
-import time
-import json
-from datetime import timedelta
 
 import numpy as np
 import src.utils as utils

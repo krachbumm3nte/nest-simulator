@@ -1,11 +1,8 @@
 import json
 import os
-import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
-import src.plot_utils as plot_utils
-import src.utils as utils
 
 styles_c_m = {1: "-",
               10: ":",
@@ -63,7 +60,7 @@ if __name__ == "__main__":
     for psi, data in loss_all.items():
         data = sorted(data)
         ax1.scatter(np.arange(3), [i[1] for i in data], color=colors_psi[psi])
-    
+
     ax0.set_title("Test error")
     ax1.set_title("Test loss")
     ax0.set_xticks(np.arange(3))
@@ -77,10 +74,9 @@ if __name__ == "__main__":
     ax0.set_xlabel("$C_m^{api}$")
     ax1.set_xlabel("$C_m^{api}$")
 
-
     dummy_lines_2 = [[ax0.scatter(0, -1, color=col), r"$\psi = {}$".format(w_s)]
                      for [w_s, col] in sorted(colors_psi.items())]
     legend1 = ax0.legend(*zip(*dummy_lines_2), loc=0)
     ax0.add_artist(legend1)
-    
+
     plt.savefig(out_file)

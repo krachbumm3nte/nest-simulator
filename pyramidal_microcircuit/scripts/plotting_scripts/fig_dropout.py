@@ -1,14 +1,10 @@
 import json
 import os
-import re
-import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
 import src.plot_utils as plot_utils
-import src.utils as utils
 from sklearn.metrics import mean_squared_error as mse
-
 from src.params import Params
 
 filter_window = 4
@@ -82,7 +78,6 @@ if __name__ == "__main__":
 
             absent_whi = np.isnan(WHI)
             print(np.mean(np.abs(WHY)))
-
 
             absent_wih = np.isnan(WIH)
             print(np.mean(np.abs(WYH)))
