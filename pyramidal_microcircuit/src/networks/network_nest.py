@@ -74,7 +74,7 @@ class NestNetwork(Network):
         nest.Connect(self.output_stimulators,
                      self.layers[-1].pyr, conn_spec="one_to_one", syn_spec=syn_stim)
 
-        all_neurons = nest.GetNodes({"neuron_model": self.p.neuron_model})
+        all_neurons = nest.GetNodes({"model": self.p.neuron_model})
 
         # Inject Gaussian white noise into neuron somata.
         if self.p.noise:
@@ -135,7 +135,7 @@ class NestNetwork(Network):
             print(f"Processing neuron dropout of {round(100*dropout, 2)}% ...")
 
             # count total number of synapses between neurons (i.e. ecluding recorders and stimulators)
-            all_neurons = nest.GetNodes({"neuron_model": self.p.neuron_model})
+            all_neurons = nest.GetNodes({"model": self.p.neuron_model})
             n_total = len(nest.GetConnections(source=all_neurons, target=all_neurons))
             n_deleted = 0
             for i, layer in enumerate(self.layers):
