@@ -181,7 +181,7 @@ input and 3 output neurons, dims are: {p.dims}")
         y_batch = np.zeros((n_samples, self.dims[-1]))
 
         for i, x in enumerate(x_batch):
-            y_batch[i, :] = self.phi(self.wyh_trgt @ self.phi(self.whx_trgt @ x))
+            y_batch[i, :] = self.phi(self.wyh_trgt @ self.phi(self.whx_trgt @ (self.gamma * x)))
 
         return x_batch, y_batch
 

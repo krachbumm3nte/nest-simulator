@@ -363,4 +363,11 @@ class NestNetwork(Network):
             self.set_weights_from_syn(weight_dict[i]["pi"], layer.pi)
             self.set_weights_from_syn(weight_dict[i]["down"], layer.down)
         self.set_weights_from_syn(weight_dict[-1]["up"], self.layers[-1].up)
+
+        if self.p.add_inhibitory_stims:
+            if "up_inh" not in weight_dict[0]:
+                print("Unable to read inhibitory stimulator weights from provided dict!")
+            else:
+                syn_stim_inh = nest.GetConnections(self.input_neurons_inh, self.layers[0].pyr)
+                self.set_weights_from_syn(weight_dict[0]["up_inh"], syn_stim_inh)
         print("Done")
