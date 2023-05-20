@@ -102,7 +102,7 @@
     },
     "latent_equilibrium": true,
     "mode": "teacher",
-    "n_epochs": 30000,
+    "n_epochs": 50000,
     "network_type": "snest",
     "neuron_model": "pp_cond_exp_mc_pyr",
     "noise": true,
