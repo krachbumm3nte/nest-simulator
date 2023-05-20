@@ -5,13 +5,13 @@ from copy import deepcopy
 root_dir = os.path.dirname(os.path.realpath(__file__))
 target_dir = os.path.join(root_dir, "par_study_c_m_psi")
 
-psi_list = [10, 50, 100]
+psi_list = [5, 10, 50]
 c_m_list = [1, 10, 50]
 
 
 default_config = {
-    "t_pres": 200,
-    "out_lag": 130.0,
+    "t_pres": 100,
+    "out_lag": 70,
     "eta": {
         "ip": [
             0.0001,
@@ -23,7 +23,7 @@ default_config = {
         ],
         "up": [
             0.00025,
-            0.00005
+            0.000075
         ],
         "down": [
             0.0,
