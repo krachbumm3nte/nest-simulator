@@ -23,16 +23,16 @@
     ],
     "eta": {
         "ip": [
-            8e-10,
+            8e-09,
             0.0
         ],
         "pi": [
-            1e-07,
+            1e-06,
             0.0
         ],
         "up": [
-            2e-09,
-            4e-10
+            2e-08,
+            6e-09
         ],
         "down": [
             0.0,
@@ -101,7 +101,7 @@
     "network_type": "snest",
     "neuron_model": "pp_cond_exp_mc_pyr",
     "noise": false,
-    "out_lag": 130.0,
+    "out_lag": 70,
     "p_conn": 1.0,
     "psi": 50,
     "pyr_params": {
@@ -147,7 +147,7 @@
         "synapse_model": "static_synapse",
         "delay": 0.1
     },
-    "t_pres": 200,
+    "t_pres": 100,
     "t_ref": 0,
     "target_delay": 0,
     "tau_delta": 1.0,
