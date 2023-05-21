@@ -14,7 +14,7 @@
         5
     ],
     "test_interval": 2500,
-    "n_epochs": 30000,
+    "n_epochs": 50000,
     "noise": true,
     "sigma": 0.01,
     "gamma": 0.8,

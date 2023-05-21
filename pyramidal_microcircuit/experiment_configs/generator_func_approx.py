@@ -17,7 +17,7 @@ config = {
     "dims_teacher": deepcopy(dims_teacher),
     "dims": deepcopy(dims_teacher),
     "test_interval": 2500,
-    "n_epochs": 30000,
+    "n_epochs": 50000,
     "noise": True,
     "sigma": 0.01,
     "gamma": 0.8,
