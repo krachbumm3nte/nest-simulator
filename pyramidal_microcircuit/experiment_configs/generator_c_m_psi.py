@@ -14,16 +14,16 @@ default_config = {
     "out_lag": 70,
     "eta": {
         "ip": [
-            0.0001,
+            0.002,
             0.0
         ],
         "pi": [
-            0.00025,
+            0.005,
             0.0
         ],
         "up": [
-            0.00025,
-            0.000075
+            0.005,
+            0.0015
         ],
         "down": [
             0.0,
@@ -33,7 +33,7 @@ default_config = {
     "init_self_pred": False,
     "network_type": "snest",
     "psi": 100,
-    "n_epochs": 1000,
+    "n_epochs": 500,
     "C_m_api": 1
 }
 
