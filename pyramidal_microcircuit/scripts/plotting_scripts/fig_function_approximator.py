@@ -12,8 +12,8 @@ import pandas as pd
 from sklearn.metrics import explained_variance_score, r2_score
 
 perform_final_tests = True
-n_samples = 50
-test_samples = 10
+train_samples = 1000
+test_samples = 1000
 
 
 if __name__ == "__main__":
@@ -30,11 +30,11 @@ if __name__ == "__main__":
     test_loss = []
     train_loss = []
     r2_scores = []
-    fig, [ax0, ax1, ax2] = plt.subplots(1, 3, sharex=True, figsize=(8, 5))
+    fig, [ax0, ax1, ax2] = plt.subplots(1, 3, sharex=True, figsize=(8, 3.5))
 
     all_configs = sorted([name for name in os.listdir(result_dir) if os.path.isdir(os.path.join(result_dir, name))])
 
-    for config in all_configs:
+    for c, config in enumerate(all_configs):
 
         if perform_final_tests:
             # Perform a large batch of tests and calculate r2 scores
@@ -42,12 +42,18 @@ if __name__ == "__main__":
             if "weights.json" not in os.listdir(os.path.join(result_dir, config)):
                 continue
 
-            params = Params(os.path.join(result_dir, config, "params.json"))
+            with open(os.path.join(result_dir, config, "params.json")) as f:
+                params_full = json.load(f)
+
+            params_dir = params_full["config_file"]
+
+            basedir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+            params = Params(os.path.join(basedir, params_dir))
             n = params.dims[1]
             print(f"\n\nTesting for n={n}")
-            params.psi = 250
-            params.noise = False
-            params.sigma = 0
+            # params.psi = 250
+            #params.noise = False
+            #params.sigma = 0
             params.threads = 8
             params.eta = {
                 "up": [0, 0],
@@ -57,11 +63,10 @@ if __name__ == "__main__":
             }
             utils.setup_nest(params)
 
-            net = NestNetwork(params)
-
             with open(os.path.join(result_dir, config, "weights.json")) as f:
                 wgts = json.load(f)
-            net.set_all_weights(wgts)
+            net = NestNetwork(params, wgts)
+            # net.set_all_weights(wgts)
 
             with open(os.path.join(result_dir, config, "progress.json")) as f:
                 progress = json.load(f)
@@ -70,9 +75,13 @@ if __name__ == "__main__":
             net_test_loss = []
             y_pred_total = []
 
-            x_batch, y_batch = net.get_test_data(test_samples)
+            if c == 0:
+                x_batch, y_batch = net.get_test_data(test_samples)
+
             net.disable_plasticity()
             for i, (x, y) in enumerate(zip(x_batch, y_batch)):
+                if i % 100 == 0:
+                    print(f"Test sample: {i}")
                 net.set_input(x)
                 net.simulate(net.t_pres, True)
                 mm_data = pd.DataFrame.from_dict(net.mm.events)
@@ -86,9 +95,9 @@ if __name__ == "__main__":
 
             test_error.append([n, 1-np.mean(net_test_acc)])
             test_loss.append([n, np.mean(net_test_loss)])
-            print(y_batch)
-            print(np.array(y_pred_total))
-            print()
+            # print(y_batch)
+            # print(np.array(y_pred_total))
+            # print()
             r2_scores.append([n, r2_score(y_true=y_batch, y_pred=np.array(y_pred_total))])
             nest.ResetKernel()
         else:
@@ -96,13 +105,14 @@ if __name__ == "__main__":
             test_error.append([n, np.mean([1-i[1] for i in progress["test_acc"][-8:]])])
             test_loss.append([n, np.mean([i[1] for i in progress["test_loss"][-8:]])])
 
-        train_loss.append([n, np.mean([i[1] for i in progress["train_loss"][-n_samples:]])])
+        train_loss.append([n, np.mean([i[1] for i in progress["train_loss"][-train_samples:]])])
 
     ax0.plot(*zip(*sorted(test_loss)), label="Test")
     ax0.plot(*zip(*sorted(train_loss)), label="Train")
     ax1.plot(*zip(*sorted(test_error)))
     ax2.plot(*zip(*sorted(r2_scores)), label=r"$R^2$ score")
 
+    print(sorted(test_loss))
     ax0.set_title("Loss")
     ax1.set_title("Test error")
     ax2.set_title(r"$R^2 score$")

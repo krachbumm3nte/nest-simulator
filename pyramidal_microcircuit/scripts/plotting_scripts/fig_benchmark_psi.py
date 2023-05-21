@@ -33,7 +33,7 @@ labels = {
                  "color": "green"}
 }
 
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(4,2.25))
 all_bars = []
 for name, cfg in labels.items():
     bar = ax.bar(cfg["X"], results[name]["t_mean"], color=cfg["color"], label=cfg["label"], width=width)
