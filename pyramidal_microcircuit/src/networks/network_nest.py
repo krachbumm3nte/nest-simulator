@@ -123,7 +123,10 @@ class NestNetwork(Network):
             # Spiking input neurons cannot communicate negative inputs under default parametrization. ,
             # A secondary population is therefore required.
             syn_stim_inh = deepcopy(self.layers[0].synapses["up"])
-            syn_stim_inh["weight"] = syn_stim_inh["weight"] * -1  # invert synaptic weights
+            if self.init_weights:
+                syn_stim_inh["weight"] = np.array(self.init_weights[0]["up_inh"]) / self.psi
+            else:
+                syn_stim_inh["weight"] = syn_stim["weight"] * -1  # invert synaptic weights
             self.input_neurons_inh = nest.Create(self.p.neuron_model, self.dims[0], self.p.input_params)
             nest.Connect(self.input_neurons_inh, self.layers[0].pyr, conn_spec="all_to_all", syn_spec=syn_stim_inh)
             # TODO: this feature so far is incompatible with dropout

@@ -116,7 +116,12 @@ if __name__ == "__main__":
         imgdir = os.path.join(root_dir, "plots")
         datadir = os.path.join(root_dir, "data")
         args.weights = os.path.join(root_dir, "weights.json")
-        params = Params(os.path.join(root_dir, "params.json"))
+        with open(os.path.join(root_dir, "params.json")) as f:
+            p_full = json.load(f)
+        params_dir = p_full["config_file"]
+
+        basedir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        params = Params(os.path.join(basedir, params_dir))
         with open(os.path.join(root_dir, "progress.json"), "r") as f:
             progress = json.load(f)
         params.init_self_pred = False
@@ -166,7 +171,7 @@ if __name__ == "__main__":
         net.train_loss = progress["train_loss"]
         net.ff_error = progress["ff_error"]
         net.fb_error = progress["fb_error"]
-        epoch_offset = progress["epochs_completed"]
+        epoch_offset = progress["epochs_completed"] + 1
         net.epoch = epoch_offset
         print(f"continuing training from epoch {epoch_offset}")
     else:
