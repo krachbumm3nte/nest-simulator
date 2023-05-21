@@ -23,16 +23,16 @@
     ],
     "eta": {
         "ip": [
-            8e-10,
+            8e-09,
             0.0
         ],
         "pi": [
-            1e-07,
+            1e-06,
             0.0
         ],
         "up": [
-            2e-09,
-            6e-10
+            2e-08,
+            6e-09
         ],
         "down": [
             0.0,
@@ -97,7 +97,7 @@
     },
     "latent_equilibrium": true,
     "mode": "bars",
-    "n_epochs": 1000,
+    "n_epochs": 500,
     "network_type": "snest",
     "neuron_model": "pp_cond_exp_mc_pyr",
     "noise": false,
