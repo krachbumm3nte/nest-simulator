@@ -84,8 +84,9 @@ if __name__ == "__main__":
             y_pred_total.append(y_pred)
             net.reset()
 
-        final_acc = np.mean(net_test_acc)
         final_loss = np.mean(net_test_loss)
+        # we add a minor shift to all accuracies. This ensures that dots don't fully overlap in the figure
+        final_acc = np.mean(net_test_acc) - 0.05 * final_loss
         error_all[psi].append((c_m, 1-final_acc))
         loss_all[psi].append((c_m, final_loss))
 
