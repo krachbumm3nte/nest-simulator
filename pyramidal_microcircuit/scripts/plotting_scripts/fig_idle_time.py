@@ -41,10 +41,10 @@ if __name__ == "__main__":
         test_acc[:, 1] = 1 - test_acc[:, 1]
         ax0.plot(test_acc[:, 0], utils.rolling_avg(test_acc[:, 1], 5), label=conf_names[config])
         ax1.plot(test_loss[:, 0], utils.rolling_avg(test_loss[:, 1], 10), label=conf_names[config])
-    ax0.set_xlim(0, 500)
-    ax1.set_xlim(0, 500)
+    ax0.set_xlim(0, 300)
+    ax1.set_xlim(0, 300)
 
-    ax0.set_ylim(-0.01, 0.7)
+    ax0.set_ylim(-0.01, 0.6)
     ax1.set_ylim(-0.005, 0.25)
 
     ax0.set_title("Test error")
@@ -54,6 +54,7 @@ if __name__ == "__main__":
     ax1.set_xlabel("Epoch")
 
     ax0.legend()
+    ax1.legend()
 
     # plt.show()
     plt.savefig(out_file)

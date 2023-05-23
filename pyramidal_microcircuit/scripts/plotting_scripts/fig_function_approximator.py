@@ -52,8 +52,8 @@ if __name__ == "__main__":
             n = params.dims[1]
             print(f"\n\nTesting for n={n}")
             # params.psi = 250
-            #params.noise = False
-            #params.sigma = 0
+            # params.noise = False
+            # params.sigma = 0
             params.threads = 8
             params.eta = {
                 "up": [0, 0],
@@ -62,8 +62,10 @@ if __name__ == "__main__":
                 "ip": [0, 0]
             }
             utils.setup_nest(params)
-
-            with open(os.path.join(result_dir, config, "weights.json")) as f:
+            last_it = max([int(i.split(".")[0].split("_")[-1])
+                          for i in os.listdir(os.path.join(result_dir, config, "data"))])
+            print(last_it)
+            with open(os.path.join(result_dir, config, "data", f"weights_{last_it}.json")) as f:
                 wgts = json.load(f)
             net = NestNetwork(params, wgts)
             # net.set_all_weights(wgts)

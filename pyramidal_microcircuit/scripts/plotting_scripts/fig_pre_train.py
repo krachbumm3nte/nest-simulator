@@ -9,7 +9,7 @@ import src.utils as utils
 filter_window = 4
 test_samples = 250
 
-conf_names = {"bars_default_snest": "Default",
+conf_names = {"bars_default_snest": "Self-predicting weights",
               "bars_no_selfpred_snest": "Random weights",
               "bars_no_selfpred_soft_reset_snest": "Random weights + soft reset"}
 
@@ -40,12 +40,12 @@ if __name__ == "__main__":
         test_acc = np.array(sorted(progress["test_acc"]))
         test_loss = np.array(sorted(progress["test_loss"]))
         test_acc[:, 1] = 1 - test_acc[:, 1]
-        ax0.plot(test_acc[:, 0], utils.rolling_avg(test_acc[:, 1], 5), label=conf_names[config])
+        ax0.plot(test_acc[:, 0], utils.rolling_avg(test_acc[:, 1], 2), label=conf_names[config])
         ax1.plot(test_loss[:, 0], utils.rolling_avg(test_loss[:, 1], 10), label=conf_names[config])
-    ax0.set_xlim(0, 500)
-    ax1.set_xlim(0, 500)
+    ax0.set_xlim(0, 400)
+    ax1.set_xlim(0, 400)
 
-    ax0.set_ylim(-0.01, 0.7)
+    ax0.set_ylim(-0.01, 0.6)
     ax1.set_ylim(-0.005, 0.25)
 
     ax0.set_title("Test error")

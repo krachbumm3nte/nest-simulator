@@ -30,7 +30,7 @@ if __name__ == "__main__":
     out_file = os.path.join(curdir, "../../data/fig_reset_strategies.png")
 
     all_configs = sorted(os.listdir(directory))
-    fig, [ax0, ax1] = plt.subplots(2, 1)
+    fig, [ax0, ax1] = plt.subplots(1, 2,  sharex=True, figsize=[8, 3])
 
     orig_data_1 = []
     le_data_1 = []
@@ -61,27 +61,18 @@ if __name__ == "__main__":
         ax0.plot(times, utils.rolling_avg(acc, filter_window), label=label)
         ax1.plot(times, utils.rolling_avg(loss, filter_window), label=label)
 
+    ax0.set_xlim(0, 600)
+    ax1.set_xlim(0, 600)
 
-    le_data_1 = sorted(le_data_1)
-    orig_data_1 = sorted(orig_data_1)
+    ax0.set_ylim(-0.01, 0.6)
+    ax1.set_ylim(-0.005, 0.25)
 
-    le_data_1 = [[t, 1-acc] for [t, acc] in le_data_1]
-    orig_data_1 = [[t, 1-acc] for [t, acc] in orig_data_1]
+    ax0.set_title("Test error")
+    ax1.set_title("Test loss")
 
-    ax0.set_ylim(0, 1)
-    ax1.set_ylim(0, 1)
-
-    ax0.set_ylabel("Test error")
-
+    ax0.set_xlabel("Epoch")
     ax1.set_xlabel("Epoch")
-    ax1.set_ylabel("Test loss")
 
-    ax0.annotate("A", xy=(0.02, 0.985), xycoords='figure fraction',
-                 horizontalalignment='left', verticalalignment='top',
-                 fontsize=20)
-
-    ax0.annotate("B", xy=(0.02, 0.485), xycoords='figure fraction',
-                 horizontalalignment='left', verticalalignment='top',
-                 fontsize=20)
     ax0.legend()
+
     plt.savefig(out_file)

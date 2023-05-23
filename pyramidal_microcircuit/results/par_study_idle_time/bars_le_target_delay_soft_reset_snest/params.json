@@ -4,6 +4,7 @@
     "C_m_som": 1,
     "Wmax": 4,
     "Wmin": -4,
+    "add_inhibitory_stims": false,
     "beta": 1,
     "compartments": {
         "apical_lat_curr": 6,
@@ -13,7 +14,7 @@
         "soma_curr": 4,
         "soma": 1
     },
-    "config_file": "experiment_configs/bars_le_target_delay_soft_reset.json",
+    "config_file": "experiment_configs/par_study_idle_time/bars_le_target_delay_soft_reset.json",
     "delta_t": 0.1,
     "dims": [
         9,

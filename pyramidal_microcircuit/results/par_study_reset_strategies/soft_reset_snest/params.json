@@ -4,6 +4,7 @@
     "C_m_som": 1,
     "Wmax": 4,
     "Wmin": -4,
+    "add_inhibitory_stims": false,
     "beta": 1,
     "compartments": {
         "apical_lat_curr": 6,
@@ -67,8 +68,8 @@
         "beta": 1,
         "theta": 0,
         "use_phi": false,
-        "t_ref": 0.0,
-        "latent_equilibrium": true
+        "t_ref": 0,
+        "latent_equilibrium": false
     },
     "intn_params": {
         "soma": {
@@ -91,21 +92,18 @@
         "beta": 1,
         "theta": 0,
         "use_phi": true,
-        "t_ref": 0.0,
+        "t_ref": 0,
         "latent_equilibrium": true
     },
-    "lambda_ah": 0.3157894736842105,
-    "lambda_bh": 0.5263157894736842,
-    "lambda_out": 0.7692307692307693,
     "latent_equilibrium": true,
     "mode": "bars",
     "n_epochs": 1000,
     "network_type": "snest",
     "neuron_model": "pp_cond_exp_mc_pyr",
     "noise": false,
-    "noise_factor": 0.09486832980505137,
     "out_lag": 35.0,
     "p_conn": 1.0,
+    "psi": 100,
     "pyr_params": {
         "soma": {
             "g_L": 0.03,
@@ -127,7 +125,7 @@
         "beta": 1,
         "theta": 0,
         "use_phi": true,
-        "t_ref": 0.0,
+        "t_ref": 0,
         "latent_equilibrium": true
     },
     "record_interval": 1,
@@ -150,14 +148,13 @@
         "delay": 0.1
     },
     "t_pres": 50,
+    "t_ref": 0,
+    "target_delay": 0,
     "tau_delta": 1.0,
     "tau_x": 0.1,
-    "test_delay": 5,
     "test_interval": 10,
-    "test_time": 10,
     "theta": 0,
     "threads": 8,
-    "psi": 100,
     "wmax_init": 1,
     "wmin_init": -1
 }

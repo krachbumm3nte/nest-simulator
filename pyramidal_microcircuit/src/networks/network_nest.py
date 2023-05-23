@@ -334,7 +334,10 @@ class NestNetwork(Network):
                 layer.reset()
         elif self.p.reset == 1:
             # soft reset TODO: parametrize relaxation time?
-            nest.Simulate(15)
+            for i in range(5):
+                self.set_input(np.random.random(self.dims[0]))
+                nest.Simulate(3)
+            self.set_input(np.zeros(self.dims[0]))
 
         all_nrns = nest.GetNodes({"model": self.p.neuron_model})
         all_nrns.set({"soma": {"V_m": 0, "I_e": 0},
