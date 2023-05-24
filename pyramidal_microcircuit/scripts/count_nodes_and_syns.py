@@ -1,16 +1,29 @@
-import numpy as np
+# -*- coding: utf-8 -*-
+#
+# count_nodes_and_syns.py
+#
+# This file is part of NEST.
+#
+# Copyright (C) 2004 The NEST Initiative
+#
+# NEST is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# NEST is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NEST.  If not, see <http://www.gnu.org/licenses/>.
+
 from src.params import Params
-import src.plot_utils as plot_utils
-import src.utils as utils
-import matplotlib.pyplot as plt
-import sys
-import json
-from src.networks.network_numpy import NumpyNetwork
 from src.networks.network_nest import NestNetwork
-from copy import deepcopy
 import nest
 
-conf_file = "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/experiment_configs/mnist_full.json"
+conf_file = "experiment_configs/mnist_full.json"
 
 p = Params(conf_file)
 p.mode = "selfpred"

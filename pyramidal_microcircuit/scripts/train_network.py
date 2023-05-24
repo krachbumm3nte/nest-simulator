@@ -1,8 +1,28 @@
+# -*- coding: utf-8 -*-
+#
+# train_network.py
+#
+# This file is part of NEST.
+#
+# Copyright (C) 2004 The NEST Initiative
+#
+# NEST is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# NEST is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NEST.  If not, see <http://www.gnu.org/licenses/>.
+
 import argparse
 import json
 import os
 import sys
-import warnings
 from datetime import timedelta
 from time import time
 
@@ -11,17 +31,29 @@ import src.utils as utils
 from src.networks.network_nest import NestNetwork
 from src.networks.network_numpy import NumpyNetwork
 from src.params import Params
-from src.plot_utils import plot_training_progress, plot_pre_training
-
-warnings.simplefilter('error', RuntimeWarning)
+from src.plot_utils import plot_pre_training, plot_training_progress
 
 
 def run_simulations(net, params, root_dir, imgdir, datadir, plot_interval=0, progress_interval=200, epoch_offset=0):
+    """Trains a network according to a given set of parameters
+
+    Arguments:
+        net -- instance of networks.Network
+        params -- instance of params.Params
+        root_dir -- base dir for storing simulation-relevant files
+        imgdir -- subdirectory for plots
+        datadir -- subdirectory for intermittent weight files
+
+    Keyword Arguments:
+        plot_interval -- number of training epochs after which to generate a figure of training progress (default: {0})
+        progress_interval -- number of training epochs after which to store training progress to disk (default: {200})
+        epoch_offset -- offset for indexing training data when continuing previous simulations (default: {0})
+    """
     simulation_times = []
 
     try:  # catches KeyboardInterruptException to ensure proper cleanup and storage of progress upon abort
         if epoch_offset == 0:
-            net.test_epoch()  # begin with initial test
+            net.test_epoch()  # begin each simulation with an initial test
 
         # core training loop
         for epoch in range(epoch_offset, params.n_epochs + 1):
@@ -54,12 +86,14 @@ def run_simulations(net, params, root_dir, imgdir, datadir, plot_interval=0, pro
                 print(f"\t epoch time: {np.mean(simulation_times[-50:]):.2f}s, " +
                       f"ETA: {timedelta(seconds=np.round(t_epoch * (params.n_epochs-epoch)))}\n")
 
+            # plot progress
             if plot_interval > 0 and epoch % plot_interval == 0:
                 if net.mode == "self-pred":
                     plot_pre_training(epoch, net, os.path.join(imgdir, f"{epoch}.png"))
                 else:
                     plot_training_progress(epoch, net, os.path.join(imgdir, f"{epoch}.png"))
 
+            # update .json file with current loss and accuracy scores.
             if epoch % progress_interval == 0:
                 print("storing progress...", end="")
                 utils.store_synaptic_weights(net, os.path.join(datadir, f"weights_{epoch}.json"))
@@ -73,6 +107,7 @@ def run_simulations(net, params, root_dir, imgdir, datadir, plot_interval=0, pro
         print("Weights stored to disk.")
         utils.store_progress(net, root_dir, epoch)
         print("progress stored to disk.")
+
         if net.mode == "self-pred":
             plot_pre_training(epoch, net, os.path.join(imgdir, f"{epoch}.png"))
         else:
@@ -82,14 +117,18 @@ def run_simulations(net, params, root_dir, imgdir, datadir, plot_interval=0, pro
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog="train_network", usage="General training script for dendritic error " +
+                                     "networks. If run without arguments, a spiking neural network is trained " +
+                                     "on the 'Bars' dataset. Most parameters should be set in a .json file " +
+                                     "located at --config.")
     parser.add_argument("--network",
                         type=str, choices=["numpy", "rnest", "snest"],
-                        help="""Type of network to train. Choice between exact mathematical simulation ('numpy') and \
-    NEST simulations with rate- or spiking neurons ('rnest', 'snest')""")
+                        help="Type of network to train. Choice between matrix-based simulation  of rate neurons " +
+                        "('numpy') and NEST simulations with rate- or spiking neurons ('rnest', 'snest') ")
     parser.add_argument("--cont",
                         type=str,
-                        help="""continue training the simulation at the specified location.""")
+                        help="continue training of the simulation at the specified location. Ignores some " +
+                        "other arguments")
     parser.add_argument("--weights",
                         type=str,
                         help="Start simulations from a set of weights stored in the specified .json file.")
@@ -112,9 +151,17 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.cont:
+        # In this special case, network is set up so as to mirror the
+        # final iteration of a previous run exactly. This becomes somewhat
+        # involved, but functions correctly to the best of my knowledge.
         root_dir = args.cont
         imgdir = os.path.join(root_dir, "plots")
         datadir = os.path.join(root_dir, "data")
+
+        # This is somewhat ugly, but reading out the full params file created by
+        # a network leads to some errors that are annoying to fix. So the
+        # location of the original config file is read out, and the network is
+        # instantiated from that instead.
         args.weights = os.path.join(root_dir, "weights.json")
         with open(os.path.join(root_dir, "params.json")) as f:
             p_full = json.load(f)
@@ -124,6 +171,7 @@ if __name__ == "__main__":
         params = Params(os.path.join(basedir, params_dir))
         with open(os.path.join(root_dir, "progress.json"), "r") as f:
             progress = json.load(f)
+
         params.init_self_pred = False
         spiking = params.spiking
     else:
@@ -147,7 +195,7 @@ if __name__ == "__main__":
         spiking = params.network_type == "snest"
         params.spiking = spiking
         root_dir, imgdir, datadir = utils.setup_directories(name=config_name, type=params.network_type)
-        # params.mode = args.mode
+
     params.threads = args.threads
 
     utils.setup_nest(params, datadir)
@@ -166,6 +214,8 @@ if __name__ == "__main__":
         net = NestNetwork(params, init_weights)
 
     if args.cont:
+        # If continuing previous training, read out progress and store it in the
+        # network class again.
         net.test_acc = progress["test_acc"]
         net.test_loss = progress["test_loss"]
         net.train_loss = progress["train_loss"]

@@ -1,6 +1,25 @@
+# -*- coding: utf-8 -*-
+#
+# benchmark_simulation_time.py
+#
+# This file is part of NEST.
+#
+# Copyright (C) 2004 The NEST Initiative
+#
+# NEST is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# NEST is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NEST.  If not, see <http://www.gnu.org/licenses/>.
+
 import json
-import os
-import sys
 import nest
 
 import src.utils as utils
@@ -11,18 +30,20 @@ import src.plot_utils as plot_utils
 
 import nest
 from time import time
-import matplotlib.pyplot as plt
 import argparse
 import numpy as np
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog="benchmark_simulation_time", usage="Performs benchmarks of simulation time " +
+                                     "for a given set of parameter configurations.")
     parser.add_argument("--config", type=str,
-                        help="configuration file")
-    parser.add_argument("--out_file",
-                        type=str,
-
+                        help="path to a .json file specifying the configuration. Should contain four components: " +
+                        "\n\tn_samples: number of training samples to run" +
+                        "\n\tn_repetitions: number of independent runs over which to perform the benchmark " +
+                        "\n\tconfigs: set of named configurations, which specify individual parameters" +
+                        "\n\tglobal_params: parameters that apply to all configurations")
+    parser.add_argument("--out_file", type=str,
                         help="file in which to store simulation results")
     args = parser.parse_args()
     plot_utils.setup_plt()

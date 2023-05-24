@@ -1,7 +1,29 @@
+# -*- coding: utf-8 -*-
+#
+# test_negative_input_response.py
+#
+# This file is part of NEST.
+#
+# Copyright (C) 2004 The NEST Initiative
+#
+# NEST is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# NEST is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NEST.  If not, see <http://www.gnu.org/licenses/>.
+
+# This script shows that negative inputs do not lead to any kind of signal transmission in the spiking network.
+
 import nest
 import src.utils as utils
 from src.networks.network_nest import NestNetwork
-from src.networks.network_numpy import NumpyNetwork
 from src.params import Params
 import numpy as np
 import pandas as pd
@@ -41,9 +63,9 @@ v_dend = utils.get_mm_data(data, net.layers[0].intn, "V_m.s")
 v_bas = utils.get_mm_data(data, net.layers[1].pyr, "V_m.s")
 
 for i in range(9):
-    plt.plot(v_som[:,i])
+    plt.plot(v_som[:, i])
 plt.show()
 print(np.std(v_api, axis=0))
 print(np.mean(np.std(v_api, axis=0)))
-print(np.mean(np.array(net.intn_error)[:,1]))
+print(np.mean(np.array(net.intn_error)[:, 1]))
 print(np.mean(np.std(v_bas, axis=0)))
