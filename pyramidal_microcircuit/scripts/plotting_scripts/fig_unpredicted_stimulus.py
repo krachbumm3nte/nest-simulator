@@ -1,3 +1,24 @@
+# -*- coding: utf-8 -*-
+#
+# fig_unpredicted_stimulus.py
+#
+# This file is part of NEST.
+#
+# Copyright (C) 2004 The NEST Initiative
+#
+# NEST is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# NEST is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NEST.  If not, see <http://www.gnu.org/licenses/>.
+
 import json
 import os
 
@@ -12,7 +33,7 @@ import nest
 
 plot_utils.setup_plt()
 
-simulation_dir = "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/results/bars_le_full_plast_deep_snest"
+simulation_dir = "results/bars_le_full_plast_deep_snest"
 weight_loc = os.path.join(simulation_dir, "data/weights_1000.json")
 p = Params(os.path.join(simulation_dir, "params.json"))
 p.spiking = True
@@ -125,4 +146,4 @@ ax.bar(ind+gap, pyr_spikes_train, align="edge", width=width, color="r", bottom=i
 ax.set_ylabel(r"$N_{spikes}$")
 ax.set_xticks(ind, ["Random weights", "Selfpredicting weights", "After training"])
 ax.legend(labels=["Interneurons", "Pyramidal neurons"])
-plt.savefig("/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/data/fig_unpredicted_stimulus.png")
+plt.savefig("data/fig_unpredicted_stimulus.png")

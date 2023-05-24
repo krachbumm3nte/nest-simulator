@@ -1,3 +1,24 @@
+# -*- coding: utf-8 -*-
+#
+# fig_le_errors_comparison.py
+#
+# This file is part of NEST.
+#
+# Copyright (C) 2004 The NEST Initiative
+#
+# NEST is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# NEST is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NEST.  If not, see <http://www.gnu.org/licenses/>.
+
 import numpy as np
 from src.params import Params
 import src.plot_utils as plot_utils
@@ -11,7 +32,7 @@ p = Params()
 ls = ["solid", "dashed", "dotted"]
 if __name__ == "__main__":
 
-    # weights = /home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/results/par_study_t_pres_le/bars_numpy/bars_le_tpres_5000_numpy/data/weights_1000.json
+    # weights = results/par_study_t_pres_le/bars_numpy/bars_le_tpres_5000_numpy/data/weights_1000.json
     weights = sys.argv[1]
     out_file = sys.argv[2]
     plot_utils.setup_plt()
