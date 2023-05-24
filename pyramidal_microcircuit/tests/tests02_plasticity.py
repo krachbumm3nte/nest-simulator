@@ -10,7 +10,7 @@ class PlasticityYH(DynamicsYH):
 
         conn = nest.GetConnections(self.neuron_01, self.neuron_02)
         if self.spiking:
-            conn.eta = self.eta/(self.psi**2 * self.tau_delta)
+            conn.eta = self.eta/(self.psi**3 * self.tau_delta)
             conn.weight = self.weight / self.psi
         else:
             conn.eta = self.eta
@@ -94,7 +94,7 @@ class PlasticityHX(DynamicsHX):
 
         self.conn = nest.GetConnections(self.neuron_01, self.neuron_02)
         if self.spiking:
-            self.conn.eta = self.eta/(self.psi**2 * self.tau_delta)
+            self.conn.eta = self.eta/(self.psi**3 * self.tau_delta)
             self.conn.weight = self.weight / self.psi
         else:
             self.conn.eta = self.eta
@@ -180,7 +180,7 @@ class PlasticityHXMulti(PlasticityHX):
         synapse = self.p.syn_plastic
         if self.spiking:
             synapse["weight"] = self.weight2 / self.psi
-            synapse["eta"] = self.eta/(self.psi**2 * self.tau_delta)
+            synapse["eta"] = self.eta/(self.psi**3 * self.tau_delta)
         else:
             synapse["weight"] = self.weight2
             synapse["eta"] = self.eta
@@ -575,6 +575,7 @@ class DeepNetworkPlasticity(TestClass):
             self.nest_net.set_input(input_currents)
             self.numpy_net.set_input(input_currents)
             self.nest_net.set_target(target_currents)
+            self.numpy_net.set_target(target_currents)
 
             for i in range(int(self.t_pres/self.p.record_interval)):
                 self.numpy_net.simulate(self.p.record_interval, True)

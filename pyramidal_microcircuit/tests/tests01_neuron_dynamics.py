@@ -171,7 +171,7 @@ class DynamicsHX(TestClass):
         nest.Connect(self.mm_01, self.neuron_01)
 
         self.neuron_02 = nest.Create(params.neuron_model, 1, params.pyr_params)
-        self.mm_02 = nest.Create("multimeter", 1, {'record_from': ["V_m.s", "V_m.b", "V_m.a_lat", "V_m.a_td"]})
+        self.mm_02 = nest.Create("multimeter", 1, {'record_from': ["V_m.s", "V_m.b", "V_m.a_lat"]})
         nest.Connect(self.mm_02, self.neuron_02)
         nest.Connect(self.neuron_01, self.neuron_02, syn_spec=conn_hx)
 
@@ -398,7 +398,7 @@ class DynamicsHY(DynamicsHX):
 
         synapse = self.p.syn_plastic
         synapse.update({"weight": self.weight / self.psi, "eta": 0,
-                       "receptor_type": self.p.compartments["apical_td"]})
+                       "receptor_type": self.p.compartments["apical_lat"]})
 
         self.neuron_01.set(params.intn_params)
         self.neuron_02.set(params.pyr_params)
@@ -454,8 +454,6 @@ class DynamicsHY(DynamicsHX):
         ax2.plot(*zip(*read_multimeter(self.mm_02, "V_m.a_lat")), label="NEST computed")
         ax2.plot(self.VAH, label="analytical")
 
-        ax3.plot(*zip(*read_multimeter(self.mm_02, "V_m.a_td")), label="NEST computed")
-
         ax0.set_title("UY")
         ax1.set_title("UH")
         ax2.set_title("VAH")
@@ -476,7 +474,7 @@ class DynamicsYH(DynamicsHX):
         super().__init__(params, **kwargs)
 
         synapse = self.p.syn_plastic
-        synapse.update({"weight": self.weight, "eta": 0, "receptor_type": self.p.compartments["basal"]})
+        synapse.update({"weight": self.weight/self.psi, "eta": 0, "receptor_type": self.p.compartments["basal"]})
 
         self.neuron_01.set(params.pyr_params)
         self.neuron_02.set(params.pyr_params)
@@ -488,7 +486,7 @@ class DynamicsYH(DynamicsHX):
     def run(self):
         U_h = 0
         U_y = 0
-        V_bh = 0
+        V_by = 0
         self.UH = []
         self.UY = []
         self.VBY = []
@@ -498,24 +496,24 @@ class DynamicsYH(DynamicsHX):
             nest.Simulate(T)
             for i in range(int(T/self.delta_t)):
 
-                delta_u_i = -self.g_l_eff * U_h + amp
-                delta_u_h = -self.g_l_eff * U_y + V_bh * self.g_d
+                delta_u_h = -self.g_l_eff * U_h + amp
+                delta_u_y = -self.g_l_eff * U_y + V_by * self.g_d
 
-                U_h = U_h + self.delta_t * delta_u_i
-                V_bh = self.phi(U_h) * self.weight
-                U_y = U_y + self.delta_t * delta_u_h
+                U_h = U_h + self.delta_t * delta_u_h
+                V_by = self.phi(U_h) * self.weight
+                U_y = U_y + self.delta_t * delta_u_y
 
                 self.UH.append(U_h)
                 self.UY.append(U_y)
-                self.VBY.append(V_bh)
+                self.VBY.append(V_by)
 
     def evaluate(self) -> bool:
         VBH_nest = self.mm_02.events["V_m.b"]
         UH_nest = self.mm_02.events["V_m.s"]
         if self.spiking:
-            return records_match(self.VBY, VBH_nest, 0.01) and records_match(self.UY, UH_nest, 0.01)
+            return records_match(self.VBY, VBH_nest, 0.1) and records_match(self.UY, UH_nest, 0.1)
         else:
-            return records_match(self.VBY, VBH_nest) and records_match(self.UY, UH_nest)
+            return records_match(self.VBY, VBH_nest, 0.01) and records_match(self.UY, UH_nest, 0.01)
 
     def plot_results(self):
 

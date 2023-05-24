@@ -1,3 +1,24 @@
+# -*- coding: utf-8 -*-
+#
+# params.py
+#
+# This file is part of NEST.
+#
+# Copyright (C) 2004 The NEST Initiative
+#
+# NEST is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# NEST is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NEST.  If not, see <http://www.gnu.org/licenses/>.
+
 import json
 from copy import deepcopy
 
@@ -27,8 +48,8 @@ class Params:
         self.store_errors = False  # compute and store apical and interneuron errors during traininng
         self.network_type = "snest"
         self.reset = 2  # how to reset the network between simualtions
-        self.add_inhibitory_stims = False # add secondary input population to transmit negative inputs in SNN
         # (0: not at all, 1: simulate a relaxation period, 2: hard reset all neuron states)
+        self.add_inhibitory_stims = False  # add secondary input population to transmit negative inputs in SNN
 
         # parameters regarding neurons
         self.g_l = 0.03  # somatic leakage conductance
@@ -74,6 +95,9 @@ class Params:
             self.from_json(config_file)
 
     def setup_nest_configs(self):
+        """Sets parameters for initializing NEST networks. This method is further responsible for setting
+        parameters that differ between the spiking- and rate-based variants of NEST.
+        """
         self.neuron_model = 'pp_cond_exp_mc_pyr' if self.spiking else 'rate_neuron_pyr'
         self.syn_model = 'pyr_synapse' if self.spiking else 'pyr_synapse_rate'
         self.static_syn_model = 'static_synapse' if self.spiking else 'rate_connection_delayed'

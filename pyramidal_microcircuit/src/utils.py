@@ -1,7 +1,26 @@
-import glob
+# -*- coding: utf-8 -*-
+#
+# utils.py
+#
+# This file is part of NEST.
+#
+# Copyright (C) 2004 The NEST Initiative
+#
+# NEST is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# NEST is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NEST.  If not, see <http://www.gnu.org/licenses/>.
+
 import json
 import os
-import re
 import shutil
 
 import numpy as np
@@ -14,6 +33,18 @@ import sys
 
 
 def setup_directories(type, name="default", root=None):
+    """Creates directories for storing network training progress
+
+    Arguments:
+        type -- Network type - ideally either [numpy, rnest, snest]
+
+    Keyword Arguments:
+        name -- Name of the simulation (default: {"default"})
+        root -- root directory in which to create folders (default: {None})
+
+    Returns:
+        absolute paths for root directory, image subdirectory and data subdirectory
+    """
     if root is None:
         root = os.path.join(*[os.path.dirname(os.path.realpath(sys.argv[0])), "..", "results"])
 
@@ -38,14 +69,19 @@ def setup_directories(type, name="default", root=None):
 
 
 def setup_nest(params, datadir=os.getcwd()):
+    """Sets some critical parameters for the NEST simulator, should be called before running simulations.
+
+    Arguments:
+        params -- instance of params.Params
+
+    Keyword Arguments:
+        datadir -- directory in which NEST should store multimeter- and spikerecorder data (default: {os.getcwd()})
+    """
     nest.set_verbosity("M_ERROR")
     nest.resolution = params.delta_t
-    try:
-        nest.local_num_threads = params.threads
-    except:
-        print("setting 'local_num_threads' failed, trying again.")
-        nest.local_num_threads = params.threads
+    nest.local_num_threads = params.threads
     print(f"configured nest on {nest.local_num_threads} threads")
+
     if params.record_interval > 0:
         nest.SetDefaults("multimeter", {'interval': params.record_interval})
     nest.SetKernelStatus({"data_path": datadir})
@@ -56,6 +92,12 @@ def rolling_avg(input, size):
 
 
 def store_synaptic_weights(network: Network, out_dir):
+    """Store full set of network weights to a .json file
+
+    Arguments:
+        network -- instance of networks.Network
+        out_dir -- full path to target file
+    """
     weights = network.get_weight_dict()
 
     for layer in weights:
@@ -68,6 +110,16 @@ def store_synaptic_weights(network: Network, out_dir):
 
 
 def store_progress(net: Network, dirname, epoch, filename="progress.json"):
+    """Stores training progress of a network to a .json file
+
+    Arguments:
+        net -- instance of networks.Network
+        dirname -- directory in which to store file
+        epoch -- number of training epochs progressed
+
+    Keyword Arguments:
+        filename -- file name I guess (default: {"progress.json"})
+    """
     progress = {
         "test_acc": net.test_acc,
         "test_loss": net.test_loss,
@@ -82,43 +134,20 @@ def store_progress(net: Network, dirname, epoch, filename="progress.json"):
         json.dump(progress, f, indent=4)
 
 
-def store_state(net: Network, dirname, filename="state.json"):
-
-    state = {
-        # "mm": net.mm.get(),
-        "in": net.input_neurons.get(),
-        "p0": net.layers[0].pyr.get(),
-        "i0": net.layers[0].intn.get(),
-        "out": net.layers[-1].pyr.get()
-    }
-    with open(os.path.join(dirname, filename), "w") as f:
-        json.dump(state, f, indent=4)
-
-
-def read_mm(device_id, path, it_min=None, it_max=None):
-    device_pattern = re.compile(fr"/it(?P<iteration>\d+)_(.+)-{device_id}-(.+)dat")
-    files = glob.glob(path + "/*")
-    dataframes = []
-    # if "sionlib" in nest.recording_backends:
-    #     for file in files:
-    #         reader = nestio.NestReader(file)
-    #         for datapoint in reader:
-    #             if not datapoint.gid in frames:
-    #                 print("foo")
-    # else:
-    for file in sorted(files):
-        if result := re.search(device_pattern, file):
-            it = int(result.group('iteration'))
-            if (it_min and it < it_min) or (it_max and it >= it_max):
-                continue
-            dataframes.append(pd.read_csv(file, sep=r"\s+", comment='#'))
-
-    return pd.concat(dataframes)
-
-
 def get_mm_data(df, population, key):
+    """Reads specified data for a given neuron population from a pandas.DataFrame
+
+    Arguments:
+        df -- dataframe of multimeter recordings
+        population -- nest.NodeCollection for which data is to be returned
+        key -- Key within the dataframe to be returned
+
+    Returns:
+        numpy.array with two axes (neuron on first axis, datapoints (sorted by time) on second axis)
+    """
+
     ids = population.global_id
-    if hasattr(ids, "__iter__"): # check if ids is a list/tuple, i.e. contains more than one value
+    if hasattr(ids, "__iter__"):  # check if ids is a list/tuple, i.e. contains more than one value
         filtered_df = df[df["senders"].isin(ids)]
         filtered_df = filtered_df.sort_values(by=["times", "senders"])[key]
         return filtered_df.values.reshape(-1, len(ids))
@@ -128,6 +157,21 @@ def get_mm_data(df, population, key):
 
 
 def read_wr(grouped_df, source, target, t_pres, delta_t=0.1):
+    """Reads data from a nest.weight_recorder
+
+    Arguments:
+        grouped_df -- pandas.GroupBy object, weight records must be a pandas.DataFrame grouped by (sender,target)
+        source -- nest.NodeCollection of source nodes
+        target -- nest.NodeCollection of target nodes
+        t_pres -- nest.biological_time, i.e. latest possible datapoint
+
+    Keyword Arguments:
+        delta_t -- NEST simulator step size (default: {0.1})
+
+    Returns:
+        np.array with all synaptic weights between the two populations. Time is on the first axis,
+        target is on the second axis, and source on the third axis.
+    """
 
     source_id = source.global_id
     target_id = target.global_id
@@ -136,7 +180,7 @@ def read_wr(grouped_df, source, target, t_pres, delta_t=0.1):
         source_id = sorted(source_id)
     else:
         source_id = [source_id]
-    
+
     if hasattr(target_id, "__iter__"):
         target_id = sorted(target_id)
     else:
@@ -156,36 +200,15 @@ def read_wr(grouped_df, source, target, t_pres, delta_t=0.1):
     return weight_array
 
 
-def set_nest_weights(sources, targets, weight_array, scaling_factor):
-    for i, source in enumerate(sources):
-        for j, target in enumerate(targets):
-            nest.GetConnections(source, target).set({"weight": weight_array[j][i] * scaling_factor})
-
-
-def dump_state(net, filename):
-    with open(filename, "w") as f:
-        wtf = {
-            "dims": net.dims,
-            "nrns": nest.GetNodes().get("model"),
-            "in": net.input_neurons[0].get(),
-            "pyr": net.layers[0].pyr[0].get(),
-            "intn": net.layers[0].intn[0].get(),
-            "out": net.layers[-1].pyr[0].get(),
-            "up0": net.layers[0].up[0].get(),
-            "ip0": net.layers[0].ip[0].get(),
-            "pi0": net.layers[0].pi[0].get(),
-            "down0": net.layers[0].down[0].get(),
-            "up1": net.layers[1].up[0].get(),
-            "inputs": [f["I_e"] for f in net.input_neurons.get("soma")],
-            "targets": [f["I_e"] for f in net.layers[-1].pyr.get("soma")],
-            "t": nest.biological_time,
-            "s": net.t_pres
-        }
-
-        json.dump(wtf, f, indent=4)
-
-
 def generate_weights(dims):
+    """Generate a set of weights for arbitrary network dimensions
+
+    Arguments:
+        dims -- network dimensions (iterable of lenght equal to the total number of layers)
+
+    Returns:
+        dictionary which can be passed to a networks.Network
+    """
     weights = []
 
     for i in range(1, len(dims) - 1):

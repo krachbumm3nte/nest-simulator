@@ -66,7 +66,6 @@ class AbstractLayer(ABC):
             "down": p.eta["down"][self.layer],
         }
 
-    @abstractmethod
     def update(self, r_in, u_next, plasticity, noise_on=False):
         """Update the state of this layer from feedforward- and feedback inputs
 
@@ -80,7 +79,6 @@ class AbstractLayer(ABC):
         """
         pass
 
-    @abstractmethod
     def apply(self, plasticity):
         """Apply changes computed in update() function
 

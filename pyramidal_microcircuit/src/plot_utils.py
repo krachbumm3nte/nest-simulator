@@ -1,4 +1,24 @@
-import os
+# -*- coding: utf-8 -*-
+#
+# plot_utils.py
+#
+# This file is part of NEST.
+#
+# Copyright (C) 2004 The NEST Initiative
+#
+# NEST is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# NEST is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NEST.  If not, see <http://www.gnu.org/licenses/>.
+
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,6 +37,8 @@ colors = {
 
 
 def setup_plt():
+    """Sets pyplot params for all plots
+    """
     plt.rcParams['savefig.dpi'] = 500
     plt.rcParams['figure.constrained_layout.use'] = True
     plt.rcParams['text.usetex'] = True
@@ -25,13 +47,6 @@ def setup_plt():
     #         'size': 22}
 
     # plt.rcParams['font'] = font
-
-
-def forceAspect(ax, aspect=1):
-    # From https://stackoverflow.com/questions/7965743/how-can-i-set-the-aspect-ratio-in-matplotlib
-    im = ax.get_images()
-    extent = im[0].get_extent()
-    ax.set_aspect(abs((extent[1]-extent[0])/(extent[3]-extent[2]))/aspect)
 
 
 def calculate_weight_errors(weights, layer_offset=0):
@@ -56,6 +71,14 @@ def calculate_weight_errors(weights, layer_offset=0):
 
 
 def plot_pre_training(epoch, net, out_file):
+    """Generates a plot specifically designed to record progress on the pre-training
+    towards the self-predicting state.
+
+    Arguments:
+        epoch -- number of training epochs passed
+        net -- instance of networks.Network
+        out_file -- file to write plot to
+    """
     print(f"Ep {epoch}: generating plot...", end="")
 
     cmap_2 = plt.cm.get_cmap('hsv', net.dims[2]+1)
@@ -103,6 +126,13 @@ def plot_pre_training(epoch, net, out_file):
 
 
 def plot_training_progress(epoch, net, out_file):
+    """Generates a plot for general training progress.
+
+    Arguments:
+        epoch -- number of training epochs passed
+        net -- instance of networks.Network
+        out_file -- file to write plot to
+    """
     print(f"Ep {epoch}: generating plot...", end="")
 
     cmap_1 = plt.cm.get_cmap('hsv', net.dims[1]+1)

@@ -68,9 +68,9 @@ Name: pp_cond_exp_mc_pyr_parameters - Helper class for pp_cond_exp_mc_pyr
 Description:
 ``pp_cond_exp_mc_pyr_parameters`` is a helper class for the ``pp_cond_exp_mc_pyr`` neuron model
 that contains all parameters of the model that are needed to compute the weight changes of a
-connected ``urbanczik_synapse`` in the base class PyrArchivingNode.
+connected ``pyr_synapse`` in the base class PyrArchivingNode.
 
-Author: Jonas Stapmanns, David Dahmen, Jan Hahne
+Author: Jonas Stapmanns, David Dahmen, Jan Hahne, Johannes Gille
 
 SeeAlso: pp_cond_exp_mc_pyr
 */
@@ -103,7 +103,7 @@ private:
   bool latent_equilibrium;
 
 public:
-  // The Urbanczik parameters need to be public within this class as they are passed to the GSL solver
+  // The pyr parameters need to be public within this class as they are passed to the GSL solver
   double tau_m;
   double phi( double u );
 
@@ -118,110 +118,31 @@ public:
 Short description
 +++++++++++++++++
 
-Two-compartment point process neuron with conductance-based synapses
+Multi-compartment point process neuron with conductance-based synapses
 
 Description
 +++++++++++
 
-pp_cond_exp_mc_pyr is an implementation of a two-compartment spiking
-point process neuron with conductance-based synapses as it is used
-in [1]_. It is capable of connecting to an :doc:`Urbanczik synapse
-<urbanczik_synapse>`.
+pp_cond_exp_mc_pyr is an implementation of a multi-compartment spiking point
+process neuron with conductance-based synapses based on the
+pp_cond_exp_mc_urbanczik model
 
-The model has two compartments: soma and dendrite, labeled as s and p,
-respectively. Each compartment can receive spike events and current input
-from a current generator. Additionally, an external (rheobase) current can be
-set for each compartment.
+The model has three compartments: soma, basal, and apical_lat. A possible
+extension to a fourth compartment for top-down inputs (apical_td) is included in
+the code, but will not be compiled by default. Each compartment can receive
+spike events and current input from a current generator. Additionally, an
+external (rheobase) current can be set for each compartment.
 
 Synapses, including those for injection external currents, are addressed through
 the receptor types given in the receptor_types entry of the state dictionary.
-Note that in contrast to the single-compartment models, all
-synaptic weights must be positive numbers! The distinction between excitatory
-and inhibitory synapses is made explicitly by specifying the receptor type of
-the synapse. For example, receptor_type=basal_exc results in an excitatory
-input and receptor_type=dendritic_inh results in an inhibitory input to the
-dendritic compartment.
+
 
 .. _multicompartment-models:
 
-Multicompartment models and synaptic delays
-+++++++++++++++++++++++++++++++++++++++++++
-
-Note that in case of multicompartment models that represent the dendrite
-explicitly, the interpretation of the synaptic delay in NEST requires careful
-consideration. In NEST, the delay is at least one simulation time step and is
-assumed to be located entirely at the postsynaptic side. For point neurons, it
-represents the time it takes for an incoming spike to travel along the
-postsynaptic dendrite before it reaches the soma, see :ref:`panel a)
-<fig-multicompartment>`. Conversely, if the synaptic weight depends on the
-state of the postsynaptic neuron, the delay also represents the time it takes
-for the information on the state to propagate back through the dendrite to the
-synapse.
-
-For multicompartment models in NEST, this means the delay is positioned directly
-behind the incoming synapse, that is, before the first dendritic compartment on the
-postsynaptic side, see :ref:`panel b) <fig-multicompartment>`. Therefore, the
-delay specified in the synapse model does *not* account for any delay that might
-be associated with information traveling through the explicitly modeled
-dendritic compartments.
-
-In the :doc:`Urbanczik synapse <urbanczik_synapse>`, the change of the synaptic
-weight is driven by an error signal, which is the difference between the firing
-rate of the soma (derived from the somatic spike train :math:`S_{post}`) and the
-dendritic prediction of the firing rate of the soma (derived from the dendritic
-membrane potential :math:`V`). The original publication [1]_ does not assume any
-delay in the interaction between the soma and the dendritic compartment.
-Therefore, we evaluate the firing rate and the dendritic prediction at equal
-time points to calculate the error signal at that time point. Due to the
-synaptic delay :math:`d`, the synapse combines a delayed version of the error
-signal with the presynaptic spike train (:math:`S_{pre}`), see :ref:`panel c)
-<fig-multicompartment>`.
-
-.. _fig-multicompartment:
-
-.. figure:: ../static/img/multicompartment.png
-   :width: 75 %
-
-   a) Two point neurons (red circles *pre* and *post*) connected via a synapse.
-   In NEST, the delay is entirely on the postsynaptic side, and in the case of point
-   neurons, it is interpreted as the dendritic delay. b) Two two-compartment
-   neuron models composed of a somatic (green) and a dendritic (blue)
-   compartment. The soma of the presynaptic neuron is connected to the dendrite
-   of the postsynaptic neuron. The synaptic delay is located behind the synapse
-   and before the dendrite. c) Time trace of the State variables that enter the
-   Urbanczik-Senn rule. Due to the synaptic delay :math:`d`, the presynaptic
-   spike train (top) is combined with a delayed version of the postsynaptic
-   quantities; the dendritic membrane potential (middle) and the somatic spike
-   train (bottom).
-
-See :doc:`../auto_examples/urbanczik_synapse_example` to learn more.
-
-Parameters
-++++++++++
-
-The following parameters can be set in the status dictionary. Parameters
-for each compartment are collected in a sub-dictionary; these sub-dictionaries
-are called "soma" and "dendritic", respectively. In the list below,
-these parameters are marked with an asterisk.
-
-============   =====   =====================================================
- V_m*           mV      Membrane potential
- E_L*           mV      Leak reversal potential
- C_m           pF      Capacity of the membrane
- g_L*           nS      Leak conductance
- tau_syn_ex*    ms      Rise time of the excitatory synaptic alpha function
- tau_syn_in*    ms      Rise time of the inhibitory synaptic alpha function
- I_e*           pA      Constant input current
- g_som          nS      Coupling between soma and dendritic compartments
- g_b            nS      Coupling between basal dendrite and soma
- g_a            nS      Coupling between apical dendrite and soma
- t_ref          ms      Duration of refractory period
-============   =====   =====================================================
-
 .. note::
 
-   The neuron model uses standard units of NEST instead of the unitless quantities
-   used in [1]_.
+   The neuron model uses standard units of NEST instead of the unitless
+   quantities used in [1]_.
 
 .. note::
 
