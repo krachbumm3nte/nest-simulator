@@ -1,3 +1,24 @@
+# -*- coding: utf-8 -*-
+#
+# network_nest.py
+#
+# This file is part of NEST.
+#
+# Copyright (C) 2004 The NEST Initiative
+#
+# NEST is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# NEST is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NEST.  If not, see <http://www.gnu.org/licenses/>.
+
 import numpy as np
 import pandas as pd
 from src.networks.layer_NEST import NestLayer, NestOutputLayer
@@ -29,17 +50,8 @@ class NestNetwork(Network):
         print("Done")
 
     def setup_populations(self):
-        # TODO: extract this code and maybe insert it into Params.setup_nest_configs()?
-        # self.wr = None
-        # if self.p.record_weights:
-        #     # initialize a weight_recorder, and update all synapse models to interface with it
-        #     self.wr = nest.Create("weight_recorder", params={'record_to': "ascii", "precision": 12})
-        #     print(self.p.syn_model)
-        #     nest.CopyModel(self.p.syn_model, 'record_syn', {"weight_recorder": self.wr})
-        #     self.p.syn_model = 'record_syn'
-
-        #     nest.CopyModel(self.p.static_syn_model, 'static_record_syn', {"weight_recorder": self.wr})
-        #     self.p.static_syn_model = 'static_record_syn'
+        """Sets up all neuron- and synapse populations in NEST
+        """
 
         # set up dictionaries for neuron and synapse initialization
         self.p.setup_nest_configs()
@@ -120,7 +132,7 @@ class NestNetwork(Network):
         self.layers[-1].connect(pyr_prev, intn_prev)
 
         if self.p.add_inhibitory_stims:
-            # Spiking input neurons cannot communicate negative inputs under default parametrization. ,
+            # Spiking input neurons cannot communicate negative inputs under default parametrization.
             # A secondary population is therefore required.
             syn_stim_inh = deepcopy(self.layers[0].synapses["up"])
             if self.init_weights:
@@ -170,8 +182,8 @@ class NestNetwork(Network):
                                       (layer.gl + layer.gd) / layer.gd, layer.ip)
 
     def redefine_connections(self):
-        """reset SynapseCollections across all layers. In NEST, SynapseCollections break whenever a new Node is 
-        created. Hence, in some cases variables holding SynapseCollections need to be re-instantiated.
+        """reset SynapseCollections across all layers. In NEST, SynapseCollections break whenever a new Node
+        is created. Hence, in some cases variables holding SynapseCollections need to be re-instantiated.
         """
         pyr_prev = self.input_neurons
         for i in range(len(self.layers)-1):
@@ -179,20 +191,33 @@ class NestNetwork(Network):
             pyr_prev = self.layers[i].pyr
         self.layers[-1].redefine_connections(pyr_prev)
 
-    def simulate(self, T, enable_recording=False, recording_delay=True):
+    def simulate(self, t, enable_recording=False, recording_delay=True):
+        """Simulates the network for a specified time
+
+        Arguments:
+            t -- simulation time in ms
+
+        Keyword Arguments:
+            enable_recording -- if true, membrane potentials and errors are recorded (default: {False})
+            recording_delay -- if true, recording starts after a delay (default: {True})
+        """
         if enable_recording and self.use_mm:
             self.mm.set({"start": self.p.out_lag if recording_delay else 0,
                         'stop': self.t_pres, 'origin': nest.biological_time})
             if self.recording_backend == "ascii":
                 nest.SetKernelStatus({"data_prefix": f"it{str(self.iteration).zfill(8)}_"})
 
-        nest.Simulate(T)
+        nest.Simulate(t)
         self.iteration += 1
 
     def disable_plasticity(self):
+        """Set learning rates in all plastic synapses to 0. Used for testing
+        """
         nest.GetConnections(synapse_model=self.p.syn_model).set({"eta": 0})
 
     def enable_learning(self):
+        """Set learning rates in all plastic synapses to their original values.
+        """
         if hasattr(self.layers[0], "syn_inh"):
             # TODO: verify!
             self.layers[0].syn_inh.set({"eta": self.layers[0].synapses["pi"]["eta"]})
@@ -279,6 +304,18 @@ class NestNetwork(Network):
         return np.mean(acc), np.mean(loss_mse)
 
     def get_weight_array(self, source, target, normalized=False):
+        """Returns array of synaptic weights between two neuron populatiosn
+
+        Arguments:
+            source -- nest.NodeCollection of source population
+            target -- nest.NodeCollection of target population
+
+        Keyword Arguments:
+            normalized -- Normalize values (i.e. multiply by psi) (default: {False})
+
+        Returns:
+            numpy.array of shape (len(target), len(source))
+        """
         weight_df = pd.DataFrame.from_dict(nest.GetConnections(source=source, target=target).get())
         n_out = len(target)
         n_in = len(source)
@@ -294,6 +331,17 @@ class NestNetwork(Network):
         return weight_array
 
     def get_weight_array_from_syn(self, synapse_collection, normalized=False):
+        """Returns array of synaptic weights in a nest.SynapseCollection
+
+        Arguments:
+            synapse_collection -- synapses to be read out
+
+        Keyword Arguments:
+            normalized -- Normalize values (i.e. multiply by psi) (default: {False})
+
+        Returns:
+            numpy.array of shape (n_out, n_in)
+        """
         weight_df = pd.DataFrame.from_dict(synapse_collection.get())
         n_out = len(set(synapse_collection.targets()))
         n_in = len(set(synapse_collection.sources()))
@@ -351,6 +399,12 @@ class NestNetwork(Network):
             self.mm.n_events = 0
 
     def set_weights_from_syn(self, weights, synapse_collection):
+        """Sets weights from a numpy.array to connections in a nest.SynapseCollection
+
+        Arguments:
+            weights -- np.array of size (n_out, n_in)
+            synapse_collection -- nest.SynapseCollection
+        """
         for i, source_id in enumerate(sorted(set(synapse_collection.sources()))):
             for j, target_id in enumerate(sorted(set(synapse_collection.targets()))):
                 source = nest.GetNodes({"global_id": source_id})

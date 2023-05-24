@@ -1,3 +1,24 @@
+# -*- coding: utf-8 -*-
+#
+# layer.py
+#
+# This file is part of NEST.
+#
+# Copyright (C) 2004 The NEST Initiative
+#
+# NEST is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# NEST is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NEST.  If not, see <http://www.gnu.org/licenses/>.
+
 
 from abc import ABC, abstractmethod
 
@@ -6,13 +27,21 @@ import numpy as np
 dtype = np.float32
 
 
-class AbstractLayer():
+class AbstractLayer(ABC):
     def __init__(self, p, net, layer) -> None:
+        """Abstract base class for a Layer in the dendritic error network
+
+        Arguments:
+            p -- instance of params.Params
+            net -- instance of networks.Network to which this layer belongs
+            layer -- index of this layer (starting at 0 for the first hidden layer)
+        """
+
         self.layer = layer
         self.p = p
         self.net = net
         self.ga = p.g_a
-        self.gb = p.g_d  # TODO: separate these?
+        self.gb = p.g_d
         self.gd = p.g_d
         self.gl = p.g_l
         self.gsom = p.g_som
@@ -25,7 +54,7 @@ class AbstractLayer():
         self.leakage = self.gl + self.ga + self.gb
 
         self.Wmin = -4
-        self.Wmax = 4  # TODO: read from config
+        self.Wmax = 4
         self.gamma = p.gamma
         self.beta = p.beta
         self.theta = p.theta
@@ -39,17 +68,47 @@ class AbstractLayer():
 
     @abstractmethod
     def update(self, r_in, u_next, plasticity, noise_on=False):
+        """Update the state of this layer from feedforward- and feedback inputs
+
+        Arguments:
+            r_in -- rate of previous layer pyramidal neurons
+            u_next -- somatic voltage of next layer pyramidal neurons
+            plasticity -- if true, compute weight changes
+
+        Keyword Arguments:
+            noise_on -- if true, inject noise into membranes (default: {False})
+        """
         pass
 
     @abstractmethod
     def apply(self, plasticity):
+        """Apply changes computed in update() function
+
+        Arguments:
+            plasticity -- if true, update synaptic weights
+        """
         pass
 
     @abstractmethod
     def reset(self):
+        """Reset membrane potentials and synaptic weight deltas
+        """
         pass
 
     def gen_weights(self, n_in, n_out, wmin=None, wmax=None):
+        """Generate a set of weights to initialize a synaptic population
+
+        Arguments:
+            n_in -- number of neuron in the source population
+            n_out -- number of neurons in the target population
+
+        Keyword Arguments:
+            wmin -- minimum initial weight (default: {None})
+            wmax -- maximum initial weight (default: {None})
+
+        Returns:
+            np.array of dimensions (n_out, n_in)
+        """
         if wmin is None:
             wmin = self.p.wmin_init/self.psi
         if wmax is None:
@@ -57,6 +116,17 @@ class AbstractLayer():
         return np.random.uniform(wmin, wmax, (n_out, n_in))
 
     def phi(self, x, thresh=15):
+        """Neuronal transfer function
+
+        Arguments:
+            x -- np.array of somatic voltages
+
+        Keyword Arguments:
+            thresh -- threshold beyond which the activation scales linearly (default: {15})
+
+        Returns:
+            np.array of equal dimensions as the input
+        """
 
         res = x.copy()
         ind = np.abs(x) < thresh
@@ -186,6 +256,13 @@ class Layer(AbstractLayer):
 class OutputLayer(AbstractLayer):
 
     def __init__(self, net, p, layer) -> None:
+        """Output layer, which only contains pyramidal neurons
+
+        Arguments:
+            p -- instance of params.Params
+            net -- instance of networks.Network to which this layer belongs
+            layer -- index of this layer (starting at 0 for the first hidden layer)
+        """
         super().__init__(net, p, layer)
         self.ga = 0
         self.N_in = net.dims[-2]

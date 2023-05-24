@@ -1,3 +1,24 @@
+# -*- coding: utf-8 -*-
+#
+# network.py
+#
+# This file is part of NEST.
+#
+# Copyright (C) 2004 The NEST Initiative
+#
+# NEST is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# NEST is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NEST.  If not, see <http://www.gnu.org/licenses/>.
+
 from abc import abstractmethod
 
 import numpy as np
@@ -8,8 +29,11 @@ import os
 
 
 class Network:
+    """Abstract network class for unifying simulations of the dendritic error network.
+    """
 
     def __init__(self, p: Params) -> None:
+
         self.p = p
 
         self.mode = p.mode
@@ -21,8 +45,8 @@ class Network:
             """
             self.dims = p.dims
             if p.dims[0] != 9 or p.dims[-1] != 3:
-                raise ValueError(f"For training on the bar Dataset, network must have exactly 9 \
-input and 3 output neurons, dims are: {p.dims}")
+                raise ValueError(f"For training on the bar Dataset, network must have exactly 9 " +
+                                 f"input and 3 output neurons, dims are: {p.dims}")
             self.train_samples = 3
             self.val_samples = 1
             self.test_samples = 1
@@ -159,6 +183,20 @@ input and 3 output neurons, dims are: {p.dims}")
         self.fb_error = []
 
     def gen_weights(self, n_in, n_out, wmin=None, wmax=None):
+        """Generate a set of weights to initialize a synaptic population
+
+        Arguments:
+            n_in -- number of neuron in the source population
+            n_out -- number of neurons in the target population
+
+        Keyword Arguments:
+            wmin -- minimum initial weight (default: {None})
+            wmax -- maximum initial weight (default: {None})
+
+        Returns:
+            np.array of dimensions (n_out, n_in)
+        """
+
         if wmin is None:
             wmin = self.p.wmin_init/self.psi
         if wmax is None:
@@ -166,6 +204,17 @@ input and 3 output neurons, dims are: {p.dims}")
         return np.random.uniform(wmin, wmax, (n_out, n_in))
 
     def phi(self, x, thresh=20):
+        """Neuronal transfer function
+
+        Arguments:
+            x -- np.array of somatic voltages
+
+        Keyword Arguments:
+            thresh -- threshold beyond which the activation scales linearly (default: {15})
+
+        Returns:
+            np.array of equal dimensions as the input
+        """
 
         res = x.copy()
         ind = np.abs(x) < thresh
@@ -174,9 +223,25 @@ input and 3 output neurons, dims are: {p.dims}")
         return res
 
     def generate_selfpred_data(self, n_samples):
+        """Generate data for training towards the self-predicting state
+
+        Arguments:
+            n_samples -- number of samples to generate
+
+        Returns:
+            numpy arrays for a batch of stimuli and a batch of targets
+        """
         return np.random.random((n_samples, self.dims[0])), np.zeros((n_samples, self.dims[-1]))
 
     def generate_teacher_data(self, n_samples):
+        """Generate data for training to match a separate teacher network
+
+        Arguments:
+            n_samples -- number of samples to generate
+
+        Returns:
+            numpy arrays for a batch of stimuli and a batch of targets
+        """
         x_batch = np.random.random((n_samples, self.dims[0])) * 2 - 1
         y_batch = np.zeros((n_samples, self.dims[-1]))
 
@@ -186,6 +251,8 @@ input and 3 output neurons, dims are: {p.dims}")
         return x_batch, y_batch
 
     def train_epoch(self):
+        """Performs a single training epoch
+        """
         x_batch, y_batch = self.get_training_data(self.train_samples)
         loss = self.train_batch(x_batch, y_batch)
         if loss > 1e4:
@@ -195,6 +262,8 @@ input and 3 output neurons, dims are: {p.dims}")
         self.epoch += 1
 
     def test_epoch(self):
+        """Performs a test epoch
+        """
         x_batch, y_batch = self.get_test_data(self.test_samples)
         acc, loss = self.test_batch(x_batch, y_batch)
 
@@ -203,32 +272,48 @@ input and 3 output neurons, dims are: {p.dims}")
         self.reset()
 
     def validate_epoch(self):
+        """Performs a validation epoch
+        """
         x_batch, y_batch = self.get_val_data(self.val_samples)
         acc, loss = self.test_batch(x_batch, y_batch)
 
         self.val_acc.append([self.epoch, acc])
         self.val_loss.append([self.epoch, loss])
-
         self.reset()
 
     @abstractmethod
     def set_all_weights(self, weights):
-        pass
+        """Set all network weights from a dictionary containing weight matrices
 
-    @abstractmethod
-    def train(self, input_currents, T):
+        Arguments:
+            weights -- weight dictionary
+        """
         pass
 
     @abstractmethod
     def get_weight_dict(self):
+        """Returns a dictionary of synaptic weights
+        """
         pass
 
     @abstractmethod
     def train_batch(self, x_batch, y_batch):
+        """Trains the network on a batch of data
+
+        Arguments:
+            x_batch -- numpy.array containing inputs
+            y_batch -- numpy.array containing target activations
+        """
         pass
 
     @abstractmethod
     def test_batch(self, x_batch, y_batch):
+        """Tests the network on a batch of data
+
+        Arguments:
+            x_batch -- numpy.array containing inputs
+            y_batch -- numpy.array containing target activations
+        """
         pass
 
     @abstractmethod

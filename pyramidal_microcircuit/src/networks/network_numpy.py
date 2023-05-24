@@ -1,3 +1,25 @@
+# -*- coding: utf-8 -*-
+#
+# network_numpy.py
+#
+# This file is part of NEST.
+#
+# Copyright (C) 2004 The NEST Initiative
+#
+# NEST is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# NEST is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NEST.  If not, see <http://www.gnu.org/licenses/>.
+
+
 from copy import deepcopy
 
 import numpy as np
@@ -83,6 +105,11 @@ class NumpyNetwork(Network):
         return np.mean(loss)
 
     def set_target(self, target_seq):
+        """Sets a target activation to be injected into the output layer
+
+        Arguments:
+            target_seq -- list of voltages, size must be equal to the number of output neurons
+        """
         self.target_seq = target_seq
 
     def test_batch(self, x_batch, y_batch):
@@ -102,6 +129,15 @@ class NumpyNetwork(Network):
         return np.mean(acc), np.mean(loss_mse)
 
     def simulate(self, t, enable_recording=False, plasticity=True):
+        """Simulates the network for a specified time
+
+        Arguments:
+            t -- simulation time in ms
+
+        Keyword Arguments:
+            enable_recording -- if true, membrane potentials and errors are recorded (default: {False})
+            plasticity -- if true, synapses are plastic (default: {True})
+        """
         for i in range(int(t/self.dt)):
             self.r_in += (self.dt/self.tau_x) * (self.I_x - self.r_in)
             self.u_target += (self.dt/self.tau_x) * (self.target_seq - self.u_target)
@@ -130,6 +166,8 @@ class NumpyNetwork(Network):
             self.iteration += 1
 
     def record_state(self):
+        """Records the state of the network (membrane voltages and weights)
+        """
         U_y = self.layers[-1].u_pyr["soma"]
         self.U_y_record = np.concatenate((self.U_y_record, np.expand_dims(U_y, 0)), axis=0)
         if self.p.store_errors:
