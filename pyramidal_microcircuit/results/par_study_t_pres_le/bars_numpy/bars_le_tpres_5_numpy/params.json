@@ -2,7 +2,7 @@
     "Wmax": 4,
     "Wmin": -4,
     "beta": 1,
-    "config_file": "/home/johannes/nest-simulator/pyramidal_microcircuit/experiment_configs/bars_le/bars_le_tpres_5.json",
+    "config_file": "experiment_configs/bars_le/bars_le_tpres_5.json",
     "delta_t": 0.1,
     "dims": [
         9,

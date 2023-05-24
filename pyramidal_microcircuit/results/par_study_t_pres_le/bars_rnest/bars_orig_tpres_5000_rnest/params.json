@@ -10,7 +10,7 @@
         "soma_curr": 5,
         "soma": 1
     },
-    "config_file": "/home/johannes/nest-simulator/pyramidal_microcircuit/experiment_configs/bars_orig_tpres_5000.json",
+    "config_file": "experiment_configs/bars_orig_tpres_5000.json",
     "delta_t": 0.1,
     "dims": [
         9,

@@ -15,8 +15,8 @@
         "soma_curr": 5,
         "soma": 1
     },
-    "config_file": "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/tests/test_params.json",
-    "datadir": "/home/johannes/Desktop/nest-simulator/pyramidal_microcircuit/tests/results/default_2023_04_11-16_42_09/data",
+    "config_file": "tests/test_params.json",
+    "datadir": "tests/results/default_2023_04_11-16_42_09/data",
     "delta_t": 0.1,
     "dims": [
         3,
